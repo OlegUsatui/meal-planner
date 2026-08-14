@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 import { FIT_KITCHEN_CATALOG } from '../src/features/products/import/fit-kitchen-catalog.ts'
+import { mergeImportedIngredients } from '../src/features/products/import/merge-imported-ingredients.ts'
 import { normalizeImportedIngredient } from '../src/features/products/import/normalize-imported-product.ts'
 
 const url = process.env.SUPABASE_URL
@@ -41,9 +42,9 @@ async function normalizeIngredients(items) {
       productMap.set(key, row)
       await insertOrThrow('products', [row])
     }
-    result.push({ product_id: productMap.get(key).id, quantity_base: normalized.quantity, entered_quantity: item.enteredQuantity, entered_unit: item.enteredUnit })
+    result.push({ product_id: productMap.get(key).id, quantity_base: normalized.quantity, entered_quantity: normalized.quantity, entered_unit: normalized.unit })
   }
-  return result
+  return mergeImportedIngredients(result)
 }
 
 async function seedCollection(file, mealType) {

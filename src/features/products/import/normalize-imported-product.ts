@@ -87,6 +87,7 @@ const rules: Rule[] = [
   rule(/нут/, 'Нут', 'Бобові'),
   rule(/сочевиц|чечевиц/, 'Сочевиця', 'Бобові'),
   rule(/горох/, 'Горох', 'Бобові'),
+  rule(/квасол\S*\s+стручков|стручков\S*\s+квасол/, 'Стручкова квасоля', 'Овочі та зелень'),
   rule(/квасол/, 'Квасоля', 'Бобові'),
   rule(/едамаме/, 'Едамаме', 'Бобові'),
   rule(/брокол|bpokoni/, 'Броколі', 'Овочі та зелень'),
@@ -96,15 +97,17 @@ const rules: Rule[] = [
   rule(/білокачан\S*\s+капуст|капуст/, 'Білокачанна капуста', 'Овочі та зелень'),
   rule(/огір|опірок|oripok/, 'Огірок', 'Овочі та зелень'),
   rule(/томатн\S*\s+(паст|соус|пюре)|пасат/, 'Томатна пасата', 'Соуси та олії'),
+  rule(/томатн\S*\s+паста(?!\S)/, 'Томатна пасата', 'Соуси та олії'),
   rule(/помідор.*чер|томат.*чер/, 'Помідори чері', 'Овочі та зелень'),
   rule(/помідор|томат/, 'Помідори', 'Овочі та зелень'),
   rule(/солодк\S*\s+перец|солодк\S*\s+перець|перець\s+солодк|перець\s+болгарськ|болгарськ\S*\s+перец|болгарськ\S*\s+перець|^перець$/, 'Солодкий перець', 'Овочі та зелень'),
   rule(/моркв|opква|орква/, 'Морква', 'Овочі та зелень'),
-  rule(/зелен\S*\s+цибул/, 'Зелена цибуля', 'Овочі та зелень'),
+  rule(/зелен\S*\s*цибул/, 'Зелена цибуля', 'Овочі та зелень'),
   rule(/червон\S*\s+цибул/, 'Червона цибуля', 'Овочі та зелень'),
   rule(/цибул/, 'Ріпчаста цибуля', 'Овочі та зелень'),
   rule(/часник/, 'Часник', 'Овочі та зелень'),
   rule(/печериц|гриб/, 'Печериці', 'Овочі та зелень'),
+  rule(/грибн\S*\s+приправа/, 'Грибна приправа', 'Спеції та зелень'),
   rule(/шпинат/, 'Шпинат', 'Овочі та зелень'),
   rule(/рукол|pykona/, 'Рукола', 'Овочі та зелень'),
   rule(/салат|ромен|айсберг/, 'Салатний мікс', 'Овочі та зелень'),
@@ -148,7 +151,7 @@ const rules: Rule[] = [
   rule(/олія\s*льону|лляна\s+олія/, 'Лляна олія', 'Соуси та олії', 'ml'),
   rule(/ріпаков\S*\s+олія/, 'Ріпакова олія', 'Соуси та олії', 'ml'),
   rule(/яблучн\S*\s+оцет/, 'Яблучний оцет', 'Соуси та олії', 'ml'),
-  rule(/рисов\S*\s+оцет/, 'Рисовий оцет', 'Соуси та олії', 'ml'),
+  rule(/рисов\S*\s+оцет|оцет\s+рисов\S*/, 'Рисовий оцет', 'Соуси та олії', 'ml'),
   rule(/оцет|бальзаміко/, 'Оцет', 'Соуси та олії', 'ml'),
   rule(/гірчиц|прчиц|fipyu/, 'Гірчиця', 'Соуси та олії'),
   rule(/мед|^ед(?:\s|$)/, 'Мед', 'Соуси та олії'),
@@ -194,6 +197,7 @@ const rules: Rule[] = [
   rule(/чилі/, 'Перець чилі', 'Спеції та зелень'),
   rule(/карі/, 'Карі', 'Спеції та зелень'),
   rule(/лавров/, 'Лавровий лист', 'Спеції та зелень'),
+  rule(/ваніл\S*\s+цукор/, 'Ванільний цукор', 'Інше'),
   rule(/зелень|3enehb/, 'Зелень', 'Спеції та зелень'),
   rule(/романо/, 'Салатний мікс', 'Овочі та зелень'),
   rule(/^черрі$/, 'Помідори чері', 'Овочі та зелень'),
@@ -207,7 +211,7 @@ const rules: Rule[] = [
   rule(/розпушувач/, 'Розпушувач', 'Інше'),
 ]
 
-const excluded = /^(?:["о]\s*)?(?:\d+\s*)?(?:ч\.?\s*л\.?|ч\.л\.\s*\(\d*|ст\.?\s*л\.?|зубчик|сухий|суха\)?|сушений|сире\)?|\(сухий\)|варена|без цукру|безлактозний|червона\)?|приблизно|вуглеводи|спеції:?|спеції:\s*сіль|сіль|cinb|щіпка\s*солі|шщшіпкасолі|чорний\s*(?:мелений\s*)?перець|перець\s*чорний|(?:г\s+)?перецьчорний|перець за смаком|вода(?:або\s+бульйон|\s+для\s+соусу)?|г\s+вода|boga|для\s+(?:рису|pucy)?\s*\)?|сік(?:\s*[-\d])?|але\s+не\s+обов.?язковий|жирності|промити\)?|типу\s*\)?|цільнозернова|щільний|шматочками\)?|вирізка\/.*\)|свіжі\s+овочі\s+для\s+подачі|г)$/u
+const excluded = /^(?:["о]\s*)?(?:\d+\s*)?(?:ч\.?\s*л\.?|ч\.л\.\s*\(\d*|ст\.?\s*л\.?|зубчик|сухий|суха\)?|сушений|сире\)?|\(сухий\)|варена|без цукру|безлактозний|червона\)?|приблизно|вуглеводи|спеції:?|спеції:\s*сіль|сіль|cinb|щіпка\s*солі|шщшіпкасолі|чорний\s*(?:мелений\s*)?перець|перець\s*чорний|(?:г\s+)?перецьчорний|перець за смаком|вода(?:\s*або\s*бульйон|\s+для\s+\S+)?|г\s+вода|boga|для\s+(?:рису|pucy)?\s*\)?|сік(?:\s*[-\d])?|але\s+не\s+обов.?язковий|жирності|промити\)?|типу\s*\)?|цільнозернова|щільний|шматочками\)?|вирізка\/.*\)|свіжі\s+овочі\s+для\s+подачі|г)$/u
 
 export function isIgnoredImportedIngredient(rawName: string): boolean {
   const cleaned = clean(rawName.trim())
@@ -219,10 +223,15 @@ export function normalizeImportedIngredient(rawName: string, quantity: number, e
   if (!raw || /^(?:a60|a6o|або)\b/iu.test(raw)) return null
   const cleaned = clean(raw)
   if (isIgnoredImportedIngredient(raw) || !Number.isFinite(quantity) || quantity <= 0) return null
-  let selected: { rule: Rule; index: number } | null = null
+  let selected: { rule: Rule; index: number; end: number; length: number } | null = null
   for (const candidate of rules) {
-    const match = Array.from(cleaned.matchAll(candidate.pattern)).at(-1)
-    if (match && (selected === null || (match.index ?? -1) >= selected.index)) selected = { rule: candidate, index: match.index ?? -1 }
+    const match = Array.from(cleaned.matchAll(candidate.pattern)).reverse().find((candidateMatch) => !isInsideParentheses(cleaned, candidateMatch.index ?? -1))
+    if (!match) continue
+    const index = match.index ?? -1
+    const length = match[0].length
+    const end = index + length
+    const isBetter = selected === null || end > selected.end || (end === selected.end && length > selected.length) || (end === selected.end && length === selected.length && index > selected.index)
+    if (isBetter) selected = { rule: candidate, index, end, length }
   }
   if (!selected) return null
   const targetUnit = selected.rule.unit ?? 'g'
@@ -232,6 +241,10 @@ export function normalizeImportedIngredient(rawName: string, quantity: number, e
     quantity: convertQuantity(quantity, enteredUnit, targetUnit, selected.rule.name),
     unit: targetUnit,
   }
+}
+
+function isInsideParentheses(value: string, index: number): boolean {
+  return value.lastIndexOf('(', index) > value.lastIndexOf(')', index)
 }
 
 function clean(value: string): string {

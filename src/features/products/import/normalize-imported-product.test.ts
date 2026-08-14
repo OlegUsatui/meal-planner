@@ -32,6 +32,19 @@ describe('normalizeImportedIngredient', () => {
     expect(normalizeImportedIngredient('Свиняча вирізка', 170, 'g')).toEqual({ name: 'Свинина', category: 'М’ясо та птиця', quantity: 170, unit: 'g' })
   })
 
+  it('preserves specific products when their names contain broader product terms', () => {
+    expect(normalizeImportedIngredient('Кунжутна олія', 5, 'ml')).toEqual({ name: 'Кунжутна олія', category: 'Соуси та олії', quantity: 5, unit: 'ml' })
+    expect(normalizeImportedIngredient('Зелена цибуля', 20, 'g')).toEqual({ name: 'Зелена цибуля', category: 'Овочі та зелень', quantity: 20, unit: 'g' })
+    expect(normalizeImportedIngredient('Оцет рисовий', 10, 'ml')).toEqual({ name: 'Рисовий оцет', category: 'Соуси та олії', quantity: 10, unit: 'ml' })
+    expect(normalizeImportedIngredient('Квасоля стручкова', 50, 'g')).toEqual({ name: 'Стручкова квасоля', category: 'Овочі та зелень', quantity: 50, unit: 'g' })
+    expect(normalizeImportedIngredient('Грибна приправа натуральна', 2, 'g')).toEqual({ name: 'Грибна приправа', category: 'Спеції та зелень', quantity: 2, unit: 'g' })
+    expect(normalizeImportedIngredient('Протеїн (ваніль)', 30, 'g')).toEqual({ name: 'Протеїн', category: 'Рослинний білок', quantity: 30, unit: 'g' })
+    expect(normalizeImportedIngredient('Ванільний цукор', 8, 'g')).toEqual({ name: 'Ванільний цукор', category: 'Інше', quantity: 8, unit: 'g' })
+    expect(normalizeImportedIngredient('Томатна паста без цукру', 20, 'g')).toEqual({ name: 'Томатна пасата', category: 'Соуси та олії', quantity: 20, unit: 'g' })
+    expect(normalizeImportedIngredient('Оцет рисовий / яблучний', 10, 'ml')).toEqual({ name: 'Рисовий оцет', category: 'Соуси та олії', quantity: 10, unit: 'ml' })
+    expect(normalizeImportedIngredient('Вода для кіноа', 100, 'ml')).toBeNull()
+  })
+
   it('ignores OCR seasoning and layout fragments from the new books', () => {
     expect(normalizeImportedIngredient('Перецьчорний', 1, 'g')).toBeNull()
     expect(normalizeImportedIngredient('Спеції: сіль', 2, 'g')).toBeNull()
