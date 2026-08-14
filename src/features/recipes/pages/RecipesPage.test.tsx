@@ -34,4 +34,18 @@ describe('RecipesPage categories', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Не вдалося завантажити рецепти')
     expect(screen.getByRole('button', { name: 'Повторити' })).toBeInTheDocument()
   })
+
+  it('paginates the catalogue through the repository page contract', async () => {
+    const repository: RecipeRepository = {
+      list: vi.fn(), listPage: vi.fn()
+        .mockResolvedValueOnce({ items: [{ ...base, id: 'one', name: 'Перший', normalizedName: 'перший', classifications: [] }], page: 1, pageSize: 24, total: 25, hasNext: true })
+        .mockResolvedValueOnce({ items: [{ ...base, id: 'two', name: 'Другий', normalizedName: 'другий', classifications: [] }], page: 2, pageSize: 24, total: 25, hasNext: false }),
+      get: vi.fn(), create: vi.fn(), update: vi.fn(), archive: vi.fn(),
+    }
+    render(<MemoryRouter><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider></MemoryRouter>)
+    expect(await screen.findByText('Перший')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Наступна сторінка' }))
+    expect(await screen.findByText('Другий')).toBeInTheDocument()
+    expect(repository.listPage).toHaveBeenNthCalledWith(2, '', { page: 2, pageSize: 24 })
+  })
 })

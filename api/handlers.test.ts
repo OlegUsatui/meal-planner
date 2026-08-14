@@ -6,7 +6,7 @@ import mealPlanCollection from './meal-plan/index.js'
 
 const mocks = vi.hoisted(() => ({
   auth: vi.fn().mockResolvedValue({ client: {}, user: { id: 'user-1' } }),
-  recipes: { list: vi.fn(), get: vi.fn(), createUploaded: vi.fn(), update: vi.fn(), updateUploaded: vi.fn(), archive: vi.fn() },
+  recipes: { list: vi.fn(), listPage: vi.fn(), get: vi.fn(), createUploaded: vi.fn(), update: vi.fn(), updateUploaded: vi.fn(), archive: vi.fn() },
   products: { list: vi.fn(), create: vi.fn() },
   mealPlan: { list: vi.fn(), upsert: vi.fn() },
 }))
@@ -24,6 +24,10 @@ describe('REST handlers', () => {
     await recipeCollection({ method: 'GET', url: '/api/recipes?query=soup', headers: {} }, getResponse)
     expect(getResponse.payload).toEqual({ data: [{ id: 'recipe-1' }] })
     expect(mocks.recipes.list).toHaveBeenCalledWith('soup')
+
+    mocks.recipes.listPage.mockResolvedValueOnce({ items: [], page: 2, pageSize: 24, total: 50, hasNext: true })
+    await recipeCollection({ method: 'GET', url: '/api/recipes?query=soup&page=2&pageSize=24&mealType=lunch&subcategoryId=lunch-soups', headers: {} }, response())
+    expect(mocks.recipes.listPage).toHaveBeenCalledWith('soup', { page: 2, pageSize: 24, mealType: 'lunch', subcategoryId: 'lunch-soups', uncategorized: false })
 
     const postResponse = response()
     await recipeCollection({ method: 'POST', headers: {}, body: { id: 'recipe-2', image: { path: 'user-1/recipe-2.webp' } } }, postResponse)

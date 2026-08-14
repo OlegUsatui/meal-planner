@@ -38,10 +38,11 @@ Generated breakfast and dinner records retain exact previous OCR titles only as 
 
 ### Browse and open
 
-1. Search active recipes by case-insensitive name.
-2. Open a food-first card.
-3. Change the transient serving selector to view scaled ingredients.
-4. Add to plan or edit.
+1. Search active recipes by case-insensitive name; search and category filters are sent to the API.
+2. Browse 24 recipes per server-paginated page and use previous/next controls.
+3. Open a food-first card.
+4. Change the transient serving selector to view scaled ingredients.
+5. Add to plan or edit.
 
 ### Edit and replace image
 
@@ -72,7 +73,7 @@ Generated breakfast and dinner records retain exact previous OCR titles only as 
 
 | Action | Response |
 | --- | --- |
-| Search | Filter active recipes locally without losing query on back navigation |
+| Search and categories | Query the server with pagination filters without losing the current query on back navigation |
 | Select image | Validate/decode/compress, show local preview, then upload to the authenticated user's Storage path on save |
 | Add ingredient | Append empty product/quantity/unit group |
 | Select product | Restrict unit options to the product dimension |
@@ -114,6 +115,8 @@ Generated breakfast and dinner records retain exact previous OCR titles only as 
 - **Image processing:** preview placeholder with progress; form fields remain available.
 - **Quota/storage error:** preserve draft and current preview, explain upload failure, retry or choose a smaller image.
 - **Missing image integrity error:** neutral placeholder and non-destructive repair prompt.
+- **Catalogue request error:** keep the page visible with a retry action rather than showing an empty catalogue.
+- **Detail request error:** show a retry action instead of leaving the recipe detail in a permanent loading state.
 - **Archive confirmation:** names planned references and historical behavior.
 
 ## 10. Accessibility and keyboard
@@ -141,6 +144,8 @@ Generated breakfast and dinner records retain exact previous OCR titles only as 
 - Serving selector scales all ingredient quantities without editing stored recipe values.
 - Recipe edits affect the live future shopping projection without creating or rewriting snapshots.
 - Archived recipes remain historically readable and disappear from new-plan selection.
+- Catalogue requests return at most 24 recipes and expose total/next-page metadata; server filters match the visible category/search state.
+- A failed detail request is recoverable through an explicit retry action.
 - No out-of-scope metadata fields appear.
 
 ## 13. Tests
@@ -159,4 +164,4 @@ Generated breakfast and dinner records retain exact previous OCR titles only as 
 - [Business rules: serving scaling](../business-rules.md#serving-scaling)
 - [Design system: photography](../design-system.md#photography)
 
-Recipe data is loaded through the authenticated `/api/recipes` repository client. System recipe images use stable public Cloudflare R2 URLs; personal recipe images use private presigned R2 URLs. Creating or editing a photo requests `/api/recipes/upload-url`, uploads directly to R2 with `PUT`, and then saves metadata through the recipe endpoint. The browser Supabase client is not used for recipe data.
+Recipe data is loaded through the authenticated `/api/recipes` repository client. Catalogue reads use `page`, `pageSize`, `query`, `mealType`, `subcategoryId`, and `uncategorized` query parameters and return `{ items, page, pageSize, total, hasNext }`. System recipe images use stable public Cloudflare R2 URLs; personal recipe images use private presigned R2 URLs. Creating or editing a photo requests `/api/recipes/upload-url`, uploads directly to R2 with `PUT`, and then saves metadata through the recipe endpoint. The browser Supabase client is not used for recipe data.

@@ -4,6 +4,7 @@ import { ApiProductRepository } from './ApiProductRepository'
 import { ApiRecipeRepository } from './ApiRecipeRepository'
 import { ApiShoppingListRepository } from './ApiShoppingListRepository'
 import type { ApiClient } from './api-client'
+import type { RecipePage } from '../features/recipes/repositories/recipe-repository'
 
 function fakeClient() {
   return { get: vi.fn(), post: vi.fn(), patch: vi.fn(), put: vi.fn(), delete: vi.fn(), uploadRecipeImage: vi.fn() } as unknown as ApiClient
@@ -17,6 +18,16 @@ describe('API repository contracts', () => {
     await new ApiProductRepository(client).list({ query: 'молоко', includeArchived: true })
     expect(client.get).toHaveBeenNthCalledWith(1, '/api/recipes?query=%D1%81%D1%83%D0%BF%20%D0%B7%20%D1%80%D0%B8%D1%81%D0%BE%D0%BC')
     expect(client.get).toHaveBeenNthCalledWith(2, '/api/products?query=%D0%BC%D0%BE%D0%BB%D0%BE%D0%BA%D0%BE&includeArchived=true')
+  })
+
+  it('requests a server-paginated recipe page with server-side filters', async () => {
+    const client = fakeClient()
+    const page = { items: [], page: 2, pageSize: 24, total: 50, hasNext: true } satisfies RecipePage
+    vi.mocked(client.get).mockResolvedValue(page)
+
+    await new ApiRecipeRepository(client).listPage('суп з рисом', { page: 2, pageSize: 24, mealType: 'lunch', subcategoryId: 'lunch-soups' })
+
+    expect(client.get).toHaveBeenCalledWith('/api/recipes?query=%D1%81%D1%83%D0%BF%20%D0%B7%20%D1%80%D0%B8%D1%81%D0%BE%D0%BC&page=2&pageSize=24&mealType=lunch&subcategoryId=lunch-soups')
   })
 
   it('uses REST verbs for meal plan and shopping list operations', async () => {

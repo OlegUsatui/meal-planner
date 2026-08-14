@@ -1,4 +1,4 @@
-import type { RecipeRepository } from '../features/recipes/repositories/recipe-repository'
+import type { RecipeListOptions, RecipePage, RecipeRepository } from '../features/recipes/repositories/recipe-repository'
 import type { CreateRecipeInput, Recipe, RecipeId, UpdateRecipeInput } from '../features/recipes/types'
 import { ApiClient } from './api-client'
 
@@ -10,6 +10,11 @@ export class ApiRecipeRepository implements RecipeRepository {
   async list(query = ''): Promise<Recipe[]> {
     const params = query ? `?query=${encodeURIComponent(query)}` : ''
     return this.client.get<Recipe[]>(`/api/recipes${params}`)
+  }
+
+  listPage(query: string, options: RecipeListOptions): Promise<RecipePage> {
+    const params = [query ? `query=${encodeURIComponent(query)}` : '', `page=${options.page}`, `pageSize=${options.pageSize}`, options.mealType ? `mealType=${encodeURIComponent(options.mealType)}` : '', options.subcategoryId ? `subcategoryId=${encodeURIComponent(options.subcategoryId)}` : '', options.uncategorized ? 'uncategorized=true' : ''].filter(Boolean).join('&')
+    return this.client.get<RecipePage>(`/api/recipes?${params}`)
   }
 
   get(id: RecipeId): Promise<Recipe> { return this.client.get<Recipe>(`/api/recipes/${encodeURIComponent(id)}`) }

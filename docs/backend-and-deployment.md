@@ -9,7 +9,7 @@ Meal Planner uses Vercel Functions as a REST API, Supabase for Auth/Postgres, Cl
 - Cloudflare R2 stores recipe photo objects using the existing `recipes.image_path` key. `system/...` objects are served from the configured public R2 custom domain; `<user-id>/...` objects are private and returned through short-lived presigned GET URLs.
 - Row Level Security exposes system records to authenticated users and restricts personal records to their owner.
 - The browser contains only Auth session state, temporary image previews, and the API client. Supabase is the source of truth for application data; R2 is the source of truth for image bytes.
-- Authenticated API routes are `GET/POST /api/recipes`, `GET/PATCH/DELETE /api/recipes/:id`, `GET/POST /api/products`, `GET/PATCH/DELETE /api/products/:id`, `GET /api/meal-plan`, `PUT /api/meal-plan`, `DELETE /api/meal-plan/:id`, and `GET /api/shopping-list`. `POST /api/recipes/upload-url` issues a signed Storage upload URL; `/api/health` is the unauthenticated health check.
+- Authenticated API routes are `GET/POST /api/recipes`, `GET/PATCH/DELETE /api/recipes/:id`, `GET/POST /api/products`, `GET/PATCH/DELETE /api/products/:id`, `GET /api/meal-plan`, `PUT /api/meal-plan`, `DELETE /api/meal-plan/:id`, and `GET /api/shopping-list`. Paginated recipe catalogue reads accept `page`, `pageSize` (default 24, maximum 100), `query`, `mealType`, `subcategoryId`, and `uncategorized`, and return `{ items, page, pageSize, total, hasNext }`. `POST /api/recipes/upload-url` issues a signed R2 upload URL; `/api/health` is the unauthenticated health check.
 - Every protected route requires `Authorization: Bearer <supabase-access-token>`. Runtime Functions never use the service-role key. Supabase RLS authorizes database rows, while the API validates the owner prefix before issuing or saving any private R2 object URL.
 - API success responses are `{ data: ... }`; errors are `{ error: { code, message } }` with status `400`, `401`, `403`, `404`, `409`, `422`, or `500`.
 - The PWA shell remains installable, but data-changing actions require an internet connection in this first server-backed version.
@@ -55,3 +55,5 @@ R2_BUCKET_NAME=meal-planner-images npm run migrate:r2
 ```
 
 The seed is idempotent by stable system IDs and can be rerun after a clean database migration.
+
+After moving an existing Supabase database to R2, run `npm run migrate:r2` once with the Supabase service-role key and R2 credentials. The database keeps the same `image_path` keys; the migration copies the existing bytes into the matching R2 keys. Until this migration (or a fresh R2-backed seed) is complete, system recipe metadata can load while its public R2 image URLs return missing objects.

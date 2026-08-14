@@ -1,5 +1,7 @@
 .products-page h1, .editor-page h1 { margin-bottom: 10px; font-size: clamp(2.2rem, 4vw, 3.2rem); }
 .recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; margin-top: 24px; }
+.recipe-pagination { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 28px 0 8px; }
+.recipe-pagination .button:disabled { cursor: not-allowed; opacity: .5; }
 .recipe-card { overflow: hidden; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: inherit; text-decoration: none; }
 .recipe-card img, .recipe-image-placeholder { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: var(--sage-pale); }
 .recipe-image-placeholder { display: grid; place-items: center; font-size: 2rem; color: var(--muted); }
