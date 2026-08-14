@@ -38,9 +38,10 @@ export class SupabaseRecipeRepository implements RecipeRepository {
     let recipeQuery = this.client.from('recipes').select('*', { count: 'exact' }).is('archived_at', null).order('name')
     const normalizedQuery = normalizeRecipeName(query)
     if (normalizedQuery) recipeQuery = recipeQuery.ilike('normalized_name', `%${escapeLikePattern(normalizedQuery)}%`)
-    if (options.uncategorized) recipeQuery = recipeQuery.eq('classifications', [])
+    if (options.uncategorized) recipeQuery = recipeQuery.filter('classifications', 'eq', '[]')
     else if (options.mealType || options.subcategoryId) {
-      recipeQuery = recipeQuery.contains('classifications', [{ ...(options.mealType ? { mealType: options.mealType } : {}), ...(options.subcategoryId ? { subcategoryId: options.subcategoryId } : {}) }])
+      const classification = [{ ...(options.mealType ? { mealType: options.mealType } : {}), ...(options.subcategoryId ? { subcategoryId: options.subcategoryId } : {}) }]
+      recipeQuery = recipeQuery.filter('classifications', 'cs', JSON.stringify(classification))
     }
     const from = (page - 1) * pageSize
     const { data, error, count } = await recipeQuery.range(from, from + pageSize - 1)
