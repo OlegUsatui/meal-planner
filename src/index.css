@@ -1,0 +1,13 @@
+@import './styles/tokens.css';
+@import './styles/base.css';
+@import './styles/shell.css';
+@import './styles/products.css';
+@import './styles/meal-planner.css';
+@import './styles/settings.css';
+ .auth-page { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--color-background, #fff9f3); }
+ .auth-card { width: min(100%, 460px); padding: 32px; border-radius: 24px; background: white; box-shadow: 0 18px 60px rgb(80 45 30 / 12%); }
+ .auth-card form { display: grid; gap: 16px; margin-top: 24px; }
+ .auth-card .button { width: 100%; }
+ .text-button { border: 0; padding: 8px 0; color: inherit; background: transparent; text-decoration: underline; cursor: pointer; }
+ .auth-card .text-button { display: block; margin: 12px auto 0; }
+ .account-note { display: grid; gap: 4px; margin: 24px 0 0; color: var(--color-muted, #786b64); font-size: 12px; overflow-wrap: anywhere; }

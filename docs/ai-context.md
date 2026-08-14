@@ -1,0 +1,3 @@
+# AI context
+
+Meal Planner is a server-backed Ukrainian PWA. Supabase Auth identifies users; system recipes/products are read-only and personal recipes/products/plans are private. Products are minimal (`name`, `category`, `baseUnit`), recipes reference products, and `/plan` stores date/slot/recipe/servings per user. `/shopping` is a read-only derived view for future entries; it is recalculated on read and has no persistence, checks, purchases, prices, snapshots, or manual rows. Archived entities remain readable in historical records. The PWA shell can be installed, but data changes require connectivity.

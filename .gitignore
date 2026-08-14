@@ -1,0 +1,17 @@
+# Local dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Test artifacts
+test-results/
+coverage/
+
+# IDE and OS files
+.idea/
+.DS_Store
+
+# Local environment overrides
+.env.local
+.env.*.local

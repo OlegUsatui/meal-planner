@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Meal Planner">
+  <rect width="512" height="512" rx="112" fill="#e86f6f"/>
+  <circle cx="256" cy="264" r="150" fill="#fff9f3"/>
+  <path d="M160 250c0-58 43-106 98-106 55 0 98 48 98 106v94H160z" fill="#e3eed8"/>
+  <path d="M187 244c22-42 54-63 96-63 27 0 51 9 72 28-14-39-51-67-97-67-55 0-98 47-98 105v97h27z" fill="#557a43"/>
+  <circle cx="212" cy="253" r="24" fill="#e86f6f"/>
+  <circle cx="295" cy="235" r="28" fill="#f6bd60"/>
+  <path d="M253 261c30 0 55 19 65 46H188c10-27 35-46 65-46z" fill="#ffffff"/>
+  <path d="M144 361h224" stroke="#201e1b" stroke-width="24" stroke-linecap="round"/>
+</svg>
