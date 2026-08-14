@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isSystemImagePath, publicImageUrl, readR2Config } from './r2'
+import { isSystemImagePath, publicImageUrl, readR2Config } from './r2.js'
 
 describe('R2 image storage', () => {
   it('reads required configuration and normalizes the public base URL', () => {

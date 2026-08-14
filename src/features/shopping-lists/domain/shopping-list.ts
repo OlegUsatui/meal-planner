@@ -1,6 +1,6 @@
-import type { BaseUnit } from '../../products/domain/product'
-import type { MealPlanEntry } from '../../meal-planner/types'
-import { scaleRecipeQuantity, type MealSlot } from '../../meal-planner/domain/meal-plan'
+import type { BaseUnit } from '../../products/domain/product.js'
+import type { MealPlanEntry } from '../../meal-planner/types.js'
+import { scaleRecipeQuantity, type MealSlot } from '../../meal-planner/domain/meal-plan.js'
 
 export interface ShoppingRecipeIngredient {
   productId: string

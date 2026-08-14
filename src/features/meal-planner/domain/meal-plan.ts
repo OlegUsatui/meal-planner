@@ -1,4 +1,4 @@
-import type { BaseUnit } from '../../products/domain/product'
+import type { BaseUnit } from '../../products/domain/product.js'
 
 export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack'
 

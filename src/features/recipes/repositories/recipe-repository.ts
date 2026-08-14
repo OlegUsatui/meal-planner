@@ -1,4 +1,4 @@
-import type { CreateRecipeInput, Recipe, RecipeId, UpdateRecipeInput } from '../types'
+import type { CreateRecipeInput, Recipe, RecipeId, UpdateRecipeInput } from '../types.js'
 
 export interface RecipeRepository {
   list(query?: string): Promise<Recipe[]>

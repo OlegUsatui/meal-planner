@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js'
-import { ApiError, header, type ApiRequest } from './http'
+import { ApiError, header, type ApiRequest } from './http.js'
 
 export interface AuthContext {
   client: SupabaseClient

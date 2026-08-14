@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { isPastMealPlanDate, validateMealPlanInput, type MealPlanInput, type MealSlot } from '../features/meal-planner/domain/meal-plan'
-import { MealPlanRepositoryError, type MealPlanEntry, type MealPlanRepository } from '../features/meal-planner/types'
-import { currentUserId } from './common'
+import { isPastMealPlanDate, validateMealPlanInput, type MealPlanInput, type MealSlot } from '../features/meal-planner/domain/meal-plan.js'
+import { MealPlanRepositoryError, type MealPlanEntry, type MealPlanRepository } from '../features/meal-planner/types.js'
+import { currentUserId } from './common.js'
 
 interface PlanRow { id: string; date: string; slot: MealSlot; date_slot: string; recipe_id: string; servings: number; created_at: string; updated_at: string }
 

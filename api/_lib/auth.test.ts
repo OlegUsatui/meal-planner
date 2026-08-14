@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bearerToken } from './auth'
+import { bearerToken } from './auth.js'
 
 describe('auth middleware', () => {
   it('requires a bearer token', () => {

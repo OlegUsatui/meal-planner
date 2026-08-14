@@ -1,6 +1,6 @@
-import { SupabaseProductRepository } from '../../src/supabase/SupabaseProductRepository'
-import { authorized, jsonBody, requireRecord } from '../_lib/routes'
-import { queryParam, type ApiRequest, type ApiResponse } from '../_lib/http'
+import { SupabaseProductRepository } from '../../src/supabase/SupabaseProductRepository.js'
+import { authorized, jsonBody, requireRecord } from '../_lib/routes.js'
+import { queryParam, type ApiRequest, type ApiResponse } from '../_lib/http.js'
 
 export default async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
   await authorized(request, response, async ({ client }) => {

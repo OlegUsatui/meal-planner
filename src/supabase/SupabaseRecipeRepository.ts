@@ -1,12 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { hasRecipeValidationErrors, normalizeRecipeName, validateRecipeInput } from '../features/recipes/domain/recipe'
-import { normalizeQuantity } from '../features/products/domain/product'
-import { uniqueClassifications } from '../features/recipes/domain/recipe-taxonomy'
-import type { CreateRecipeInput, Recipe, RecipeImageInput, UpdateRecipeInput } from '../features/recipes/types'
-import { RecipeRepositoryError, type RecipeRepository } from '../features/recipes/repositories/recipe-repository'
-import { R2Storage } from '../../api/_lib/r2'
-import { asNumber, cleanName, currentUserId } from './common'
-import { isOwnedRecipeImagePath } from './image-path'
+import { hasRecipeValidationErrors, normalizeRecipeName, validateRecipeInput } from '../features/recipes/domain/recipe.js'
+import { normalizeQuantity } from '../features/products/domain/product.js'
+import { uniqueClassifications } from '../features/recipes/domain/recipe-taxonomy.js'
+import type { CreateRecipeInput, Recipe, RecipeImageInput, UpdateRecipeInput } from '../features/recipes/types.js'
+import { RecipeRepositoryError, type RecipeRepository } from '../features/recipes/repositories/recipe-repository.js'
+import { R2Storage } from '../../api/_lib/r2.js'
+import { asNumber, cleanName, currentUserId } from './common.js'
+import { isOwnedRecipeImagePath } from './image-path.js'
 
 interface RecipeRow { id: string; owner_id: string | null; name: string; normalized_name: string; image_path: string; image_mime_type: string; image_width: number; image_height: number; image_byte_size: number; instructions: string; calories_per_serving: number | string | null; protein_grams_per_serving: number | string | null; fat_grams_per_serving: number | string | null; carbs_grams_per_serving: number | string | null; preparation_time_min_minutes: number | null; preparation_time_max_minutes: number | null; classifications: unknown; archived_at: string | null; created_at: string; updated_at: string }
 interface IngredientRow { id: string; recipe_id: string; product_id: string; quantity_base: number | string; entered_quantity: number | string; entered_unit: 'g' | 'kg' | 'ml' | 'l' | 'pcs' }

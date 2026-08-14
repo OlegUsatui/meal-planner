@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import recipeCollection from './recipes/index'
-import recipeItem from './recipes/[id]'
-import productCollection from './products/index'
-import mealPlanCollection from './meal-plan/index'
+import recipeCollection from './recipes/index.js'
+import recipeItem from './recipes/[id].js'
+import productCollection from './products/index.js'
+import mealPlanCollection from './meal-plan/index.js'
 
 const mocks = vi.hoisted(() => ({
   auth: vi.fn().mockResolvedValue({ client: {}, user: { id: 'user-1' } }),

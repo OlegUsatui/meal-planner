@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { buildShoppingList, type ShoppingListItem } from '../features/shopping-lists/domain/shopping-list'
-import type { ShoppingListRepository } from '../features/shopping-lists/types'
-import { currentUserId } from './common'
+import { buildShoppingList, type ShoppingListItem } from '../features/shopping-lists/domain/shopping-list.js'
+import type { ShoppingListRepository } from '../features/shopping-lists/types.js'
+import { currentUserId } from './common.js'
 
 interface ProductRow { id: string; name: string; category: string; base_unit: 'g' | 'ml' | 'pcs' }
 interface RecipeRow { id: string; name: string }

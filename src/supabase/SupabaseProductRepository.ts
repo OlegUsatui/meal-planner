@@ -1,8 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { normalizeProductName, hasValidationErrors, validateProductInput } from '../features/products/domain/product'
-import type { CreateProductInput, Product, ProductListOptions, UpdateProductInput } from '../features/products/types'
-import { ProductRepositoryError, type ProductRepository } from '../features/products/repositories/product-repository'
-import { cleanName, currentUserId } from './common'
+import { normalizeProductName, hasValidationErrors, validateProductInput } from '../features/products/domain/product.js'
+import type { CreateProductInput, Product, ProductListOptions, UpdateProductInput } from '../features/products/types.js'
+import { ProductRepositoryError, type ProductRepository } from '../features/products/repositories/product-repository.js'
+import { cleanName, currentUserId } from './common.js'
 
 interface ProductRow { id: string; owner_id: string | null; name: string; normalized_name: string; category: string; base_unit: Product['baseUnit']; archived_at: string | null; created_at: string; updated_at: string }
 interface IngredientRow { product_id: string }

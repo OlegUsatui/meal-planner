@@ -1,5 +1,5 @@
-import type { DisplayUnit } from '../../products/domain/product'
-import { isValidRecipeClassification, type RecipeClassification } from './recipe-taxonomy'
+import type { DisplayUnit } from '../../products/domain/product.js'
+import { isValidRecipeClassification, type RecipeClassification } from './recipe-taxonomy.js'
 
 export interface RecipeIngredientInput {
   productId: string

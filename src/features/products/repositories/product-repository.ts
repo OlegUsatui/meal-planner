@@ -4,7 +4,7 @@ import type {
   ProductId,
   ProductListOptions,
   UpdateProductInput,
-} from '../types'
+} from '../types.js'
 
 export interface ProductImportItem extends CreateProductInput {
   sourceKey: string

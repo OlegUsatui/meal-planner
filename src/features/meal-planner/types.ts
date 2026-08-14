@@ -1,4 +1,4 @@
-import type { MealSlot, MealPlanInput } from './domain/meal-plan'
+import type { MealSlot, MealPlanInput } from './domain/meal-plan.js'
 
 export type MealPlanId = string
 

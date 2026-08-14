@@ -1,8 +1,8 @@
-import { MealPlanRepositoryError } from '../../src/features/meal-planner/types'
-import { ProductRepositoryError } from '../../src/features/products/repositories/product-repository'
-import { RecipeRepositoryError } from '../../src/features/recipes/repositories/recipe-repository'
-import { authenticate, type AuthContext } from './auth'
-import { ApiError, readJson, sendData, sendError, type ApiRequest, type ApiResponse } from './http'
+import { MealPlanRepositoryError } from '../../src/features/meal-planner/types.js'
+import { ProductRepositoryError } from '../../src/features/products/repositories/product-repository.js'
+import { RecipeRepositoryError } from '../../src/features/recipes/repositories/recipe-repository.js'
+import { authenticate, type AuthContext } from './auth.js'
+import { ApiError, readJson, sendData, sendError, type ApiRequest, type ApiResponse } from './http.js'
 
 export function method(request: ApiRequest, ...allowed: string[]): void {
   if (!allowed.includes(request.method ?? '')) throw new ApiError(400, 'bad-request', 'Метод запиту не підтримується')

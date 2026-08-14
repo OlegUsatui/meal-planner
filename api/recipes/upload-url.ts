@@ -1,7 +1,7 @@
-import { authorized, jsonBody, requireRecord, requireString } from '../_lib/routes'
-import { assertUploadPath } from '../_lib/upload'
-import { R2Storage } from '../_lib/r2'
-import { ApiError, type ApiRequest, type ApiResponse } from '../_lib/http'
+import { authorized, jsonBody, requireRecord, requireString } from '../_lib/routes.js'
+import { assertUploadPath } from '../_lib/upload.js'
+import { R2Storage } from '../_lib/r2.js'
+import { ApiError, type ApiRequest, type ApiResponse } from '../_lib/http.js'
 
 export default async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
   await authorized(request, response, async ({ user }) => {

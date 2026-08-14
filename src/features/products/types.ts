@@ -1,4 +1,4 @@
-import type { BaseUnit, ProductInput } from './domain/product'
+import type { BaseUnit, ProductInput } from './domain/product.js'
 
 export type ProductId = string
 

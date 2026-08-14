@@ -1,6 +1,6 @@
-import { SupabaseMealPlanRepository } from '../../src/supabase/SupabaseMealPlanRepository'
-import { authorized } from '../_lib/routes'
-import type { ApiRequest, ApiResponse } from '../_lib/http'
+import { SupabaseMealPlanRepository } from '../../src/supabase/SupabaseMealPlanRepository.js'
+import { authorized } from '../_lib/routes.js'
+import type { ApiRequest, ApiResponse } from '../_lib/http.js'
 
 export default async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
   const id = routeId(request)

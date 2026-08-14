@@ -1,6 +1,6 @@
-import type { BaseUnit } from '../products/domain/product'
-import type { RecipeIngredientInput, RecipeInput } from './domain/recipe'
-import type { RecipeClassification } from './domain/recipe-taxonomy'
+import type { BaseUnit } from '../products/domain/product.js'
+import type { RecipeIngredientInput, RecipeInput } from './domain/recipe.js'
+import type { RecipeClassification } from './domain/recipe-taxonomy.js'
 
 export type RecipeId = string
 

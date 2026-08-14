@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ApiError, sendError, type ApiResponse } from './http'
+import { ApiError, sendError, type ApiResponse } from './http.js'
 
 describe('API error mapping', () => {
   it('returns the standard error envelope', () => {
