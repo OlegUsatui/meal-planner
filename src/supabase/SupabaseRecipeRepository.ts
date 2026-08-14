@@ -4,9 +4,9 @@ import { normalizeQuantity } from '../features/products/domain/product'
 import { uniqueClassifications } from '../features/recipes/domain/recipe-taxonomy'
 import type { CreateRecipeInput, Recipe, RecipeImageInput, UpdateRecipeInput } from '../features/recipes/types'
 import { RecipeRepositoryError, type RecipeRepository } from '../features/recipes/repositories/recipe-repository'
+import { R2Storage } from '../../api/_lib/r2'
 import { asNumber, cleanName, currentUserId } from './common'
 import { isOwnedRecipeImagePath } from './image-path'
-import { mapSignedUrls } from './signed-url-mapping'
 
 interface RecipeRow { id: string; owner_id: string | null; name: string; normalized_name: string; image_path: string; image_mime_type: string; image_width: number; image_height: number; image_byte_size: number; instructions: string; calories_per_serving: number | string | null; protein_grams_per_serving: number | string | null; fat_grams_per_serving: number | string | null; carbs_grams_per_serving: number | string | null; preparation_time_min_minutes: number | null; preparation_time_max_minutes: number | null; classifications: unknown; archived_at: string | null; created_at: string; updated_at: string }
 interface IngredientRow { id: string; recipe_id: string; product_id: string; quantity_base: number | string; entered_quantity: number | string; entered_unit: 'g' | 'kg' | 'ml' | 'l' | 'pcs' }
@@ -14,8 +14,9 @@ interface ProductRow { id: string; name: string; base_unit: 'g' | 'ml' | 'pcs'; 
 
 export class SupabaseRecipeRepository implements RecipeRepository {
   private readonly client: SupabaseClient
+  private readonly storage: R2Storage
 
-  constructor(client: SupabaseClient) { this.client = client }
+  constructor(client: SupabaseClient, storage = new R2Storage()) { this.client = client; this.storage = storage }
 
   async list(query = ''): Promise<Recipe[]> {
     const [{ data: recipes, error: recipeError }, { data: ingredients, error: ingredientError }, { data: products, error: productError }] = await Promise.all([
@@ -27,8 +28,8 @@ export class SupabaseRecipeRepository implements RecipeRepository {
     const normalizedQuery = normalizeRecipeName(query)
     const productMap = new Map((products as unknown as ProductRow[]).map((product) => [product.id, product]))
     const visible = (recipes as unknown as RecipeRow[]).filter((recipe) => !recipe.archived_at && (!normalizedQuery || recipe.normalized_name.includes(normalizedQuery)))
-    const signedUrls = await this.createBatchSignedUrls(visible.map((recipe) => recipe.image_path))
-    return visible.map((recipe) => this.toRecipe(recipe, ingredients as unknown as IngredientRow[], productMap, signedUrls.get(recipe.image_path) || undefined))
+    const imageUrls = await Promise.all(visible.map((recipe) => this.storage.imageUrl(recipe.image_path)))
+    return visible.map((recipe, index) => this.toRecipe(recipe, ingredients as unknown as IngredientRow[], productMap, imageUrls[index]))
   }
 
   async get(id: string): Promise<Recipe> {
@@ -39,7 +40,7 @@ export class SupabaseRecipeRepository implements RecipeRepository {
     ])
     if (recipeError || ingredientError || productError || !recipe) throw new RecipeRepositoryError('not-found', 'Рецепт не знайдено')
     const row = recipe as unknown as RecipeRow
-    const signedUrl = await this.createSingleSignedUrl(row.image_path)
+    const signedUrl = await this.storage.imageUrl(row.image_path)
     return this.toRecipe(row, ingredients as unknown as IngredientRow[], new Map((products as unknown as ProductRow[]).map((product) => [product.id, product])), signedUrl)
   }
 
@@ -54,7 +55,7 @@ export class SupabaseRecipeRepository implements RecipeRepository {
       if (error) throw error
       const { error: ingredientsError } = await this.client.from('recipe_ingredients').insert(ingredients.map((ingredient) => ({ id: crypto.randomUUID(), recipe_id: id, ...ingredient })))
       if (ingredientsError) throw ingredientsError
-    } catch (error) { await this.client.storage.from('recipe-images').remove([path]); throw new RecipeRepositoryError('invalid-recipe', error instanceof Error ? error.message : 'Не вдалося зберегти рецепт.') }
+    } catch (error) { await this.storage.remove(path); throw new RecipeRepositoryError('invalid-recipe', error instanceof Error ? error.message : 'Не вдалося зберегти рецепт.') }
     return this.get(id)
   }
 
@@ -71,6 +72,7 @@ export class SupabaseRecipeRepository implements RecipeRepository {
       const { error: ingredientsError } = await this.client.from('recipe_ingredients').insert(ingredients.map((ingredient) => ({ id: crypto.randomUUID(), recipe_id: id, ...ingredient })))
       if (ingredientsError) throw ingredientsError
     } catch (error) {
+      try { await this.storage.remove(input.image.path!) } catch { /* The original validation error is more useful to the API caller. */ }
       throw new RecipeRepositoryError('invalid-recipe', error instanceof Error ? error.message : 'Не вдалося зберегти рецепт.')
     }
     return this.get(id)
@@ -137,24 +139,13 @@ export class SupabaseRecipeRepository implements RecipeRepository {
 
   private async uploadImage(path: string, image: RecipeImageInput) {
     if (!image.blob) throw new RecipeRepositoryError('invalid-recipe', 'Додайте фото рецепту')
-    const { error } = await this.client.storage.from('recipe-images').upload(path, image.blob, { contentType: image.mimeType, upsert: false })
-    if (error) throw new RecipeRepositoryError('invalid-recipe', `Не вдалося завантажити фото. ${error.message}`)
+    try { await this.storage.upload(path, new Uint8Array(await image.blob.arrayBuffer()), image.mimeType) }
+    catch (error) { throw new RecipeRepositoryError('invalid-recipe', `Не вдалося завантажити фото. ${error instanceof Error ? error.message : ''}`) }
   }
 
   private toRecipe(row: RecipeRow, ingredients: IngredientRow[], products: Map<string, ProductRow>, signedUrl?: string): Recipe {
     const classifications = Array.isArray(row.classifications) ? row.classifications : []
     return { id: row.id, ownerId: row.owner_id, isSystem: row.owner_id === null, name: row.name, normalizedName: row.normalized_name, instructions: row.instructions, caloriesPerServing: asNumber(row.calories_per_serving), proteinGramsPerServing: asNumber(row.protein_grams_per_serving), fatGramsPerServing: asNumber(row.fat_grams_per_serving), carbsGramsPerServing: asNumber(row.carbs_grams_per_serving), preparationTimeMinMinutes: row.preparation_time_min_minutes, preparationTimeMaxMinutes: row.preparation_time_max_minutes, classifications: classifications as Recipe['classifications'], archivedAt: row.archived_at, createdAt: row.created_at, updatedAt: row.updated_at, image: { path: row.image_path, url: signedUrl, mimeType: row.image_mime_type, width: row.image_width, height: row.image_height, byteSize: row.image_byte_size }, ingredients: ingredients.filter((ingredient) => ingredient.recipe_id === row.id).map((ingredient) => { const product = products.get(ingredient.product_id); if (!product) throw new RecipeRepositoryError('invalid-product', 'Продукт рецепту не знайдено'); return { id: ingredient.id, recipeId: row.id, productId: product.id, quantityBase: Number(ingredient.quantity_base), enteredQuantity: Number(ingredient.entered_quantity), enteredUnit: ingredient.entered_unit, productName: product.name, productBaseUnit: product.base_unit } }) }
-  }
-
-  private async createBatchSignedUrls(paths: string[]): Promise<Map<string, string>> {
-    if (!paths.length) return new Map()
-    const { data } = await this.client.storage.from('recipe-images').createSignedUrls(paths, 3600)
-    return mapSignedUrls(paths, data)
-  }
-
-  private async createSingleSignedUrl(path: string): Promise<string | undefined> {
-    const { data } = await this.client.storage.from('recipe-images').createSignedUrl(path, 3600)
-    return data?.signedUrl
   }
 
   private assertValid(input: CreateRecipeInput | UpdateRecipeInput) { if (hasRecipeValidationErrors(validateRecipeInput(input))) throw new RecipeRepositoryError('invalid-recipe', 'Некоректний рецепт') }

@@ -1,15 +1,21 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { createClient } from '@supabase/supabase-js'
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { FIT_KITCHEN_CATALOG } from '../src/features/products/import/fit-kitchen-catalog.ts'
 import { mergeImportedIngredients } from '../src/features/products/import/merge-imported-ingredients.ts'
 import { normalizeImportedIngredient } from '../src/features/products/import/normalize-imported-product.ts'
 
 const url = process.env.SUPABASE_URL
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-if (!url || !serviceRoleKey) throw new Error('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY before seeding.')
+const r2AccountId = process.env.R2_ACCOUNT_ID
+const r2AccessKeyId = process.env.R2_ACCESS_KEY_ID
+const r2SecretAccessKey = process.env.R2_SECRET_ACCESS_KEY
+const r2BucketName = process.env.R2_BUCKET_NAME
+if (!url || !serviceRoleKey || !r2AccountId || !r2AccessKeyId || !r2SecretAccessKey || !r2BucketName) throw new Error('Set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, and R2_BUCKET_NAME before seeding.')
 
 const client = createClient(url, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } })
+const r2 = new S3Client({ region: 'auto', endpoint: `https://${r2AccountId}.r2.cloudflarestorage.com`, credentials: { accessKeyId: r2AccessKeyId, secretAccessKey: r2SecretAccessKey } })
 const root = process.cwd()
 const now = new Date().toISOString()
 const productMap = new Map()
@@ -66,8 +72,8 @@ async function seedCollection(file, mealType) {
 }
 
 async function uploadOrThrow(filePath, body) {
-  const { error } = await client.storage.from('recipe-images').upload(filePath, body, { contentType: 'image/webp', upsert: true })
-  if (error) throw new Error(`Image upload failed for ${filePath}: ${error.message}`)
+  try { await r2.send(new PutObjectCommand({ Bucket: r2BucketName, Key: filePath, Body: body, ContentType: 'image/webp' })) }
+  catch (error) { throw new Error(`R2 image upload failed for ${filePath}: ${error instanceof Error ? error.message : String(error)}`) }
 }
 
 async function insertOrThrow(table, rows) {

@@ -38,7 +38,7 @@ describe('API repository contracts', () => {
   it('uploads before creating a recipe and sends only JSON metadata to the API', async () => {
     const client = fakeClient()
     vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValue('00000000-0000-4000-8000-000000000001')
-    vi.mocked(client.uploadRecipeImage).mockResolvedValue({ path: 'user-1/00000000-0000-4000-8000-000000000001.webp', signedUrl: 'signed', token: 'token' })
+    vi.mocked(client.uploadRecipeImage).mockResolvedValue({ path: 'user-1/00000000-0000-4000-8000-000000000001.webp', signedUrl: 'signed' })
     vi.mocked(client.post).mockResolvedValue({ id: '00000000-0000-4000-8000-000000000001' })
     await new ApiRecipeRepository(client).create({ name: 'Суп', instructions: 'Зварити', ingredients: [], classifications: [], caloriesPerServing: null, proteinGramsPerServing: null, fatGramsPerServing: null, carbsGramsPerServing: null, preparationTimeMinMinutes: null, preparationTimeMaxMinutes: null, image: { blob: new Blob(['x'], { type: 'image/webp' }), mimeType: 'image/webp', width: 10, height: 10, byteSize: 1 } })
     expect(client.uploadRecipeImage).toHaveBeenCalledWith('00000000-0000-4000-8000-000000000001', expect.objectContaining({ mimeType: 'image/webp' }), 'create')

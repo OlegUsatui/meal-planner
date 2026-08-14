@@ -15,9 +15,12 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "seed:supabase": "node --experimental-strip-types scripts/seed-supabase.mjs",
+    "migrate:r2": "node scripts/migrate-supabase-images-to-r2.mjs",
     "typecheck": "tsc -b --pretty false"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1111.0",
+    "@aws-sdk/s3-request-presigner": "^3.1111.0",
     "@fontsource-variable/manrope": "^5.3.0",
     "@supabase/supabase-js": "^2.112.3",
     "dexie": "^4.4.4",

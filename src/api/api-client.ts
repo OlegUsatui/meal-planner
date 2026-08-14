@@ -19,7 +19,6 @@ export class ApiClientError extends Error {
 export interface SignedUpload {
   path: string
   signedUrl: string
-  token: string
 }
 
 export class ApiClient {
@@ -35,11 +34,8 @@ export class ApiClient {
 
   async uploadRecipeImage(recipeId: string, image: RecipeImageInput, mode: 'create' | 'update'): Promise<SignedUpload> {
     if (!image.blob) throw new ApiClientError(422, 'validation', 'Додайте фото рецепту')
-    const upload = await this.post<SignedUpload>('/api/recipes/upload-url', { recipeId, mode })
-    const form = new FormData()
-    form.append('cacheControl', '3600')
-    form.append('', image.blob)
-    const response = await fetch(upload.signedUrl, { method: 'POST', headers: { 'x-upsert': String(mode === 'update') }, body: form })
+    const upload = await this.post<SignedUpload>('/api/recipes/upload-url', { recipeId, mode, mimeType: image.mimeType })
+    const response = await fetch(upload.signedUrl, { method: 'PUT', headers: { 'Content-Type': image.mimeType }, body: image.blob })
     if (!response.ok) throw new ApiClientError(422, 'validation', 'Не вдалося завантажити фото рецепту')
     return upload
   }

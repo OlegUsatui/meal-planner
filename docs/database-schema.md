@@ -2,7 +2,7 @@
 
 Production uses Supabase PostgreSQL. The schema and RLS policies are in `supabase/migrations/20260814000000_initial_schema.sql`.
 
-`profiles` references Supabase Auth users. `products` and `recipes` use nullable `owner_id`: null means read-only system seed data, while a UUID means private user data. `recipe_ingredients` references recipes and products. `meal_plan_entries` is owned by a user and enforces one entry per `(owner_id, date_slot)`. Recipe image metadata is stored on `recipes`; the binary is stored in the private `recipe-images` Storage bucket.
+`profiles` references Supabase Auth users. `products` and `recipes` use nullable `owner_id`: null means read-only system seed data, while a UUID means private user data. `recipe_ingredients` references recipes and products. `meal_plan_entries` is owned by a user and enforces one entry per `(owner_id, date_slot)`. Recipe image metadata is stored on `recipes`; `image_path` is also the object key in Cloudflare R2. No database migration is needed for the R2 move.
 
 The idempotent `npm run seed:supabase` command reads the verified bundled JSON and WebP files, uploads system images, and upserts 457 system recipes with stable IDs. It does not touch user-owned records.
 

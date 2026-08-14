@@ -159,4 +159,4 @@ Generated breakfast and dinner records retain exact previous OCR titles only as 
 - [Business rules: serving scaling](../business-rules.md#serving-scaling)
 - [Design system: photography](../design-system.md#photography)
 
-Recipe data is loaded through the authenticated `/api/recipes` repository client. The API returns recipe data, ingredients, products, and signed image URLs; the list uses one batch Storage signing request and keeps a recipe visible when its image URL fails. Creating or editing a photo requests `/api/recipes/upload-url`, uploads directly to private Storage, and then saves metadata through the recipe endpoint. The browser Supabase client is not used for recipe data.
+Recipe data is loaded through the authenticated `/api/recipes` repository client. System recipe images use stable public Cloudflare R2 URLs; personal recipe images use private presigned R2 URLs. Creating or editing a photo requests `/api/recipes/upload-url`, uploads directly to R2 with `PUT`, and then saves metadata through the recipe endpoint. The browser Supabase client is not used for recipe data.
