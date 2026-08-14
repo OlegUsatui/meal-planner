@@ -26,7 +26,7 @@ export class SupabaseProductRepository implements ProductRepository {
   async get(id: string): Promise<Product> {
     const { data, error } = await this.client.from('products').select('*').eq('id', id).maybeSingle()
     if (error || !data) throw new ProductRepositoryError('not-found', 'Продукт не знайдено')
-    return this.toProduct(data as unknown as ProductRow)
+    return this.toProduct(data as unknown as ProductRow, await this.usageCount(id))
   }
 
   async list(options: ProductListOptions = {}): Promise<Product[]> {
@@ -34,7 +34,12 @@ export class SupabaseProductRepository implements ProductRepository {
     if (error) throw repositoryError(error.message, 'Не вдалося завантажити продукти.')
     const query = options.query ? normalizeProductName(options.query) : ''
     const rows = (data as unknown as ProductRow[]).filter((row) => options.includeArchived || !row.archived_at).filter((row) => !query || row.normalized_name.includes(query)).filter((row) => !options.category || row.category === options.category)
-    return Promise.all(rows.map((row) => this.toProduct(row)))
+    if (!rows.length) return []
+    const { data: ingredients, error: ingredientsError } = await this.client.from('recipe_ingredients').select('product_id').in('product_id', rows.map((row) => row.id))
+    if (ingredientsError) throw repositoryError(ingredientsError.message, 'Не вдалося завантажити використання продукту.')
+    const counts = new Map<string, number>()
+    for (const ingredient of ingredients as unknown as IngredientRow[]) counts.set(ingredient.product_id, (counts.get(ingredient.product_id) ?? 0) + 1)
+    return rows.map((row) => this.toProduct(row, counts.get(row.id) ?? 0))
   }
 
   async update(id: string, input: UpdateProductInput): Promise<Product> {
@@ -57,10 +62,14 @@ export class SupabaseProductRepository implements ProductRepository {
     if (error) throw repositoryError(error.message, 'Не вдалося архівувати продукт.')
   }
 
-  private async toProduct(row: ProductRow): Promise<Product> {
-    const { data, error } = await this.client.from('recipe_ingredients').select('product_id').eq('product_id', row.id)
+  private toProduct(row: ProductRow, usageCount: number): Product {
+    return { id: row.id, ownerId: row.owner_id, isSystem: row.owner_id === null, name: row.name, normalizedName: row.normalized_name, category: row.category, baseUnit: row.base_unit, archivedAt: row.archived_at, createdAt: row.created_at, updatedAt: row.updated_at, recipeUsageCount: usageCount, isBaseUnitLocked: usageCount > 0 }
+  }
+
+  private async usageCount(id: string): Promise<number> {
+    const { data, error } = await this.client.from('recipe_ingredients').select('product_id').eq('product_id', id)
     if (error) throw repositoryError(error.message, 'Не вдалося завантажити використання продукту.')
-    return { id: row.id, ownerId: row.owner_id, isSystem: row.owner_id === null, name: row.name, normalizedName: row.normalized_name, category: row.category, baseUnit: row.base_unit, archivedAt: row.archived_at, createdAt: row.created_at, updatedAt: row.updated_at, recipeUsageCount: (data as unknown as IngredientRow[]).length, isBaseUnitLocked: (data as unknown as IngredientRow[]).length > 0 }
+    return (data as unknown as IngredientRow[]).length
   }
 
   private async assertUniqueName(normalizedName: string, ownerId: string, exceptId?: string): Promise<void> {

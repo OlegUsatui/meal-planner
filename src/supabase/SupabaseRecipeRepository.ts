@@ -5,6 +5,8 @@ import { uniqueClassifications } from '../features/recipes/domain/recipe-taxonom
 import type { CreateRecipeInput, Recipe, RecipeImageInput, UpdateRecipeInput } from '../features/recipes/types'
 import { RecipeRepositoryError, type RecipeRepository } from '../features/recipes/repositories/recipe-repository'
 import { asNumber, cleanName, currentUserId } from './common'
+import { isOwnedRecipeImagePath } from './image-path'
+import { mapSignedUrls } from './signed-url-mapping'
 
 interface RecipeRow { id: string; owner_id: string | null; name: string; normalized_name: string; image_path: string; image_mime_type: string; image_width: number; image_height: number; image_byte_size: number; instructions: string; calories_per_serving: number | string | null; protein_grams_per_serving: number | string | null; fat_grams_per_serving: number | string | null; carbs_grams_per_serving: number | string | null; preparation_time_min_minutes: number | null; preparation_time_max_minutes: number | null; classifications: unknown; archived_at: string | null; created_at: string; updated_at: string }
 interface IngredientRow { id: string; recipe_id: string; product_id: string; quantity_base: number | string; entered_quantity: number | string; entered_unit: 'g' | 'kg' | 'ml' | 'l' | 'pcs' }
@@ -24,7 +26,9 @@ export class SupabaseRecipeRepository implements RecipeRepository {
     if (recipeError || ingredientError || productError) throw new RecipeRepositoryError('not-found', 'Не вдалося завантажити рецепти.')
     const normalizedQuery = normalizeRecipeName(query)
     const productMap = new Map((products as unknown as ProductRow[]).map((product) => [product.id, product]))
-    return Promise.all((recipes as unknown as RecipeRow[]).filter((recipe) => !recipe.archived_at && (!normalizedQuery || recipe.normalized_name.includes(normalizedQuery))).map((recipe) => this.toRecipe(recipe, ingredients as unknown as IngredientRow[], productMap)))
+    const visible = (recipes as unknown as RecipeRow[]).filter((recipe) => !recipe.archived_at && (!normalizedQuery || recipe.normalized_name.includes(normalizedQuery)))
+    const signedUrls = await this.createBatchSignedUrls(visible.map((recipe) => recipe.image_path))
+    return visible.map((recipe) => this.toRecipe(recipe, ingredients as unknown as IngredientRow[], productMap, signedUrls.get(recipe.image_path) || undefined))
   }
 
   async get(id: string): Promise<Recipe> {
@@ -34,7 +38,9 @@ export class SupabaseRecipeRepository implements RecipeRepository {
       this.client.from('products').select('*'),
     ])
     if (recipeError || ingredientError || productError || !recipe) throw new RecipeRepositoryError('not-found', 'Рецепт не знайдено')
-    return this.toRecipe(recipe as unknown as RecipeRow, ingredients as unknown as IngredientRow[], new Map((products as unknown as ProductRow[]).map((product) => [product.id, product])))
+    const row = recipe as unknown as RecipeRow
+    const signedUrl = await this.createSingleSignedUrl(row.image_path)
+    return this.toRecipe(row, ingredients as unknown as IngredientRow[], new Map((products as unknown as ProductRow[]).map((product) => [product.id, product])), signedUrl)
   }
 
   async create(input: CreateRecipeInput): Promise<Recipe> {
@@ -52,6 +58,24 @@ export class SupabaseRecipeRepository implements RecipeRepository {
     return this.get(id)
   }
 
+  async createUploaded(id: string, input: CreateRecipeInput): Promise<Recipe> {
+    const ownerId = await currentUserId(this.client)
+    this.assertValid(input)
+    assertUploadedImage(input.image, ownerId, id, 'create')
+    const now = new Date().toISOString()
+    await this.assertUniqueName(normalizeRecipeName(input.name), ownerId)
+    try {
+      const ingredients = await this.prepareIngredients(input)
+      const { error } = await this.client.from('recipes').insert(recipeInsert(id, ownerId, input.image.path!, input, now))
+      if (error) throw error
+      const { error: ingredientsError } = await this.client.from('recipe_ingredients').insert(ingredients.map((ingredient) => ({ id: crypto.randomUUID(), recipe_id: id, ...ingredient })))
+      if (ingredientsError) throw ingredientsError
+    } catch (error) {
+      throw new RecipeRepositoryError('invalid-recipe', error instanceof Error ? error.message : 'Не вдалося зберегти рецепт.')
+    }
+    return this.get(id)
+  }
+
   async update(id: string, input: UpdateRecipeInput): Promise<Recipe> {
     const ownerId = await currentUserId(this.client); this.assertValid(input)
     const current = await this.get(id); if (current.isSystem) throw new RecipeRepositoryError('not-found', 'Системний рецепт не можна редагувати')
@@ -61,6 +85,24 @@ export class SupabaseRecipeRepository implements RecipeRepository {
     if (input.image) { assertImage(input.image); await this.uploadImage(nextPath, input.image) }
     const ingredients = await this.prepareIngredients(input)
     const { error } = await this.client.from('recipes').update(recipeUpdate(ownerId, nextPath, input, current, new Date().toISOString())).eq('id', id).eq('owner_id', ownerId)
+    if (error) throw new RecipeRepositoryError('invalid-recipe', error.message)
+    const { error: deleteError } = await this.client.from('recipe_ingredients').delete().eq('recipe_id', id)
+    if (deleteError) throw new RecipeRepositoryError('invalid-recipe', deleteError.message)
+    const { error: insertError } = await this.client.from('recipe_ingredients').insert(ingredients.map((ingredient) => ({ id: crypto.randomUUID(), recipe_id: id, ...ingredient })))
+    if (insertError) throw new RecipeRepositoryError('invalid-recipe', insertError.message)
+    return this.get(id)
+  }
+
+  async updateUploaded(id: string, input: UpdateRecipeInput): Promise<Recipe> {
+    const ownerId = await currentUserId(this.client)
+    this.assertValid(input)
+    const current = await this.get(id)
+    if (current.isSystem) throw new RecipeRepositoryError('not-found', 'Системний рецепт не можна редагувати')
+    if (!input.image?.path) throw new RecipeRepositoryError('invalid-recipe', 'Не вдалося визначити фото рецепту')
+    assertUploadedImage(input.image, ownerId, id, 'update')
+    await this.assertUniqueName(normalizeRecipeName(input.name), ownerId, id)
+    const ingredients = await this.prepareIngredients(input)
+    const { error } = await this.client.from('recipes').update(recipeUpdate(ownerId, input.image.path, input, current, new Date().toISOString())).eq('id', id).eq('owner_id', ownerId)
     if (error) throw new RecipeRepositoryError('invalid-recipe', error.message)
     const { error: deleteError } = await this.client.from('recipe_ingredients').delete().eq('recipe_id', id)
     if (deleteError) throw new RecipeRepositoryError('invalid-recipe', deleteError.message)
@@ -99,16 +141,26 @@ export class SupabaseRecipeRepository implements RecipeRepository {
     if (error) throw new RecipeRepositoryError('invalid-recipe', `Не вдалося завантажити фото. ${error.message}`)
   }
 
-  private async toRecipe(row: RecipeRow, ingredients: IngredientRow[], products: Map<string, ProductRow>): Promise<Recipe> {
-    const { data, error } = await this.client.storage.from('recipe-images').createSignedUrl(row.image_path, 3600)
-    if (error || !data?.signedUrl) throw new RecipeRepositoryError('not-found', 'Фото рецепту не знайдено')
+  private toRecipe(row: RecipeRow, ingredients: IngredientRow[], products: Map<string, ProductRow>, signedUrl?: string): Recipe {
     const classifications = Array.isArray(row.classifications) ? row.classifications : []
-    return { id: row.id, ownerId: row.owner_id, isSystem: row.owner_id === null, name: row.name, normalizedName: row.normalized_name, instructions: row.instructions, caloriesPerServing: asNumber(row.calories_per_serving), proteinGramsPerServing: asNumber(row.protein_grams_per_serving), fatGramsPerServing: asNumber(row.fat_grams_per_serving), carbsGramsPerServing: asNumber(row.carbs_grams_per_serving), preparationTimeMinMinutes: row.preparation_time_min_minutes, preparationTimeMaxMinutes: row.preparation_time_max_minutes, classifications: classifications as Recipe['classifications'], archivedAt: row.archived_at, createdAt: row.created_at, updatedAt: row.updated_at, image: { path: row.image_path, url: data.signedUrl, mimeType: row.image_mime_type, width: row.image_width, height: row.image_height, byteSize: row.image_byte_size }, ingredients: ingredients.filter((ingredient) => ingredient.recipe_id === row.id).map((ingredient) => { const product = products.get(ingredient.product_id); if (!product) throw new RecipeRepositoryError('invalid-product', 'Продукт рецепту не знайдено'); return { id: ingredient.id, recipeId: row.id, productId: product.id, quantityBase: Number(ingredient.quantity_base), enteredQuantity: Number(ingredient.entered_quantity), enteredUnit: ingredient.entered_unit, productName: product.name, productBaseUnit: product.base_unit } }) }
+    return { id: row.id, ownerId: row.owner_id, isSystem: row.owner_id === null, name: row.name, normalizedName: row.normalized_name, instructions: row.instructions, caloriesPerServing: asNumber(row.calories_per_serving), proteinGramsPerServing: asNumber(row.protein_grams_per_serving), fatGramsPerServing: asNumber(row.fat_grams_per_serving), carbsGramsPerServing: asNumber(row.carbs_grams_per_serving), preparationTimeMinMinutes: row.preparation_time_min_minutes, preparationTimeMaxMinutes: row.preparation_time_max_minutes, classifications: classifications as Recipe['classifications'], archivedAt: row.archived_at, createdAt: row.created_at, updatedAt: row.updated_at, image: { path: row.image_path, url: signedUrl, mimeType: row.image_mime_type, width: row.image_width, height: row.image_height, byteSize: row.image_byte_size }, ingredients: ingredients.filter((ingredient) => ingredient.recipe_id === row.id).map((ingredient) => { const product = products.get(ingredient.product_id); if (!product) throw new RecipeRepositoryError('invalid-product', 'Продукт рецепту не знайдено'); return { id: ingredient.id, recipeId: row.id, productId: product.id, quantityBase: Number(ingredient.quantity_base), enteredQuantity: Number(ingredient.entered_quantity), enteredUnit: ingredient.entered_unit, productName: product.name, productBaseUnit: product.base_unit } }) }
+  }
+
+  private async createBatchSignedUrls(paths: string[]): Promise<Map<string, string>> {
+    if (!paths.length) return new Map()
+    const { data } = await this.client.storage.from('recipe-images').createSignedUrls(paths, 3600)
+    return mapSignedUrls(paths, data)
+  }
+
+  private async createSingleSignedUrl(path: string): Promise<string | undefined> {
+    const { data } = await this.client.storage.from('recipe-images').createSignedUrl(path, 3600)
+    return data?.signedUrl
   }
 
   private assertValid(input: CreateRecipeInput | UpdateRecipeInput) { if (hasRecipeValidationErrors(validateRecipeInput(input))) throw new RecipeRepositoryError('invalid-recipe', 'Некоректний рецепт') }
 }
 
 function assertImage(image: RecipeImageInput) { if (!image.blob || !image.mimeType.startsWith('image/') || image.width < 1 || image.height < 1 || image.byteSize < 1 || image.byteSize > 2 * 1024 * 1024) throw new RecipeRepositoryError('invalid-recipe', 'Некоректне фото рецепту') }
+function assertUploadedImage(image: RecipeImageInput, userId: string, recipeId: string, mode: 'create' | 'update') { if (!image.path || !image.mimeType.startsWith('image/') || image.width < 1 || image.height < 1 || image.byteSize < 1 || image.byteSize > 2 * 1024 * 1024) throw new RecipeRepositoryError('invalid-recipe', 'Некоректне фото рецепту'); if (!isOwnedRecipeImagePath(userId, recipeId, image.path, mode)) throw new RecipeRepositoryError('invalid-recipe', 'Некоректний шлях фото рецепту') }
 function recipeInsert(id: string, ownerId: string, path: string, input: CreateRecipeInput | UpdateRecipeInput, now: string) { return { id, owner_id: ownerId, name: cleanName(input.name), normalized_name: normalizeRecipeName(input.name), image_path: path, image_mime_type: input.image?.mimeType ?? 'image/webp', image_width: input.image?.width ?? 1, image_height: input.image?.height ?? 1, image_byte_size: input.image?.byteSize ?? 1, instructions: input.instructions.trim(), calories_per_serving: input.caloriesPerServing, protein_grams_per_serving: input.proteinGramsPerServing, fat_grams_per_serving: input.fatGramsPerServing, carbs_grams_per_serving: input.carbsGramsPerServing, preparation_time_min_minutes: input.preparationTimeMinMinutes, preparation_time_max_minutes: input.preparationTimeMaxMinutes, classifications: uniqueClassifications(input.classifications), archived_at: null, created_at: now, updated_at: now } }
 function recipeUpdate(ownerId: string, path: string, input: UpdateRecipeInput, current: Recipe, now: string) { return { owner_id: ownerId, name: cleanName(input.name), normalized_name: normalizeRecipeName(input.name), image_path: path, image_mime_type: input.image?.mimeType ?? current.image.mimeType, image_width: input.image?.width ?? current.image.width, image_height: input.image?.height ?? current.image.height, image_byte_size: input.image?.byteSize ?? current.image.byteSize, instructions: input.instructions.trim(), calories_per_serving: input.caloriesPerServing, protein_grams_per_serving: input.proteinGramsPerServing, fat_grams_per_serving: input.fatGramsPerServing, carbs_grams_per_serving: input.carbsGramsPerServing, preparation_time_min_minutes: input.preparationTimeMinMinutes, preparation_time_max_minutes: input.preparationTimeMaxMinutes, classifications: uniqueClassifications(input.classifications), updated_at: now } }

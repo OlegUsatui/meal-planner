@@ -23,3 +23,5 @@ Dialogs close via their close control, `Escape`, or backdrop, trap keyboard focu
 ## Acceptance and tests
 
 Tests cover Monday-first week boundaries, navigation helpers, seven days/four slots, add/replace/delete, recipe details, nutrition and ingredient scaling, archived references, read-only past dates, and desktop/mobile layout contracts.
+
+The calendar uses `/api/meal-plan` for entries and `/api/recipes` for selectable recipes. Both calls carry the Supabase access token through the shared API client; loading failures remain visible as a retryable plan error instead of an empty calendar.

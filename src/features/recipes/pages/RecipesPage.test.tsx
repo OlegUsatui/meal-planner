@@ -27,4 +27,11 @@ describe('RecipesPage categories', () => {
     await userEvent.click(screen.getByRole('tab', { name: 'Без категорії' }))
     expect(screen.getByText('Старий рецепт')).toBeInTheDocument()
   })
+
+  it('shows a retryable error instead of an empty catalogue when loading fails', async () => {
+    const repository: RecipeRepository = { list: vi.fn().mockRejectedValue(new Error('network')), get: vi.fn(), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
+    render(<MemoryRouter><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider></MemoryRouter>)
+    expect(await screen.findByRole('alert')).toHaveTextContent('Не вдалося завантажити рецепти')
+    expect(screen.getByRole('button', { name: 'Повторити' })).toBeInTheDocument()
+  })
 })

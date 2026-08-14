@@ -8,3 +8,5 @@ Entries with `date >= today` are included. Each recipe ingredient is stored for 
 
 ## States
 The page exposes loading, error, and empty states. The empty state links to `/plan` and explains that the list appears after planning recipes. There are no checks, purchases, manual rows, snapshots, prices, package rounding, or shopping storage.
+
+The shopping list is read from the authenticated `/api/shopping-list` endpoint. The API derives the list from the current user's future meal plan and shared catalog data, preserving the existing read-only behavior.

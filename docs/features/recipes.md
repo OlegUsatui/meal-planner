@@ -158,3 +158,5 @@ Generated breakfast and dinner records retain exact previous OCR titles only as 
 - [Domain model: Recipe](../domain-model.md#recipe)
 - [Business rules: serving scaling](../business-rules.md#serving-scaling)
 - [Design system: photography](../design-system.md#photography)
+
+Recipe data is loaded through the authenticated `/api/recipes` repository client. The API returns recipe data, ingredients, products, and signed image URLs; the list uses one batch Storage signing request and keeps a recipe visible when its image URL fails. Creating or editing a photo requests `/api/recipes/upload-url`, uploads directly to private Storage, and then saves metadata through the recipe endpoint. The browser Supabase client is not used for recipe data.
