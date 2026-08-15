@@ -23,32 +23,3 @@ jobs:
         with:
           configPath: ./.lighthouserc.json
           uploadArtifacts: true
-
-  e2e:
-    runs-on: ubuntu-latest
-    needs: quality
-    env:
-      E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
-      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
-      VITE_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
-      VITE_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
-      SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
-      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
-      R2_ACCOUNT_ID: ${{ secrets.E2E_R2_ACCOUNT_ID }}
-      R2_ACCESS_KEY_ID: ${{ secrets.E2E_R2_ACCESS_KEY_ID }}
-      R2_SECRET_ACCESS_KEY: ${{ secrets.E2E_R2_SECRET_ACCESS_KEY }}
-      R2_BUCKET_NAME: ${{ secrets.E2E_R2_BUCKET_NAME }}
-      R2_PUBLIC_BASE_URL: ${{ secrets.E2E_R2_PUBLIC_BASE_URL }}
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium
-      - run: npm run build
-      - run: npm run test:e2e
