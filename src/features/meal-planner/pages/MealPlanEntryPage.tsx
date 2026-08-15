@@ -26,7 +26,7 @@ export function MealPlanEntryPage() {
   const slot = validSlot(searchParams.get('slot')) ?? 'breakfast'
   const replacing = Boolean(searchParams.get('entryId'))
   const initialRecipeId = searchParams.get('recipeId') ?? ''
-  const servings = parseServings(searchParams.get('servings')) ?? 1
+  const servings = parseServings(searchParams.get('servings')) ?? 2
   const [selectedId, setSelectedId] = useState(initialRecipeId)
   const [search, setSearch] = useState('')
   const [subcategory, setSubcategory] = useState('')

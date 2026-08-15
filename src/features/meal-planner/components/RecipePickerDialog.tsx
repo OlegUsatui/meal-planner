@@ -17,7 +17,7 @@ interface Props {
   onSave: (recipeId: string, servings: number) => Promise<void>
 }
 
-export function RecipePickerDialog({ date, slot, recipes, initialRecipeId, initialServings = 1, onClose, onSave }: Props) {
+export function RecipePickerDialog({ date, slot, recipes, initialRecipeId, initialServings = 2, onClose, onSave }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null)
   const eligible = useMemo(() => recipes.filter((recipe) => recipeAvailableForMealType(recipe.classifications, slot)), [recipes, slot])
   const initial = eligible.some((recipe) => recipe.id === initialRecipeId) ? initialRecipeId! : eligible[0]?.id ?? ''

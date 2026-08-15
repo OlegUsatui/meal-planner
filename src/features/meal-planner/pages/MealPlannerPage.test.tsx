@@ -26,6 +26,9 @@ describe('MealPlannerPage', () => {
     expect(container.querySelectorAll('.week-day')).toHaveLength(7)
     expect(plan.list).toHaveBeenCalledWith({ from: '2026-08-10', to: '2026-08-16' }, expect.any(AbortSignal))
 
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Кількість порцій для Рисова миска' }), '3')
+    expect(plan.upsert).toHaveBeenCalledWith({ date: '2026-08-14', slot: 'breakfast', recipeId: recipe.id, servings: 3 })
+
     await userEvent.click(screen.getByRole('button', { name: 'Відкрити рецепт Рисова миска' }))
     expect(router.state.location.pathname).toBe('/recipes/recipe-1')
     router.navigate('/plan')
@@ -56,7 +59,7 @@ describe('MealPlannerPage', () => {
     expect(screen.queryByRole('button', { name: 'Додати до плану' })).not.toBeInTheDocument()
     await userEvent.click(recipeCardAfterFilter)
     await userEvent.click(screen.getByRole('button', { name: 'Додати до плану' }))
-    expect(plan.upsert).toHaveBeenCalledWith(expect.objectContaining({ recipeId: recipe.id, servings: 1 }))
+    expect(plan.upsert).toHaveBeenCalledWith(expect.objectContaining({ recipeId: recipe.id, servings: 2 }))
   })
 
   it('replaces and removes a planned meal with explicit confirmations', async () => {

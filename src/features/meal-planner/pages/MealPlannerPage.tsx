@@ -71,6 +71,16 @@ export function MealPlannerPage() {
     catch { setActionError('Не вдалося видалити страву. Спробуйте ще раз.') }
     finally { setRemovePending(false) }
   }
+  async function updateServings(entry: MealPlanEntry, servings: number) {
+    if (servings === entry.servings || servings < 1 || servings > 99) return
+    setActionError('')
+    try {
+      await plan.upsert({ date: entry.date, slot: entry.slot, recipeId: entry.recipeId, servings })
+      await invalidateMealPlanData(queryClient, userId)
+    } catch {
+      setActionError('Не вдалося змінити кількість порцій. Спробуйте ще раз.')
+    }
+  }
   const openDetails = (entry: MealPlanEntry, recipe: RecipeSummary) => {
     const query = new URLSearchParams({ planDate: entry.date, planSlot: entry.slot, planServings: String(entry.servings), returnTo: `/plan?date=${entry.date}` })
     navigate(`/recipes/${recipe.id}?${query.toString()}`)
@@ -82,7 +92,7 @@ export function MealPlannerPage() {
     {loading && <div className="loading-panel" role="status">Завантажуємо план…</div>}
     {stale && <div className="form-alert stale-banner" role="alert"><span>{entries.length ? 'Показуємо останній завантажений план.' : 'Не вдалося завантажити план.'}</span><button type="button" className="button button-secondary" onClick={() => { void planQuery.refetch(); void catalogueQuery.refetch() }}>Повторити</button></div>}
     {actionError && <div className="form-alert" role="alert">{actionError}</div>}
-    {!loading && <WeekCalendar dates={dates} today={today} selectedDate={selectedDate} entries={entries} recipes={recipes} onSelectDate={selectDate} onAdd={(date, slot) => navigate(`/plan/add?date=${encodeURIComponent(date)}&slot=${encodeURIComponent(slot)}`)} onReplace={(entry) => navigate(`/plan/add?date=${encodeURIComponent(entry.date)}&slot=${encodeURIComponent(entry.slot)}&entryId=${encodeURIComponent(entry.id)}&recipeId=${encodeURIComponent(entry.recipeId)}&servings=${entry.servings}`)} onRemove={setRemoving} onOpen={(entry, recipe) => openDetails(entry, recipe)} />}
+    {!loading && <WeekCalendar dates={dates} today={today} selectedDate={selectedDate} entries={entries} recipes={recipes} onSelectDate={selectDate} onAdd={(date, slot) => navigate(`/plan/add?date=${encodeURIComponent(date)}&slot=${encodeURIComponent(slot)}`)} onReplace={(entry) => navigate(`/plan/add?date=${encodeURIComponent(entry.date)}&slot=${encodeURIComponent(entry.slot)}&entryId=${encodeURIComponent(entry.id)}&recipeId=${encodeURIComponent(entry.recipeId)}&servings=${entry.servings}`)} onRemove={setRemoving} onServingsChange={updateServings} onOpen={(entry, recipe) => openDetails(entry, recipe)} />}
     {removing && <ConfirmDialog title="Видалити страву з плану?" description="Слот стане порожнім. Рецепт залишиться у вашому каталозі." confirmLabel="Видалити з плану" pending={removePending} danger onCancel={() => setRemoving(undefined)} onConfirm={() => void confirmRemove()} />}
   </section>
 }

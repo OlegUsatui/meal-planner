@@ -12,7 +12,7 @@ Plan recipes into dated meal slots while preserving the selected week and surrou
 
 ## Flows
 
-Select an empty slot → open the full-page picker → search/filter an eligible recipe with chips → explicitly select a recipe → add from the action bar. New entries use one serving by default; replacements preserve the existing serving count. Existing entries use the same page for explicit replacement and confirmed remove remains in the calendar.
+Select an empty slot → open the full-page picker → search/filter an eligible recipe with chips → explicitly select a recipe → add from the action bar. New entries use two servings by default; replacements preserve the existing serving count. Existing cards expose a servings selector for future dates; saving a new value updates the meal-plan entry and recalculates the shopping projection. Confirmed remove remains in the calendar.
 
 ## Desktop UI
 
@@ -24,7 +24,7 @@ Date strip plus one selected day, visible “Сьогодні” action, and a d
 
 ## Actions
 
-Change week/day, return to today, add, replace, remove, open detail, search/filter on the selection page, retry a stale read, and recover a missing recipe.
+Change week/day, return to today, add, replace, remove, change servings, open detail, search/filter on the selection page, retry a stale read, and recover a missing recipe.
 
 ## State and storage
 
@@ -48,11 +48,11 @@ A failed refresh keeps stale calendar data. Replace shows current → new and co
 
 ## Acceptance criteria
 
-The API receives only the visible week; date survives reload/back; add and replace preserve context through `/plan/add` and return to the same date; planned detail scales ingredients/nutrition and returns to the same date.
+The API receives only the visible week; date survives reload/back; add and replace preserve context through `/plan/add` and return to the same date; changing servings on a future card persists 1–99 servings and refreshes shopping totals for the active ranges; planned detail returns to the same date.
 
 ## Tests
 
-Domain tests cover date ranges and slot rules. Component tests cover responsive add/replace/remove, stale data, local errors, menus, and missing recipes. E2E covers desktop/mobile core planning.
+Domain tests cover date ranges and slot rules. Component tests cover responsive add/replace/remove, servings changes, stale data, local errors, menus, and missing recipes. E2E covers desktop/mobile core planning.
 
 ## Dependencies
 

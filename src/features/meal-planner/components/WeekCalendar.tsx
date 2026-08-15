@@ -13,6 +13,7 @@ interface Props {
   onAdd: (date: string, slot: MealSlot) => void
   onReplace: (entry: MealPlanEntry) => void
   onRemove: (entry: MealPlanEntry) => void
+  onServingsChange: (entry: MealPlanEntry, servings: number) => Promise<void> | void
   onOpen: (entry: MealPlanEntry, recipe: RecipeSummary, trigger: HTMLElement) => void
 }
 
@@ -23,14 +24,14 @@ export function WeekCalendar(props: Props) {
   </div>
 }
 
-function DayColumn({ date, today, selected, entries, recipes, onSelectDate, onAdd, onReplace, onRemove, onOpen }: Props & { date: string; selected: boolean }) {
+function DayColumn({ date, today, selected, entries, recipes, onSelectDate, onAdd, onReplace, onRemove, onServingsChange, onOpen }: Props & { date: string; selected: boolean }) {
   const readOnly = date < today
   return <section className={`week-day ${date === today ? 'today' : ''} ${selected ? 'selected' : ''}`} aria-label={parseLocalDate(date).toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long' })}>
     <button type="button" className="week-day-header" onClick={() => onSelectDate(date)}><span>{parseLocalDate(date).toLocaleDateString('uk-UA', { weekday: 'short' })}</span><strong>{parseLocalDate(date).getDate()}</strong></button>
     <div className="week-day-slots">{mealSlots.map(({ value, label }) => {
       const entry = entries.find((item) => item.date === date && item.slot === value)
       const recipe = entry ? recipes.get(entry.recipeId) : undefined
-      return <div className="calendar-meal-slot" key={value}><span className="calendar-slot-label">{label}</span>{entry && recipe ? <MealCard entry={entry} recipe={recipe} readOnly={readOnly} onOpen={(trigger) => onOpen(entry, recipe, trigger)} onReplace={() => onReplace(entry)} onRemove={() => onRemove(entry)} /> : entry ? <div className="missing-recipe">Рецепт недоступний</div> : <button type="button" className="empty-meal-slot" disabled={readOnly} onClick={() => onAdd(date, value)}>+ <span>Додати страву</span></button>}</div>
+      return <div className="calendar-meal-slot" key={value}><span className="calendar-slot-label">{label}</span>{entry && recipe ? <MealCard entry={entry} recipe={recipe} readOnly={readOnly} onOpen={(trigger) => onOpen(entry, recipe, trigger)} onReplace={() => onReplace(entry)} onRemove={() => onRemove(entry)} onServingsChange={(servings) => onServingsChange(entry, servings)} /> : entry ? <div className="missing-recipe">Рецепт недоступний</div> : <button type="button" className="empty-meal-slot" disabled={readOnly} onClick={() => onAdd(date, value)}>+ <span>Додати страву</span></button>}</div>
     })}</div>
   </section>
 }

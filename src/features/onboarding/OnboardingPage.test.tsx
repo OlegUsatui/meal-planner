@@ -26,7 +26,7 @@ describe('OnboardingPage', () => {
     expect(screen.getByRole('dialog', { name: 'Додати страву' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Додати до плану' }))
 
-    expect(plan.upsert).toHaveBeenCalledWith(expect.objectContaining({ recipeId: recipe.id, slot: 'dinner' }))
+    expect(plan.upsert).toHaveBeenCalledWith(expect.objectContaining({ recipeId: recipe.id, slot: 'dinner', servings: 2 }))
     expect(completeOnboarding).toHaveBeenCalledOnce()
     expect(await screen.findByRole('heading', { name: 'Перша страва у плані' })).toBeInTheDocument()
     expect(screen.getByText(/Рис/)).toBeInTheDocument()

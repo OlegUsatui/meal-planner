@@ -27,7 +27,11 @@
 .meal-card-image { width: 48px; height: 48px; object-fit: cover; border-radius: 9px; background: var(--sage-soft); }
 .meal-card-copy { min-width: 0; display: grid; gap: 3px; }
 .meal-card-copy strong { overflow: hidden; font-size: .72rem; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
-.meal-card-copy small { color: var(--muted); font-size: .64rem; }
+.meal-card-servings { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 7px 7px; color: var(--muted); font-size: .64rem; }
+.meal-card-servings strong { color: var(--ink); font-size: .74rem; }
+.meal-card-servings select { width: 58px; min-height: 44px; padding: 4px 5px; color: var(--ink); background: var(--canvas); border: 1px solid var(--border); border-radius: 8px; font: inherit; font-weight: 750; }
+.meal-card-servings select:disabled { cursor: wait; opacity: .6; }
+.meal-card-servings.read-only { padding-right: 10px; }
 .meal-card-menu-wrap { position: absolute; z-index: 3; top: 3px; right: 3px; }
 .meal-menu-trigger { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 8px; color: var(--muted); background: rgba(255,255,255,.9); font-weight: 900; }
 .meal-card-menu { position: absolute; top: 28px; right: 0; width: 118px; padding: 5px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); }
@@ -94,7 +98,7 @@
   .mobile-day-strip button span { font-size: .66rem; }.mobile-day-strip button strong { font-size: 1.05rem; }.mobile-day-strip button.selected { color: #fff; background: var(--coral-dark); border-color: var(--coral-dark); }
   .week-grid { display: block; background: transparent; border: 0; }.week-day { display: none; border: 1px solid var(--border); border-radius: var(--radius) !important; }.week-day.selected { display: block; }.week-day-header { min-height: 64px; display: flex; justify-content: space-between; padding: 14px 18px; }.week-day-header span { font-size: .82rem; }.week-day.today .week-day-header strong { width: 32px; height: 32px; }
   .calendar-meal-slot { min-height: 0; padding: 14px; }.calendar-slot-label { margin-bottom: 8px; font-size: .7rem; }.empty-meal-slot { min-height: 72px; font-size: .86rem; }
-  .meal-card-main { grid-template-columns: 76px minmax(0, 1fr); min-height: 84px; padding: 8px 38px 8px 8px; }.meal-card-image { width: 76px; height: 68px; }.meal-card-copy strong { font-size: .92rem; }.meal-card-copy small { font-size: .75rem; }
+  .meal-card-main { grid-template-columns: 76px minmax(0, 1fr); min-height: 84px; padding: 8px 38px 8px 8px; }.meal-card-image { width: 76px; height: 68px; }.meal-card-copy strong { font-size: .92rem; }.meal-card-servings { padding-inline: 8px; padding-bottom: 8px; font-size: .75rem; }.meal-card-servings select { width: 64px; }
   .meal-plan-entry-page { padding-inline: 12px; padding-bottom: 190px; }.meal-plan-entry-toolbar { padding: 14px; }.meal-plan-entry-actions { left: 12px; right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); width: auto; flex-direction: column; align-items: stretch; gap: 10px; padding: 12px 14px; transform: none; }.meal-plan-entry-submit { width: 100%; min-width: 0; }.meal-plan-category-chips, .picker-category-chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }.meal-plan-category-chips button, .picker-category-chips button { flex: 0 0 auto; }
   .planner-dialog-backdrop { align-items: stretch; padding: 0; }.planner-dialog { width: 100%; max-height: 100dvh; min-height: 100dvh; border-radius: 0; }.planner-dialog-header { padding: 24px 20px 12px; }.picker-filter-row { padding-inline: 20px; }.picker-recipes { grid-template-columns: 1fr; max-height: calc(100dvh - 340px); padding-inline: 20px; }.picker-footer { position: sticky; bottom: 0; padding: 14px 20px calc(18px + env(safe-area-inset-bottom)); background: var(--surface); }.picker-footer .button { flex: 1; }
   .recipe-dialog-layout { display: block; }.recipe-dialog-image { height: 34vh; min-height: 240px; border-radius: 0; }.recipe-dialog-content { padding: 28px 20px calc(40px + env(safe-area-inset-bottom)); }.nutrition-comparison { grid-template-columns: 1fr; }
