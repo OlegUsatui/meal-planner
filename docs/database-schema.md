@@ -1,8 +1,14 @@
 # Database schema
 
-Production uses Supabase PostgreSQL. The schema and RLS policies are in `supabase/migrations/20260814000000_initial_schema.sql`.
+Production uses Supabase PostgreSQL. The base schema and RLS policies are in `supabase/migrations/20260814000000_initial_schema.sql`; admin roles and expanded product/recipe RLS are added by `supabase/migrations/20260815000000_admin_roles.sql`.
 
-`profiles` references Supabase Auth users. `products` and `recipes` use nullable `owner_id`: null means read-only system seed data, while a UUID means private user data. `recipe_ingredients` references recipes and products. `meal_plan_entries` is owned by a user and enforces one entry per `(owner_id, date_slot)`. Recipe image metadata is stored on `recipes`; `image_path` is also the object key in Cloudflare R2. No database migration is needed for the R2 move.
+`profiles` references Supabase Auth users and stores `role` (`user` or `admin`). The `is_admin()` security-definer function is used by RLS; role changes are intentionally performed by a trusted database operator. `products` and `recipes` use nullable `owner_id`: null means shared system data, while a UUID means private user data. Admins can manage all products and recipes without changing their ownership. `recipe_ingredients` references recipes and products. `meal_plan_entries` is owned by a user and enforces one entry per `(owner_id, date_slot)`; admin access does not bypass this boundary. Recipe image metadata is stored on `recipes`; `image_path` is also the object key in Cloudflare R2. No database migration is needed for the R2 move.
+
+After applying `20260815000000_admin_roles.sql`, promote the first administrator from a trusted SQL session:
+
+```sql
+update public.profiles set role = 'admin' where id = 'USER_UUID_HERE';
+```
 
 The idempotent `npm run seed:supabase` command reads the verified bundled JSON and WebP files, uploads system images, and upserts 457 system recipes with stable IDs. It does not touch user-owned records.
 

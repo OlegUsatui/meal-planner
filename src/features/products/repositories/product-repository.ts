@@ -22,6 +22,7 @@ export interface ProductRepository {
   list(options?: ProductListOptions): Promise<Product[]>
   update(id: ProductId, input: UpdateProductInput): Promise<Product>
   archive(id: ProductId): Promise<void>
+  remove?(id: ProductId): Promise<void>
 }
 
 export type ProductRepositoryErrorCode =
@@ -29,6 +30,8 @@ export type ProductRepositoryErrorCode =
   | 'invalid-product'
   | 'not-found'
   | 'base-unit-locked'
+  | 'forbidden'
+  | 'in-use'
 
 export class ProductRepositoryError extends Error {
   readonly code: ProductRepositoryErrorCode

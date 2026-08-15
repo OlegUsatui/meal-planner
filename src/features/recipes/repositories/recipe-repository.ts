@@ -7,6 +7,7 @@ export interface RecipeListOptions {
   mealType?: RecipeMealType
   subcategoryId?: string
   uncategorized?: boolean
+  includeArchived?: boolean
 }
 
 export interface RecipePage {
@@ -24,12 +25,13 @@ export interface RecipeRepository {
   create(input: CreateRecipeInput): Promise<Recipe>
   update(id: RecipeId, input: UpdateRecipeInput): Promise<Recipe>
   archive(id: RecipeId): Promise<void>
+  remove?(id: RecipeId): Promise<void>
 }
 
 export class RecipeRepositoryError extends Error {
-  readonly code: 'invalid-recipe' | 'duplicate-name' | 'not-found' | 'invalid-product'
+  readonly code: 'invalid-recipe' | 'duplicate-name' | 'not-found' | 'invalid-product' | 'forbidden' | 'in-use'
 
-  constructor(code: 'invalid-recipe' | 'duplicate-name' | 'not-found' | 'invalid-product', message: string) {
+  constructor(code: 'invalid-recipe' | 'duplicate-name' | 'not-found' | 'invalid-product' | 'forbidden' | 'in-use', message: string) {
     super(message)
     this.name = 'RecipeRepositoryError'
     this.code = code

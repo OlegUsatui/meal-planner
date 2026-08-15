@@ -9,8 +9,9 @@ interface IngredientRow { product_id: string }
 
 export class SupabaseProductRepository implements ProductRepository {
   private readonly client: SupabaseClient
+  private readonly isAdmin: boolean
 
-  constructor(client: SupabaseClient) { this.client = client }
+  constructor(client: SupabaseClient, isAdmin = false) { this.client = client; this.isAdmin = isAdmin }
 
   async create(input: CreateProductInput): Promise<Product> {
     this.assertValid(input)
@@ -44,22 +45,39 @@ export class SupabaseProductRepository implements ProductRepository {
 
   async update(id: string, input: UpdateProductInput): Promise<Product> {
     this.assertValid(input)
-    const ownerId = await currentUserId(this.client)
+    const actorId = await currentUserId(this.client)
     const current = await this.get(id)
-    if (current.isSystem) throw new ProductRepositoryError('not-found', 'Системний продукт не можна редагувати')
+    if (current.isSystem && !this.isAdmin) throw new ProductRepositoryError('forbidden', 'Системний продукт не можна редагувати')
+    if (!this.isAdmin && current.ownerId !== actorId) throw new ProductRepositoryError('forbidden', 'Продукт належить іншому користувачу')
+    const ownerId = current.ownerId ?? actorId
     const normalizedName = normalizeProductName(input.name)
     await this.assertUniqueName(normalizedName, ownerId, id)
     if (current.baseUnit !== input.baseUnit && current.isBaseUnitLocked) throw new ProductRepositoryError('base-unit-locked', 'Одиницю продукту вже не можна змінити')
-    const { error } = await this.client.from('products').update({ name: cleanName(input.name), normalized_name: normalizedName, category: input.category.trim(), base_unit: input.baseUnit, updated_at: new Date().toISOString() }).eq('id', id).eq('owner_id', ownerId)
+    let query = this.client.from('products').update({ name: cleanName(input.name), normalized_name: normalizedName, category: input.category.trim(), base_unit: input.baseUnit, updated_at: new Date().toISOString() }).eq('id', id)
+    if (!this.isAdmin) query = query.eq('owner_id', actorId)
+    const { error } = await query
     if (error) throw repositoryError(error.message, 'Не вдалося оновити продукт.')
     return this.get(id)
   }
 
   async archive(id: string): Promise<void> {
     const ownerId = await currentUserId(this.client); const current = await this.get(id)
-    if (current.isSystem) throw new ProductRepositoryError('not-found', 'Системний продукт не можна архівувати')
-    const { error } = await this.client.from('products').update({ archived_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', id).eq('owner_id', ownerId)
+    if (current.isSystem && !this.isAdmin) throw new ProductRepositoryError('forbidden', 'Системний продукт не можна архівувати')
+    if (!this.isAdmin && current.ownerId !== ownerId) throw new ProductRepositoryError('forbidden', 'Продукт належить іншому користувачу')
+    let query = this.client.from('products').update({ archived_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', id)
+    if (!this.isAdmin) query = query.eq('owner_id', ownerId)
+    const { error } = await query
     if (error) throw repositoryError(error.message, 'Не вдалося архівувати продукт.')
+  }
+
+  async remove(id: string): Promise<void> {
+    if (!this.isAdmin) throw new ProductRepositoryError('forbidden', 'Безповоротно видаляти продукти може лише адміністратор')
+    await this.get(id)
+    const { error } = await this.client.from('products').delete().eq('id', id)
+    if (error) {
+      if (error.code === '23503') throw new ProductRepositoryError('in-use', 'Продукт використовується в рецептах і не може бути видалений')
+      throw repositoryError(error.message, 'Не вдалося видалити продукт.')
+    }
   }
 
   private toProduct(row: ProductRow, usageCount: number): Product {
@@ -72,8 +90,10 @@ export class SupabaseProductRepository implements ProductRepository {
     return (data as unknown as IngredientRow[]).length
   }
 
-  private async assertUniqueName(normalizedName: string, ownerId: string, exceptId?: string): Promise<void> {
-    const { data, error } = await this.client.from('products').select('id').eq('owner_id', ownerId).eq('normalized_name', normalizedName).is('archived_at', null)
+  private async assertUniqueName(normalizedName: string, ownerId: string | null, exceptId?: string): Promise<void> {
+    let query = this.client.from('products').select('id').eq('normalized_name', normalizedName).is('archived_at', null)
+    query = ownerId === null ? query.is('owner_id', null) : query.eq('owner_id', ownerId)
+    const { data, error } = await query
     if (error) throw repositoryError(error.message, 'Не вдалося перевірити назву продукту.')
     if ((data ?? []).some((row) => row.id !== exceptId)) throw new ProductRepositoryError('duplicate-name', 'Активний продукт із такою назвою вже існує')
   }

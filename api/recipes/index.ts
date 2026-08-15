@@ -5,8 +5,8 @@ import { authorized, jsonBody, requireRecord, requireString } from '../_lib/rout
 import { ApiError, queryParam, type ApiRequest, type ApiResponse } from '../_lib/http.js'
 
 export default async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
-  await authorized(request, response, async ({ client }) => {
-    const repository = new SupabaseRecipeRepository(client)
+  await authorized(request, response, async ({ client, isAdmin }) => {
+    const repository = new SupabaseRecipeRepository(client, isAdmin)
     if (request.method === 'GET') {
       const query = queryParam(request, 'query') ?? ''
       const page = queryParam(request, 'page')
@@ -14,9 +14,12 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       const mealType = queryParam(request, 'mealType')
       const subcategoryId = queryParam(request, 'subcategoryId')
       const uncategorized = queryParam(request, 'uncategorized')
-      if (![page, pageSize, mealType, subcategoryId, uncategorized].some((value) => value !== undefined)) return repository.list(query)
+      const includeArchived = queryParam(request, 'includeArchived')
+      if (![page, pageSize, mealType, subcategoryId, uncategorized, includeArchived].some((value) => value !== undefined)) return repository.list(query)
       if (!repository.listPage) throw new ApiError(500, 'internal', 'Пагінація рецептів недоступна')
-      return repository.listPage(query, parseListOptions({ page, pageSize, mealType, subcategoryId, uncategorized }))
+      const options = parseListOptions({ page, pageSize, mealType, subcategoryId, uncategorized, includeArchived })
+      if (options.includeArchived && !isAdmin) throw new ApiError(403, 'forbidden', 'Архівні рецепти доступні лише адміністратору')
+      return repository.listPage(query, options)
     }
     const body = requireRecord(await jsonBody(request))
     const id = requireString(body.id, 'id')
@@ -31,7 +34,9 @@ function parseListOptions(values: Record<string, string | undefined>): RecipeLis
   if (mealType && !['breakfast', 'lunch', 'dinner', 'snack'].includes(mealType)) throw new ApiError(400, 'bad-request', 'Некоректний тип прийому їжі')
   const uncategorized = values.uncategorized === undefined ? false : values.uncategorized === 'true' ? true : values.uncategorized === 'false' ? false : undefined
   if (uncategorized === undefined) throw new ApiError(400, 'bad-request', 'Некоректний параметр uncategorized')
-  return { page, pageSize, mealType: mealType as RecipeMealType | undefined, subcategoryId: values.subcategoryId, uncategorized }
+  const includeArchived = values.includeArchived === undefined ? false : values.includeArchived === 'true' ? true : values.includeArchived === 'false' ? false : undefined
+  if (includeArchived === undefined) throw new ApiError(400, 'bad-request', 'Некоректний параметр includeArchived')
+  return { page, pageSize, mealType: mealType as RecipeMealType | undefined, subcategoryId: values.subcategoryId, uncategorized, includeArchived }
 }
 
 function positiveInteger(value: string | undefined, fallback: number, field: string, max = Number.MAX_SAFE_INTEGER): number {

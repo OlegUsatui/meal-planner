@@ -4,6 +4,7 @@ import { ApiError, header, type ApiRequest } from './http.js'
 export interface AuthContext {
   client: SupabaseClient
   user: User
+  isAdmin: boolean
 }
 
 export function bearerToken(request: ApiRequest): string {
@@ -22,5 +23,7 @@ export async function authenticate(request: ApiRequest, environment: Record<stri
   const client = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false }, global: { headers: { Authorization: `Bearer ${token}` } } })
   const { data, error } = await client.auth.getUser(token)
   if (error || !data.user) throw new ApiError(401, 'unauthorized', 'Сесія недійсна або завершилася')
-  return { client, user: data.user }
+  const { data: profile, error: profileError } = await client.from('profiles').select('role').eq('id', data.user.id).maybeSingle()
+  if (profileError) throw new ApiError(500, 'internal', 'Не вдалося перевірити роль користувача')
+  return { client, user: data.user, isAdmin: profile?.role === 'admin' }
 }

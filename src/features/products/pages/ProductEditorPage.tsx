@@ -5,6 +5,8 @@ import { ArchiveProductDialog } from '../components/ArchiveProductDialog'
 import { ProductRepositoryError } from '../repositories/product-repository'
 import { useProductRepository } from '../repositories/useProductRepository'
 import type { CreateProductInput, Product, UpdateProductInput } from '../types'
+import { useOptionalAuth } from '../../auth/useAuth'
+import { PermanentDeleteDialog } from '../../../shared/ui/PermanentDeleteDialog'
 
 type LoadState =
   | { status: 'loading' }
@@ -19,6 +21,9 @@ export function ProductEditorPage() {
   const [submitError, setSubmitError] = useState<string>()
   const [showArchive, setShowArchive] = useState(false)
   const archiveButtonRef = useRef<HTMLButtonElement>(null)
+  const [showPermanentDelete, setShowPermanentDelete] = useState(false)
+  const auth = useOptionalAuth()
+  const isAdmin = auth?.isAdmin ?? false
   const isCreate = !productId
 
   useEffect(() => {
@@ -68,6 +73,17 @@ export function ProductEditorPage() {
     archiveButtonRef.current?.focus()
   }
 
+  const removePermanently = async () => {
+    if (!productId || !repository.remove) return
+    try {
+      await repository.remove(productId)
+      navigate('/products', { replace: true })
+    } catch (error: unknown) {
+      setShowPermanentDelete(false)
+      setSubmitError(errorMessage(error))
+    }
+  }
+
   if (!isCreate && loadState.status === 'loading') {
     return <div className="loading-panel" aria-live="polite">Завантажуємо продукт…</div>
   }
@@ -76,7 +92,7 @@ export function ProductEditorPage() {
   }
 
   const product = !isCreate && loadState.status === 'ready' ? loadState.product : undefined
-  if (product?.isSystem) return <section className="page editor-page"><Link className="back-link" to="/products">← До продуктів</Link><header className="editor-header"><div><p className="eyebrow">Системний каталог</p><h1>{product.name}</h1><p className="page-intro">Цей продукт входить до вбудованого каталогу й доступний усім користувачам. Його не можна редагувати або архівувати.</p></div></header></section>
+  if (product?.isSystem && !isAdmin) return <section className="page editor-page"><Link className="back-link" to="/products">← До продуктів</Link><header className="editor-header"><div><p className="eyebrow">Системний каталог</p><h1>{product.name}</h1><p className="page-intro">Цей продукт входить до вбудованого каталогу й доступний усім користувачам. Його може змінювати лише адміністратор.</p></div></header></section>
   return (
     <section className="page editor-page">
       <Link className="back-link" to="/products">← До продуктів</Link>
@@ -84,9 +100,9 @@ export function ProductEditorPage() {
         <div>
           <p className="eyebrow">{isCreate ? 'Новий інгредієнт' : product?.category}</p>
           <h1>{isCreate ? 'Створити продукт' : product?.name}</h1>
-        <p className="page-intro">Вкажіть назву, категорію та одиницю, щоб використовувати продукт у рецептах.</p>
+          <p className="page-intro">Вкажіть назву, категорію та одиницю, щоб використовувати продукт у рецептах.</p>
         </div>
-        {product && !product.archivedAt && <button ref={archiveButtonRef} className="button button-danger-ghost" onClick={() => setShowArchive(true)}>Архівувати</button>}
+        {product && <div className="editor-actions">{!product.archivedAt && <button ref={archiveButtonRef} className="button button-danger-ghost" onClick={() => setShowArchive(true)}>Архівувати</button>}{isAdmin && <button className="button button-danger-ghost" onClick={() => setShowPermanentDelete(true)}>Видалити назавжди</button>}</div>}
       </header>
 
       <div className="form-card">
@@ -98,6 +114,7 @@ export function ProductEditorPage() {
       </div>
 
       {showArchive && product && <ArchiveProductDialog product={product} onCancel={closeArchive} onConfirm={archive} />}
+      {showPermanentDelete && product && <PermanentDeleteDialog name={product.name} entityLabel="продукт" onCancel={() => setShowPermanentDelete(false)} onConfirm={() => void removePermanently()} />}
     </section>
   )
 }
@@ -114,6 +131,8 @@ function errorMessage(error: unknown): string {
   if (error instanceof ProductRepositoryError) {
     if (error.code === 'duplicate-name') return 'Продукт із такою назвою вже існує.'
     if (error.code === 'base-unit-locked') return 'Базову одиницю вже не можна змінити.'
+    if (error.code === 'in-use') return error.message
+    if (error.code === 'forbidden') return error.message
   }
   return 'Не вдалося зберегти продукт. Перевірте дані та спробуйте ще раз.'
 }

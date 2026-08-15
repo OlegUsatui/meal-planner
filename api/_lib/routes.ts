@@ -25,10 +25,14 @@ export function mapError(error: unknown): unknown {
   if (error instanceof RecipeRepositoryError) {
     if (error.code === 'duplicate-name') return new ApiError(409, 'conflict', error.message)
     if (error.code === 'not-found') return new ApiError(404, 'not-found', error.message)
+    if (error.code === 'forbidden') return new ApiError(403, 'forbidden', error.message)
+    if (error.code === 'in-use') return new ApiError(409, 'conflict', error.message)
     if (error.code === 'invalid-product' || error.code === 'invalid-recipe') return new ApiError(422, 'validation', error.message)
   }
   if (error instanceof ProductRepositoryError) {
     if (error.code === 'duplicate-name' || error.code === 'base-unit-locked') return new ApiError(409, 'conflict', error.message)
+    if (error.code === 'in-use') return new ApiError(409, 'conflict', error.message)
+    if (error.code === 'forbidden') return new ApiError(403, 'forbidden', error.message)
     if (error.code === 'not-found') return new ApiError(404, 'not-found', error.message)
     return new ApiError(422, 'validation', error.message)
   }

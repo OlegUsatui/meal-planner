@@ -1,6 +1,6 @@
 # Domain model
 
-The app is server-backed. Supabase is the source of truth for products, recipes, images, and meal-plan entries; the shopping list is a read-only projection. Every personal record belongs to an authenticated account. System records have no owner and are read-only.
+The app is server-backed. Supabase is the source of truth for products, recipes, images, and meal-plan entries; the shopping list is a read-only projection. Every personal record belongs to an authenticated account. System records have no owner and are read-only for ordinary users; admins may manage them while preserving system ownership.
 
 ## Product
 

@@ -3,11 +3,12 @@ import recipeCollection from './recipes/index.js'
 import recipeItem from './recipes/[id].js'
 import productCollection from './products/index.js'
 import mealPlanCollection from './meal-plan/index.js'
+import me from './me.js'
 
 const mocks = vi.hoisted(() => ({
-  auth: vi.fn().mockResolvedValue({ client: {}, user: { id: 'user-1' } }),
-  recipes: { list: vi.fn(), listPage: vi.fn(), get: vi.fn(), createUploaded: vi.fn(), update: vi.fn(), updateUploaded: vi.fn(), archive: vi.fn() },
-  products: { list: vi.fn(), create: vi.fn() },
+  auth: vi.fn().mockResolvedValue({ client: {}, user: { id: 'user-1', email: 'user@example.com' }, isAdmin: false }),
+  recipes: { list: vi.fn(), listPage: vi.fn(), get: vi.fn(), createUploaded: vi.fn(), update: vi.fn(), updateUploaded: vi.fn(), archive: vi.fn(), remove: vi.fn() },
+  products: { list: vi.fn(), create: vi.fn(), remove: vi.fn() },
   mealPlan: { list: vi.fn(), upsert: vi.fn() },
 }))
 
@@ -27,7 +28,7 @@ describe('REST handlers', () => {
 
     mocks.recipes.listPage.mockResolvedValueOnce({ items: [], page: 2, pageSize: 24, total: 50, hasNext: true })
     await recipeCollection({ method: 'GET', url: '/api/recipes?query=soup&page=2&pageSize=24&mealType=lunch&subcategoryId=lunch-soups', headers: {} }, response())
-    expect(mocks.recipes.listPage).toHaveBeenCalledWith('soup', { page: 2, pageSize: 24, mealType: 'lunch', subcategoryId: 'lunch-soups', uncategorized: false })
+    expect(mocks.recipes.listPage).toHaveBeenCalledWith('soup', { page: 2, pageSize: 24, mealType: 'lunch', subcategoryId: 'lunch-soups', uncategorized: false, includeArchived: false })
 
     const postResponse = response()
     await recipeCollection({ method: 'POST', headers: {}, body: { id: 'recipe-2', image: { path: 'user-1/recipe-2.webp' } } }, postResponse)
@@ -47,6 +48,17 @@ describe('REST handlers', () => {
     expect(mocks.recipes.update).toHaveBeenCalledWith('recipe-1', { name: 'Soup' })
     await recipeItem({ method: 'DELETE', url: '/api/recipes/recipe-1', headers: {} }, response())
     expect(mocks.recipes.archive).toHaveBeenCalledWith('recipe-1')
+  })
+
+  it('exposes the authenticated role and routes permanent recipe deletion to the repository', async () => {
+    mocks.auth.mockResolvedValueOnce({ client: {}, user: { id: 'admin-1', email: 'admin@example.com' }, isAdmin: true })
+    const meResponse = response()
+    await me({ method: 'GET', headers: {} }, meResponse)
+    expect(meResponse.payload).toEqual({ data: { id: 'admin-1', email: 'admin@example.com', role: 'admin', isAdmin: true } })
+
+    mocks.auth.mockResolvedValueOnce({ client: {}, user: { id: 'admin-1' }, isAdmin: true })
+    await recipeItem({ method: 'DELETE', url: '/api/recipes/system:1?permanent=true', headers: {} }, response())
+    expect(mocks.recipes.remove).toHaveBeenCalledWith('system:1')
   })
 
   it('handles product collection and meal-plan collection', async () => {

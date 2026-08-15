@@ -19,7 +19,7 @@ export function AppShell() {
           {navigation.map((item) => <NavigationLink key={item.to} {...item} />)}
         </nav>
         <NavLink className="settings-link" to="/settings"><span aria-hidden="true">⚙</span><span>Налаштування</span></NavLink>
-        {auth && <div className="account-note"><span>{auth.session?.user.email}</span><button type="button" className="text-button" onClick={() => void auth.signOut()}>Вийти</button></div>}
+        {auth && <div className="account-note"><span>{auth.session?.user.email}</span>{auth.isAdmin && <span className="badge">Адмін</span>}<button type="button" className="text-button" onClick={() => void auth.signOut()}>Вийти</button></div>}
       </aside>
 
       <main className="main-content" tabIndex={-1}><Outlet /></main>

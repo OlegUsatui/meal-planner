@@ -23,4 +23,6 @@ export class ApiProductRepository implements ProductRepository {
   update(id: ProductId, input: UpdateProductInput): Promise<Product> { return this.client.patch<Product>(`/api/products/${encodeURIComponent(id)}`, input) }
 
   async archive(id: ProductId): Promise<void> { await this.client.delete(`/api/products/${encodeURIComponent(id)}`) }
+
+  async remove(id: ProductId): Promise<void> { await this.client.delete(`/api/products/${encodeURIComponent(id)}?permanent=true`) }
 }

@@ -15,8 +15,13 @@ interface ProductRow { id: string; name: string; base_unit: 'g' | 'ml' | 'pcs'; 
 export class SupabaseRecipeRepository implements RecipeRepository {
   private readonly client: SupabaseClient
   private readonly storage: R2Storage
+  private readonly isAdmin: boolean
 
-  constructor(client: SupabaseClient, storage = new R2Storage()) { this.client = client; this.storage = storage }
+  constructor(client: SupabaseClient, isAdminOrStorage: boolean | R2Storage = false, storage?: R2Storage) {
+    this.client = client
+    this.isAdmin = typeof isAdminOrStorage === 'boolean' ? isAdminOrStorage : false
+    this.storage = typeof isAdminOrStorage === 'boolean' ? (storage ?? new R2Storage()) : isAdminOrStorage
+  }
 
   async list(query = ''): Promise<Recipe[]> {
     const [{ data: recipes, error: recipeError }, { data: ingredients, error: ingredientError }, { data: products, error: productError }] = await Promise.all([
@@ -35,7 +40,8 @@ export class SupabaseRecipeRepository implements RecipeRepository {
   async listPage(query = '', options: RecipeListOptions): Promise<RecipePage> {
     const page = Math.max(1, options.page)
     const pageSize = Math.min(100, Math.max(1, options.pageSize))
-    let recipeQuery = this.client.from('recipes').select('*', { count: 'exact' }).is('archived_at', null).order('name')
+    let recipeQuery = this.client.from('recipes').select('*', { count: 'exact' }).order('name')
+    if (!options.includeArchived) recipeQuery = recipeQuery.is('archived_at', null)
     const normalizedQuery = normalizeRecipeName(query)
     if (normalizedQuery) recipeQuery = recipeQuery.ilike('normalized_name', `%${escapeLikePattern(normalizedQuery)}%`)
     if (options.uncategorized) recipeQuery = recipeQuery.filter('classifications', 'eq', '[]')
@@ -98,14 +104,23 @@ export class SupabaseRecipeRepository implements RecipeRepository {
   }
 
   async update(id: string, input: UpdateRecipeInput): Promise<Recipe> {
-    const ownerId = await currentUserId(this.client); this.assertValid(input)
-    const current = await this.get(id); if (current.isSystem) throw new RecipeRepositoryError('not-found', 'Системний рецепт не можна редагувати')
+    const actorId = await currentUserId(this.client); this.assertValid(input)
+    const current = await this.get(id)
+    if (current.isSystem && !this.isAdmin) throw new RecipeRepositoryError('forbidden', 'Системний рецепт не можна редагувати')
+    if (!this.isAdmin && current.ownerId !== actorId) throw new RecipeRepositoryError('forbidden', 'Рецепт належить іншому користувачу')
+    const ownerId = current.ownerId ?? actorId
     await this.assertUniqueName(normalizeRecipeName(input.name), ownerId, id)
-    const nextPath = input.image ? `${ownerId}/${id}-${Date.now()}.webp` : current.image.path
+    const nextPath = input.image
+      ? current.isSystem && this.isAdmin
+        ? `system/${id}-${Date.now()}.webp`
+        : `${ownerId}/${id}-${Date.now()}.webp`
+      : current.image.path
     if (!nextPath) throw new RecipeRepositoryError('invalid-recipe', 'Не вдалося визначити фото рецепту')
     if (input.image) { assertImage(input.image); await this.uploadImage(nextPath, input.image) }
     const ingredients = await this.prepareIngredients(input)
-    const { error } = await this.client.from('recipes').update(recipeUpdate(ownerId, nextPath, input, current, new Date().toISOString())).eq('id', id).eq('owner_id', ownerId)
+    let query = this.client.from('recipes').update(recipeUpdatePreservingOwner(nextPath, input, current, new Date().toISOString())).eq('id', id)
+    if (!this.isAdmin) query = query.eq('owner_id', actorId)
+    const { error } = await query
     if (error) throw new RecipeRepositoryError('invalid-recipe', error.message)
     const { error: deleteError } = await this.client.from('recipe_ingredients').delete().eq('recipe_id', id)
     if (deleteError) throw new RecipeRepositoryError('invalid-recipe', deleteError.message)
@@ -115,15 +130,19 @@ export class SupabaseRecipeRepository implements RecipeRepository {
   }
 
   async updateUploaded(id: string, input: UpdateRecipeInput): Promise<Recipe> {
-    const ownerId = await currentUserId(this.client)
+    const actorId = await currentUserId(this.client)
     this.assertValid(input)
     const current = await this.get(id)
-    if (current.isSystem) throw new RecipeRepositoryError('not-found', 'Системний рецепт не можна редагувати')
+    if (current.isSystem && !this.isAdmin) throw new RecipeRepositoryError('forbidden', 'Системний рецепт не можна редагувати')
+    if (!this.isAdmin && current.ownerId !== actorId) throw new RecipeRepositoryError('forbidden', 'Рецепт належить іншому користувачу')
     if (!input.image?.path) throw new RecipeRepositoryError('invalid-recipe', 'Не вдалося визначити фото рецепту')
-    assertUploadedImage(input.image, ownerId, id, 'update')
+    assertUploadedImage(input.image, actorId, id, 'update', this.isAdmin)
+    const ownerId = current.ownerId ?? actorId
     await this.assertUniqueName(normalizeRecipeName(input.name), ownerId, id)
     const ingredients = await this.prepareIngredients(input)
-    const { error } = await this.client.from('recipes').update(recipeUpdate(ownerId, input.image.path, input, current, new Date().toISOString())).eq('id', id).eq('owner_id', ownerId)
+    let query = this.client.from('recipes').update(recipeUpdatePreservingOwner(input.image.path, input, current, new Date().toISOString())).eq('id', id)
+    if (!this.isAdmin) query = query.eq('owner_id', actorId)
+    const { error } = await query
     if (error) throw new RecipeRepositoryError('invalid-recipe', error.message)
     const { error: deleteError } = await this.client.from('recipe_ingredients').delete().eq('recipe_id', id)
     if (deleteError) throw new RecipeRepositoryError('invalid-recipe', deleteError.message)
@@ -134,9 +153,25 @@ export class SupabaseRecipeRepository implements RecipeRepository {
 
   async archive(id: string): Promise<void> {
     const ownerId = await currentUserId(this.client); const current = await this.get(id)
-    if (current.isSystem) throw new RecipeRepositoryError('not-found', 'Системний рецепт не можна архівувати')
-    const { error } = await this.client.from('recipes').update({ archived_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', id).eq('owner_id', ownerId)
+    if (current.isSystem && !this.isAdmin) throw new RecipeRepositoryError('forbidden', 'Системний рецепт не можна архівувати')
+    if (!this.isAdmin && current.ownerId !== ownerId) throw new RecipeRepositoryError('forbidden', 'Рецепт належить іншому користувачу')
+    let query = this.client.from('recipes').update({ archived_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', id)
+    if (!this.isAdmin) query = query.eq('owner_id', ownerId)
+    const { error } = await query
     if (error) throw new RecipeRepositoryError('not-found', error.message)
+  }
+
+  async remove(id: string): Promise<void> {
+    if (!this.isAdmin) throw new RecipeRepositoryError('forbidden', 'Безповоротно видаляти рецепти може лише адміністратор')
+    const current = await this.get(id)
+    const { error } = await this.client.from('recipes').delete().eq('id', id)
+    if (error) {
+      if (error.code === '23503') throw new RecipeRepositoryError('in-use', 'Рецепт використовується в плані харчування і не може бути видалений')
+      throw new RecipeRepositoryError('invalid-recipe', error.message)
+    }
+    if (current.image.path) {
+      try { await this.storage.remove(current.image.path) } catch { /* Database deletion already succeeded. */ }
+    }
   }
 
   private async prepareIngredients(input: Omit<CreateRecipeInput, 'image'> | UpdateRecipeInput) {
@@ -185,7 +220,7 @@ export class SupabaseRecipeRepository implements RecipeRepository {
 }
 
 function assertImage(image: RecipeImageInput) { if (!image.blob || !image.mimeType.startsWith('image/') || image.width < 1 || image.height < 1 || image.byteSize < 1 || image.byteSize > 2 * 1024 * 1024) throw new RecipeRepositoryError('invalid-recipe', 'Некоректне фото рецепту') }
-function assertUploadedImage(image: RecipeImageInput, userId: string, recipeId: string, mode: 'create' | 'update') { if (!image.path || !image.mimeType.startsWith('image/') || image.width < 1 || image.height < 1 || image.byteSize < 1 || image.byteSize > 2 * 1024 * 1024) throw new RecipeRepositoryError('invalid-recipe', 'Некоректне фото рецепту'); if (!isOwnedRecipeImagePath(userId, recipeId, image.path, mode)) throw new RecipeRepositoryError('invalid-recipe', 'Некоректний шлях фото рецепту') }
+function assertUploadedImage(image: RecipeImageInput, userId: string, recipeId: string, mode: 'create' | 'update', isAdmin = false) { if (!image.path || !image.mimeType.startsWith('image/') || image.width < 1 || image.height < 1 || image.byteSize < 1 || image.byteSize > 2 * 1024 * 1024) throw new RecipeRepositoryError('invalid-recipe', 'Некоректне фото рецепту'); if (!isOwnedRecipeImagePath(userId, recipeId, image.path, mode) && !(isAdmin && (image.path.startsWith(`system/${recipeId}-`) || image.path.startsWith(`admin/${userId}/${recipeId}-`)))) throw new RecipeRepositoryError('invalid-recipe', 'Некоректний шлях фото рецепту') }
 function escapeLikePattern(value: string): string { return value.replace(/[\\%_]/gu, '\\$&') }
+function recipeUpdatePreservingOwner(path: string, input: UpdateRecipeInput, current: Recipe, now: string) { return { owner_id: current.ownerId ?? null, name: cleanName(input.name), normalized_name: normalizeRecipeName(input.name), image_path: path, image_mime_type: input.image?.mimeType ?? current.image.mimeType, image_width: input.image?.width ?? current.image.width, image_height: input.image?.height ?? current.image.height, image_byte_size: input.image?.byteSize ?? current.image.byteSize, instructions: input.instructions.trim(), calories_per_serving: input.caloriesPerServing, protein_grams_per_serving: input.proteinGramsPerServing, fat_grams_per_serving: input.fatGramsPerServing, carbs_grams_per_serving: input.carbsGramsPerServing, preparation_time_min_minutes: input.preparationTimeMinMinutes, preparation_time_max_minutes: input.preparationTimeMaxMinutes, classifications: uniqueClassifications(input.classifications), updated_at: now } }
 function recipeInsert(id: string, ownerId: string, path: string, input: CreateRecipeInput | UpdateRecipeInput, now: string) { return { id, owner_id: ownerId, name: cleanName(input.name), normalized_name: normalizeRecipeName(input.name), image_path: path, image_mime_type: input.image?.mimeType ?? 'image/webp', image_width: input.image?.width ?? 1, image_height: input.image?.height ?? 1, image_byte_size: input.image?.byteSize ?? 1, instructions: input.instructions.trim(), calories_per_serving: input.caloriesPerServing, protein_grams_per_serving: input.proteinGramsPerServing, fat_grams_per_serving: input.fatGramsPerServing, carbs_grams_per_serving: input.carbsGramsPerServing, preparation_time_min_minutes: input.preparationTimeMinMinutes, preparation_time_max_minutes: input.preparationTimeMaxMinutes, classifications: uniqueClassifications(input.classifications), archived_at: null, created_at: now, updated_at: now } }
-function recipeUpdate(ownerId: string, path: string, input: UpdateRecipeInput, current: Recipe, now: string) { return { owner_id: ownerId, name: cleanName(input.name), normalized_name: normalizeRecipeName(input.name), image_path: path, image_mime_type: input.image?.mimeType ?? current.image.mimeType, image_width: input.image?.width ?? current.image.width, image_height: input.image?.height ?? current.image.height, image_byte_size: input.image?.byteSize ?? current.image.byteSize, instructions: input.instructions.trim(), calories_per_serving: input.caloriesPerServing, protein_grams_per_serving: input.proteinGramsPerServing, fat_grams_per_serving: input.fatGramsPerServing, carbs_grams_per_serving: input.carbsGramsPerServing, preparation_time_min_minutes: input.preparationTimeMinMinutes, preparation_time_max_minutes: input.preparationTimeMaxMinutes, classifications: uniqueClassifications(input.classifications), updated_at: now } }

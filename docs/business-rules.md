@@ -10,3 +10,4 @@
 - Meal plans have four slots, one recipe per date/slot, and 1–99 servings. Past dates cannot be added, replaced, or removed; replacements/removals require confirmation.
 - The shopping list is recalculated on every read from products, recipes, and plan entries. It includes dates from today onward, scales quantities by servings, aggregates by product, and reports source recipes/dates.
 - Archived recipes remain visible through existing plan entries but cannot be selected for new plan entries. Archived products remain readable by recipes.
+- Administrators are identified by `profiles.role = 'admin'`. They may manage all products and recipes, including system records, but cannot access other users' meal plans or shopping projections. New records created by an admin remain personal. Permanent deletion is admin-only and blocked by recipe-ingredient or meal-plan references; archive is the safe fallback.

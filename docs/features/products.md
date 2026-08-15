@@ -11,7 +11,7 @@ The bundled catalogue import keeps only name, category, and unit. System product
 
 Bundled PDF imports map OCR variants and measurement fragments from all three recipe books to a controlled Ukrainian catalogue. Existing products are reused by normalized name and base unit, and only genuinely missing canonical products are created. Recipe imports never clear user-created products. Alternative ingredients after `або`, water, salt, non-quantified seasonings, and source-layout fragments are ignored.
 
-Product CRUD is performed through the authenticated `/api/products` repository client. Product usage counts are calculated server-side in one ingredient query for a list response, and standard API errors are shown in the page error state.
+Product CRUD is performed through the authenticated `/api/products` repository client. Product usage counts are calculated server-side in one ingredient query for a list response, and standard API errors are shown in the page error state. Administrators can edit/archive any product, including system products, and can request permanent deletion; permanent deletion is blocked when ingredients reference the product.
 
 ## Acceptance
 Duplicate active names are rejected, referenced units are locked, archive is non-destructive, and desktop/mobile list and form states expose loading, empty, error, and validation feedback. After the PDF import, OCR fragments, quantity annotations, and alternative ingredients do not appear as catalogue rows.

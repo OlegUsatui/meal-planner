@@ -13,7 +13,7 @@ export class ApiRecipeRepository implements RecipeRepository {
   }
 
   listPage(query: string, options: RecipeListOptions): Promise<RecipePage> {
-    const params = [query ? `query=${encodeURIComponent(query)}` : '', `page=${options.page}`, `pageSize=${options.pageSize}`, options.mealType ? `mealType=${encodeURIComponent(options.mealType)}` : '', options.subcategoryId ? `subcategoryId=${encodeURIComponent(options.subcategoryId)}` : '', options.uncategorized ? 'uncategorized=true' : ''].filter(Boolean).join('&')
+    const params = [query ? `query=${encodeURIComponent(query)}` : '', `page=${options.page}`, `pageSize=${options.pageSize}`, options.mealType ? `mealType=${encodeURIComponent(options.mealType)}` : '', options.subcategoryId ? `subcategoryId=${encodeURIComponent(options.subcategoryId)}` : '', options.uncategorized ? 'uncategorized=true' : '', options.includeArchived ? 'includeArchived=true' : ''].filter(Boolean).join('&')
     return this.client.get<RecipePage>(`/api/recipes?${params}`)
   }
 
@@ -31,6 +31,8 @@ export class ApiRecipeRepository implements RecipeRepository {
   }
 
   async archive(id: RecipeId): Promise<void> { await this.client.delete(`/api/recipes/${encodeURIComponent(id)}`) }
+
+  async remove(id: RecipeId): Promise<void> { await this.client.delete(`/api/recipes/${encodeURIComponent(id)}?permanent=true`) }
 }
 
 function serializeInput(input: CreateRecipeInput | UpdateRecipeInput, path?: string, id?: string): Record<string, unknown> {
