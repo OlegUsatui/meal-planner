@@ -6,7 +6,7 @@ Plan recipes into dated meal slots while preserving the selected week and surrou
 
 ## Routes
 
-- `/plan?date=YYYY-MM-DD` — Monday-first visible week.
+- `/plan?date=YYYY-MM-DD&view=day|week` — Monday-first visible week; day mode is the default and week mode is optional.
 - `/plan/add?date=YYYY-MM-DD&slot=...` — full-page add/replace flow; replacement also carries `entryId`, `recipeId`, and `servings` context.
 - `GET /api/meal-plan?from&to` — inclusive visible-week read.
 
@@ -16,15 +16,15 @@ Select an empty slot → open the full-page picker → search/filter an eligible
 
 ## Desktop UI
 
-Seven-column week calendar. Add/replace navigates to a dedicated selection page and returns to the same week/date after saving. The selection page uses the same recipe-card grid and visual hierarchy as the Recipes catalogue; its fixed bottom action bar keeps the primary action visible without a duplicate selected-recipe summary panel.
+Two-level calendar: a seven-day date strip followed by one spacious selected-day panel in day mode, with an optional seven-column week mode from the view switcher. Day cards are rich and show the recipe title, preparation time, category and available per-serving nutrition; week cards stay compact and expose the recipe title through hover/focus tooltip. Add/replace navigates to a dedicated selection page and returns to the same week/date after saving. The selection page uses the same recipe-card grid and visual hierarchy as the Recipes catalogue; its fixed bottom action bar keeps the primary action visible without a duplicate selected-recipe summary panel.
 
 ## Mobile UI
 
-Date strip plus one selected day, visible “Сьогодні” action, and a dedicated full-height mobile selection page. Category filters are horizontally scrollable chips, the add action stays above the bottom navigation while scrolling, and the calendar is usable at 320 px without horizontal page overflow.
+Day mode is the default on mobile with larger full-width rich meal cards; week mode uses compact cards and keeps the seven columns inside a horizontally scrollable calendar surface without page overflow. Category filters are horizontally scrollable chips, the add action stays above the bottom navigation while scrolling, and the calendar is usable at 320 px.
 
 ## Actions
 
-Change week/day, return to today, add, replace, remove, change servings, open detail, search/filter on the selection page, retry a stale read, and recover a missing recipe.
+Change week/day, switch between day/week views, return to today, add, replace, remove, change servings, open detail, search/filter on the selection page, retry a stale read, and recover a missing recipe.
 
 ## State and storage
 

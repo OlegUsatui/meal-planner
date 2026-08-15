@@ -23,8 +23,17 @@ describe('MealPlannerPage', () => {
     const router = createMemoryRouter([{ path: '/plan', element: <MealPlannerPage /> }, { path: '/plan/add', element: <MealPlanEntryPage /> }, { path: '/recipes/:recipeId', element: <h1>Сторінка рецепту</h1> }], { initialEntries: ['/plan?date=2026-08-14'] })
     const { container } = render(<QueryTestProvider><RecipeRepositoryProvider repository={recipes}><MealPlanRepositoryProvider repository={plan}><RouterProvider router={router} /></MealPlanRepositoryProvider></RecipeRepositoryProvider></QueryTestProvider>)
     expect(await screen.findByRole('heading', { name: 'План харчування' })).toBeInTheDocument()
-    expect(container.querySelectorAll('.week-day')).toHaveLength(7)
+    expect(container.querySelectorAll('.week-day')).toHaveLength(1)
+    expect(container.querySelectorAll('.mobile-day-strip button')).toHaveLength(7)
     expect(plan.list).toHaveBeenCalledWith({ from: '2026-08-10', to: '2026-08-16' }, expect.any(AbortSignal))
+
+    expect(screen.getByRole('button', { name: 'День' })).toHaveAttribute('aria-pressed', 'true')
+    await userEvent.click(screen.getByRole('button', { name: 'Тиждень' }))
+    expect(container.querySelectorAll('.week-grid-day-header')).toHaveLength(7)
+    expect(router.state.location.search).toContain('view=week')
+    await userEvent.click(screen.getByRole('button', { name: 'День' }))
+    expect(container.querySelectorAll('.week-day')).toHaveLength(1)
+    expect(router.state.location.search).toContain('view=day')
 
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Кількість порцій для Рисова миска' }), '3')
     expect(plan.upsert).toHaveBeenCalledWith({ date: '2026-08-14', slot: 'breakfast', recipeId: recipe.id, servings: 3 })
