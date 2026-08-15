@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { Archive, ArrowLeft, Clock3, Minus, Pencil, Plus, Soup, Trash2 } from 'lucide-react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { formatQuantity } from '../../../shared/formatting/format'
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog'
@@ -58,7 +58,7 @@ export function RecipeDetailPage() {
     return () => { if (nextUrl.startsWith('blob:')) URL.revokeObjectURL(nextUrl) }
   }, [planServings, recipe])
 
-  if (recipeQuery.isPending) return <div className="loading-panel">Завантажуємо рецепт…</div>
+  if (recipeQuery.isPending) return <section className="page recipe-detail" aria-busy="true"><div className="recipe-detail-skeleton" role="status"><span className="sr-only">Завантажуємо рецепт…</span><div className="skeleton-block recipe-detail-skeleton-media" /><div className="recipe-detail-skeleton-copy"><div className="skeleton-block skeleton-eyebrow" /><div className="skeleton-block skeleton-title" /><div className="skeleton-block skeleton-line" /><div className="skeleton-block skeleton-line short" /></div></div></section>
   if (recipeQuery.isError || !recipe) return <div className="form-alert" role="alert">Не вдалося завантажити рецепт.<button type="button" className="button button-secondary" onClick={() => void recipeQuery.refetch()}>Повторити</button></div>
 
   const canManage = !recipe.isSystem || isAdmin
@@ -88,39 +88,39 @@ export function RecipeDetailPage() {
     }
   }
 
+  const adjustServings = (delta: number) => setServings((current) => Math.min(99, Math.max(1, current + delta)))
+  const nutrition = [
+    { label: 'Калорії', value: recipe.caloriesPerServing == null ? '—' : `${recipe.caloriesPerServing} ккал` },
+    { label: 'Білки', value: recipe.proteinGramsPerServing == null ? '—' : `${recipe.proteinGramsPerServing} г` },
+    { label: 'Жири', value: recipe.fatGramsPerServing == null ? '—' : `${recipe.fatGramsPerServing} г` },
+    { label: 'Вуглеводи', value: recipe.carbsGramsPerServing == null ? '—' : `${recipe.carbsGramsPerServing} г` },
+  ]
+
   return (
-    <section className="page recipe-detail">
-      <Link className="back-link" to={backHref}><ArrowLeft aria-hidden="true" /> {plannedView ? 'Назад до плану' : 'До рецептів'}</Link>
+    <section className={`page recipe-detail${planContext ? ' has-plan-context' : ''}`}>
+      <div className="recipe-detail-topbar"><Link className="back-link" to={backHref}><ArrowLeft aria-hidden="true" /> {plannedView ? 'Назад до плану' : 'До рецептів'}</Link>{plannedView && <span className="recipe-context-pill">{planContext ? 'Додайте в план' : 'У плані'}</span>}</div>
       {successMessage && <p className="toast-inline" role="status">{successMessage}</p>}
-      <header className="page-header">
-        <div>
-          <p className="eyebrow">{plannedView ? 'Запланована страва' : `${recipe.isSystem ? 'Системний рецепт' : 'Ваш рецепт'} · Харчова цінність на 1 порцію`}</p>
+      {actionError && <div className="form-alert" role="alert">{actionError}</div>}
+      <div className="recipe-detail-hero">
+        <div className="recipe-detail-hero-media">{url && !imageError ? <img className="recipe-hero" src={url} alt={`Фото страви ${recipe.name}`} onError={() => setImageError(true)} /> : <div className="recipe-image-placeholder recipe-hero" role="img" aria-label="Фото недоступне"><Soup aria-hidden="true" /><span>Страва без фото</span></div>}</div>
+        <div className="recipe-detail-hero-copy">
+          <p className="eyebrow">{plannedView ? 'Запланована страва' : recipe.isSystem ? 'Системний рецепт' : 'Ваш рецепт'}</p>
           <h1>{recipe.name}</h1>
           <div className="recipe-category-badges">
             {recipe.classifications.length ? recipe.classifications.map((item) => <span key={`${item.mealType}:${item.subcategoryId}`}>{recipeMealTypes.find((type) => type.value === item.mealType)?.label}: {getRecipeSubcategory(item.subcategoryId)?.label}</span>) : <span>Без категорії</span>}
           </div>
-          <p className="recipe-meta">{formatPreparationTime(recipe.preparationTimeMinMinutes, recipe.preparationTimeMaxMinutes) ? `${formatPreparationTime(recipe.preparationTimeMinMinutes, recipe.preparationTimeMaxMinutes)} приготування` : 'Час приготування не вказано'}</p>
+          <div className="recipe-meta-row"><span><Clock3 aria-hidden="true" /> {formatPreparationTime(recipe.preparationTimeMinMinutes, recipe.preparationTimeMaxMinutes) ?? 'Час не вказано'}</span><span>На 1 порцію</span></div>
+          {canManage && <div className="recipe-detail-manage-actions">
+            <Link className="button button-secondary" to={`/recipes/${recipe.id}/edit?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`}><Pencil aria-hidden="true" /> Редагувати</Link>
+            <details className="recipe-detail-more"><summary className="button button-ghost">Інші дії</summary><div className="recipe-detail-more-menu">{!recipe.archivedAt && <button type="button" onClick={() => setShowArchive(true)}><Archive aria-hidden="true" /> Архівувати</button>}{isAdmin && <button type="button" className="danger" onClick={() => setShowPermanentDelete(true)}><Trash2 aria-hidden="true" /> Видалити назавжди</button>}</div></details>
+          </div>}
+          {planContext && <div className="recipe-detail-plan-action"><button className="button button-primary" disabled={savingToPlan || !Number.isInteger(servings) || servings < 1 || servings > 99} onClick={() => void addToPlan()}>{savingToPlan ? 'Зберігаємо…' : planContext.mode === 'replace' ? 'Замінити в плані' : 'Додати до плану'} <Plus aria-hidden="true" /></button></div>}
         </div>
-        {(canManage || planContext) && <div className="editor-actions">
-          {planContext && <button className="button button-primary" disabled={savingToPlan || !Number.isInteger(servings) || servings < 1 || servings > 99} onClick={() => void addToPlan()}>{savingToPlan ? 'Зберігаємо…' : planContext.mode === 'replace' ? 'Замінити в плані' : 'Додати до плану'}</button>}
-          {canManage && <>
-            <Link className="button button-secondary" to={`/recipes/${recipe.id}/edit?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`}>Редагувати</Link>
-            {!recipe.archivedAt && <button className="button button-danger-ghost" onClick={() => setShowArchive(true)}>Архівувати</button>}
-            {isAdmin && <button className="button button-danger-ghost" onClick={() => setShowPermanentDelete(true)}>Видалити назавжди</button>}
-          </>}
-        </div>}
-      </header>
-      {actionError && <div className="form-alert" role="alert">{actionError}</div>}
-      <div className="recipe-detail-grid">
-        {url && !imageError ? <img className="recipe-hero" src={url} alt={`Фото страви ${recipe.name}`} onError={() => setImageError(true)} /> : <div className="recipe-image-placeholder recipe-hero" role="img" aria-label="Фото недоступне">Страва без фото</div>}
-        <div>
-          <label className="field">Порцій<input inputMode="numeric" min="1" value={servings} onChange={(event) => setServings(Number(event.target.value))} /></label>
-          <p className="nutrition-summary">{recipe.caloriesPerServing ?? '—'} ккал · Б {recipe.proteinGramsPerServing ?? '—'} г · Ж {recipe.fatGramsPerServing ?? '—'} г · В {recipe.carbsGramsPerServing ?? '—'} г</p>
-          <h2>Інгредієнти</h2>
-          <ul className="ingredient-list">{recipe.ingredients.map((item) => <li key={item.id}><span>{item.productName}</span><strong>{formatQuantity(scaleIngredientQuantity(item.quantityBase, servings), item.productBaseUnit)}</strong></li>)}</ul>
-          <h2>Спосіб приготування</h2>
-          <p className="recipe-instructions">{recipe.instructions}</p>
-        </div>
+      </div>
+      <div className="recipe-detail-body">
+        <section className="recipe-detail-panel recipe-nutrition-panel" aria-labelledby="nutrition-title"><div className="section-heading"><div><p className="eyebrow">Харчова цінність</p><h2 id="nutrition-title">На одну порцію</h2></div><span className="recipe-detail-panel-note">Орієнтовно</span></div><div className="nutrition-cards">{nutrition.map((item) => <div className="nutrition-card" key={item.label}><span>{item.label}</span><strong>{item.value}</strong></div>)}</div></section>
+        <section className="recipe-detail-panel recipe-ingredients-panel" aria-labelledby="ingredients-title"><div className="section-heading"><div><p className="eyebrow">Підготовка продуктів</p><h2 id="ingredients-title">Інгредієнти</h2></div><span className="recipe-detail-panel-note">{recipe.ingredients.length} {recipe.ingredients.length === 1 ? 'продукт' : 'продуктів'}</span></div><div className="recipe-servings-control"><span id="servings-label">Кількість порцій</span><div className="servings-stepper" role="group" aria-labelledby="servings-label"><button type="button" aria-label="Зменшити кількість порцій" disabled={servings <= 1} onClick={() => adjustServings(-1)}><Minus aria-hidden="true" /></button><input aria-label="Порцій" inputMode="numeric" min="1" max="99" value={servings} onChange={(event) => setServings(Number(event.target.value))} /><button type="button" aria-label="Збільшити кількість порцій" disabled={servings >= 99} onClick={() => adjustServings(1)}><Plus aria-hidden="true" /></button></div></div><ul className="ingredient-list">{recipe.ingredients.length ? recipe.ingredients.map((item) => <li key={item.id}><span>{item.productName}</span><strong>{formatQuantity(scaleIngredientQuantity(item.quantityBase, servings), item.productBaseUnit)}</strong></li>) : <li className="ingredient-list-empty">Інгредієнти ще не додані.</li>}</ul></section>
+        <section className="recipe-detail-panel recipe-instructions-panel" aria-labelledby="instructions-title"><div className="section-heading"><div><p className="eyebrow">Крок за кроком</p><h2 id="instructions-title">Спосіб приготування</h2></div></div><p className="recipe-instructions">{recipe.instructions}</p></section>
       </div>
       {showArchive && <ConfirmDialog title={`Архівувати «${recipe.name}»?`} description="Рецепт зникне з вибору нових страв, але залишиться читабельним у попередніх планах." confirmLabel="Архівувати рецепт" danger onCancel={() => setShowArchive(false)} onConfirm={() => void archive()} />}
       {showPermanentDelete && <PermanentDeleteDialog name={recipe.name} entityLabel="рецепт" onCancel={() => setShowPermanentDelete(false)} onConfirm={() => void removePermanently()} />}

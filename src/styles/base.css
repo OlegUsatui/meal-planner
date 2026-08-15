@@ -17,13 +17,15 @@ p { color: var(--muted); line-height: 1.6; }
 .button-primary { color: #fff; background: var(--primary); box-shadow: 0 8px 20px rgba(54, 88, 70, .2); }
 .button-primary:hover { background: var(--primary-hover); }
 .button-secondary { color: var(--ink); background: var(--surface); border-color: var(--border); }
+.button-ghost { color: var(--muted); background: transparent; border-color: var(--border); }
 .button-danger { color: #fff; background: var(--danger); }
 .button-danger-ghost { color: var(--danger); background: transparent; border-color: #e4bcbc; }
 .button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
 .form-alert { padding: 14px 16px; margin-bottom: 20px; border: 1px solid #e1aaaa; border-radius: var(--radius-sm); color: #812828; background: #fff0ef; }
 .loading-panel { min-height: 180px; display: grid; place-items: center; color: var(--muted); border: 1px dashed var(--border); border-radius: var(--radius); }
 .badge, .progress-pill { display: inline-flex; align-items: center; width: max-content; min-height: 28px; padding: 4px 10px; border-radius: 999px; color: var(--sage); background: var(--sage-soft); font-size: .78rem; font-weight: 750; }
-.back-link { display: inline-block; margin-bottom: 28px; color: var(--muted); font-weight: 700; text-decoration: none; }
+.back-link { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 28px; color: var(--muted); font-weight: 700; text-decoration: none; }
+.back-link svg { width: 18px; height: 18px; flex: 0 0 auto; }
 .back-link:hover { color: var(--ink); }
 .placeholder-page { display: grid; place-items: center; }
 .placeholder-card { width: min(100%, 680px); padding: clamp(32px, 6vw, 72px); text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); }

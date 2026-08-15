@@ -61,13 +61,13 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 
 - Catalogue header with search and primary “Новий рецепт”. Category filter buttons wrap onto additional rows without horizontal scrolling when the available width is limited.
 - 3–4 column photo card grid; optional archived toggle is secondary.
-- Detail: large 4:3 image/summary column, ingredients and instructions column, actions in header.
+- Detail: editorial hero with large 4:3 image, title, taxonomy, metadata and management actions; nutrition, servings, ingredients and instructions use separate readable panels below.
 - Editor: centered 760 px form; ingredient rows align product, quantity, unit, and remove action.
 
 ## 5. Mobile composition
 
 - Full-width search and one/two-column card grid based on minimum width.
-- Detail stacks image, title, serving selector, ingredients, instructions, then planning action.
+- Detail stacks image, title, metadata, nutrition cards, serving stepper, ingredients and instructions; plan-context actions stay visible in a mobile fixed action bar.
 - Editor is a full page. Each ingredient is a labelled mini-card, not a compressed row.
 - Image picker supports camera/photo library through browser file input without requiring native APIs.
 
@@ -79,7 +79,7 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 | Select image | Validate/decode/compress, show local preview, then upload to the authenticated user's Storage path on save |
 | Add ingredient | Append empty product/quantity/unit group |
 | Select product | Restrict unit options to the product dimension |
-| Change servings on detail | Recalculate display only |
+| Change servings on detail | Recalculate display-only ingredient quantities through the stepper |
 | Save | Commit recipe aggregate and image transactionally |
 | Add to plan | Open date/slot/servings planner flow |
 | Archive | Confirm references, set archive timestamp |
@@ -127,7 +127,7 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 - Recipe card link name is recipe title; decorative thumbnail avoids duplicate announcement.
 - Image input has instructions, accepted formats, preview alt, and error association.
 - Ingredient groups use fieldsets/legends or equivalent semantic grouping; remove names the product/row.
-- Serving selector announces updated quantities in a restrained polite live region.
+- Serving stepper exposes labelled increment/decrement controls and announces the current value through the native input/live interaction.
 
 ## 11. Tricky cases
 

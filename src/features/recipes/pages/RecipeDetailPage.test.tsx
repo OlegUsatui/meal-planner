@@ -17,7 +17,7 @@ describe('RecipeDetailPage', () => {
     const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn(), remove: vi.fn() }
     render(<QueryTestProvider><MemoryRouter initialEntries={['/recipes/recipe-1?created=1']}><RecipeRepositoryProvider repository={repository}><MealPlanRepositoryProvider repository={mealPlan}><Routes><Route path="/recipes/:recipeId" element={<RecipeDetailPage />} /></Routes></MealPlanRepositoryProvider></RecipeRepositoryProvider></MemoryRouter></QueryTestProvider>)
 
-    expect(await screen.findByRole('status')).toHaveTextContent('Рецепт створено')
+    expect(await screen.findByText(/Рецепт створено/)).toBeInTheDocument()
   })
 
   it('shows a retryable error when the recipe cannot be loaded', async () => {
@@ -39,8 +39,14 @@ describe('RecipeDetailPage', () => {
 
     expect(await screen.findByRole('button', { name: 'Додати до плану' })).toBeInTheDocument()
     expect(screen.getByLabelText('Порцій')).toHaveValue('3')
+    expect(screen.getByRole('heading', { name: 'На одну порцію' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Інгредієнти' })).toBeInTheDocument()
+    expect(screen.getByText('400 ккал')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Збільшити кількість порцій' }))
+    expect(screen.getByLabelText('Порцій')).toHaveValue('4')
+    expect(screen.getByText('400 ккал')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Додати до плану' }))
-    expect(mealPlan.upsert).toHaveBeenCalledWith({ date: '2026-08-15', slot: 'dinner', recipeId: 'recipe-1', servings: 3 })
+    expect(mealPlan.upsert).toHaveBeenCalledWith({ date: '2026-08-15', slot: 'dinner', recipeId: 'recipe-1', servings: 4 })
     expect(router.state.location.pathname).toBe('/plan')
     expect(router.state.location.search).toBe('?date=2026-08-15')
   })
