@@ -68,4 +68,36 @@ describe('RecipesPage categories', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('?section=lunch&subcategory=lunch-soups')
     expect(repository.listPage).toHaveBeenLastCalledWith('', { page: 1, pageSize: 24, mealType: 'lunch', subcategoryId: 'lunch-soups' })
   })
+
+  it('keeps all subcategory options available in the filter panel', async () => {
+    const repository: RecipeRepository = {
+      list: vi.fn(), listPage: vi.fn().mockResolvedValue({ items: [], page: 1, pageSize: 24, total: 0, hasNext: false }),
+      get: vi.fn(), create: vi.fn(), update: vi.fn(), archive: vi.fn(),
+    }
+    render(<MemoryRouter initialEntries={['/recipes?section=lunch']}><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider></MemoryRouter>)
+
+    const panel = await screen.findByRole('group', { name: 'Підкатегорії' })
+    expect(panel).toHaveClass('recipe-subcategory-filters')
+    expect(panel.querySelectorAll('button')).toHaveLength(14)
+    expect(screen.getByRole('button', { name: 'Паста й локшина з білком' })).toBeInTheDocument()
+  })
+
+  it('locks plan selection to the requested meal type and excludes uncategorized recipes', async () => {
+    const repository: RecipeRepository = {
+      list: vi.fn(), listPage: vi.fn().mockResolvedValue({ items: [
+        { ...base, id: 'breakfast', name: 'Сніданковий рецепт', normalizedName: 'сніданковий рецепт', classifications: [{ mealType: 'breakfast', subcategoryId: 'breakfast-eggs' }] },
+        { ...base, id: 'lunch', name: 'Обідній рецепт', normalizedName: 'обідній рецепт', classifications: [{ mealType: 'lunch', subcategoryId: 'lunch-soups' }] },
+        { ...base, id: 'legacy', name: 'Старий рецепт', normalizedName: 'старий рецепт', classifications: [] },
+      ], page: 1, pageSize: 24, total: 3, hasNext: false }),
+      get: vi.fn(), create: vi.fn(), update: vi.fn(), archive: vi.fn(),
+    }
+    render(<MemoryRouter initialEntries={['/recipes?planDate=2026-08-15&planSlot=breakfast&planServings=1&planMode=add&section=lunch']}><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider></MemoryRouter>)
+
+    expect(await screen.findByText('Сніданковий рецепт')).toBeInTheDocument()
+    expect(screen.queryByText('Обідній рецепт')).not.toBeInTheDocument()
+    expect(screen.queryByText('Старий рецепт')).not.toBeInTheDocument()
+    expect(screen.queryByRole('tablist', { name: 'Прийом їжі' })).not.toBeInTheDocument()
+    expect(repository.listPage).toHaveBeenCalledWith('', { page: 1, pageSize: 24, mealType: 'breakfast' })
+    expect(screen.getByRole('link', { name: /Сніданковий рецепт/ })).toHaveAttribute('href', expect.stringContaining('section=breakfast'))
+  })
 })

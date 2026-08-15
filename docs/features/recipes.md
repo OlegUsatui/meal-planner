@@ -10,7 +10,7 @@ Maintain reusable dishes that drive meal plans and the derived shopping list. A 
 - Create: `/recipes/new`.
 - Detail: `/recipes/:recipeId`.
 - Edit: `/recipes/:recipeId/edit`.
-- Entry from primary navigation, planner picker, dashboard, and product usage context.
+- Entry from primary navigation, planner selection flow, dashboard, and product usage context.
 
 ### Bundled lunch book import
 
@@ -44,6 +44,8 @@ Generated breakfast and dinner records retain exact previous OCR titles only as 
 4. Change the transient serving selector to view scaled ingredients.
 5. Add to plan or edit.
 
+When opened from the planner with `planDate`, `planSlot`, `planServings`, and `planMode` URL parameters, the catalogue becomes a plan-selection flow. The recipe detail page preserves that context and exposes an add/replace action that returns to the selected plan date after saving.
+
 ### Edit and replace image
 
 1. Open editor with original entered quantities/units.
@@ -57,7 +59,7 @@ Generated breakfast and dinner records retain exact previous OCR titles only as 
 
 ## 4. Desktop composition
 
-- Catalogue header with search and primary “Новий рецепт”.
+- Catalogue header with search and primary “Новий рецепт”. Category filter buttons wrap onto additional rows without horizontal scrolling when the available width is limited.
 - 3–4 column photo card grid; optional archived toggle is secondary.
 - Detail: large 4:3 image/summary column, ingredients and instructions column, actions in header.
 - Editor: centered 760 px form; ingredient rows align product, quantity, unit, and remove action.
@@ -88,7 +90,7 @@ Generated breakfast and dinner records retain exact previous OCR titles only as 
 - Reads active `Product` records for ingredient selection.
 - Reads plan entries when calculating archive impact.
 - Form draft, object URL, and transient serving selection are UI-only.
-- Search query, meal section, subcategory, and current page live in URL parameters `q`, `section`, `subcategory`, and `page` for recoverable navigation and direct links.
+- Search query, meal section, subcategory, current page, and planner selection context live in URL parameters. Planner context uses `planDate`, `planSlot`, `planServings`, and `planMode` for recoverable navigation and direct links.
 
 ## 8. Validation and business rules
 

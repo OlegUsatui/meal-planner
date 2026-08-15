@@ -10,7 +10,7 @@ Desktop shows seven day columns with four meal slots each. Planned meals are pho
 
 ## Flows
 
-Adding or replacing opens a searchable active-recipe picker with servings from 1 to 99 and subcategory filtering. The picker includes recipes classified for that slot plus legacy unclassified recipes; snack uses its own recipe category. Clicking a meal card opens recipe details with categories, photo, preparation time, per-serving and planned-total nutrition, scaled ingredients, and instructions. A separate card menu provides replace and confirmed delete actions. Past dates remain read-only.
+Adding or replacing navigates to the recipe catalogue in plan-selection mode. The catalogue includes recipes for the selected slot; opening a recipe uses the standard recipe detail page, where the user confirms "Додати до плану" or "Замінити в плані" with 1–99 servings. The plan date, slot, servings, and mode travel in URL parameters, and successful selection returns to the same plan date. Clicking a meal card opens the standard recipe detail page instead of a details modal. A separate card menu provides replace and confirmed delete actions. Past dates remain read-only.
 
 ## State and storage
 
@@ -18,7 +18,7 @@ Adding or replacing opens a searchable active-recipe picker with servings from 1
 
 ## Accessibility and states
 
-Dialogs close via their close control, `Escape`, or backdrop, trap keyboard focus, and restore focus to the originating card. The page provides loading/error states, missing-recipe fallback, empty-picker guidance, visible focus, and keyboard-operable controls.
+The page provides loading/error states, missing-recipe fallback, visible focus, keyboard-operable controls, and a recoverable route-based recipe selection flow. Past dates keep add/replace controls unavailable.
 
 ## Acceptance and tests
 
