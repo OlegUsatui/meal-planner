@@ -52,7 +52,7 @@ export class R2Storage {
     } catch { return undefined }
   }
 
-  async upload(path: string, body: Uint8Array | Buffer, contentType: string): Promise<void> {
+  async upload(path: string, body: Uint8Array, contentType: string): Promise<void> {
     const { config, client } = this.requirePrivateStorage()
     await client.send(new PutObjectCommand({ Bucket: config.bucketName, Key: path, Body: body, ContentType: contentType }))
   }
