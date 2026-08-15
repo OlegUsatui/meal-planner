@@ -1,4 +1,4 @@
-import type { ProductRepository } from '../features/products/repositories/product-repository'
+import type { ProductPage, ProductRepository } from '../features/products/repositories/product-repository'
 import type { CreateProductInput, Product, ProductId, ProductListOptions, UpdateProductInput } from '../features/products/types'
 import { ApiClient } from './api-client'
 
@@ -18,6 +18,14 @@ export class ApiProductRepository implements ProductRepository {
     if (options.includeArchived) params.set('includeArchived', 'true')
     const suffix = params.toString() ? `?${params.toString()}` : ''
     return this.client.get<Product[]>(`/api/products${suffix}`)
+  }
+
+  listPage(options: ProductListOptions & { page: number; pageSize: number }): Promise<ProductPage> {
+    const params = new URLSearchParams({ page: String(options.page), pageSize: String(options.pageSize) })
+    if (options.query) params.set('query', options.query)
+    if (options.category) params.set('category', options.category)
+    if (options.includeArchived) params.set('includeArchived', 'true')
+    return this.client.get<ProductPage>(`/api/products?${params.toString()}`)
   }
 
   update(id: ProductId, input: UpdateProductInput): Promise<Product> { return this.client.patch<Product>(`/api/products/${encodeURIComponent(id)}`, input) }

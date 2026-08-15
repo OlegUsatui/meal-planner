@@ -4,11 +4,12 @@ export interface PaginationProps {
   total: number
   hasNext: boolean
   onPageChange: (page: number) => void
+  ariaLabel?: string
 }
 
 type PageItem = number | 'ellipsis-start' | 'ellipsis-end'
 
-export function Pagination({ page, pageSize, total, hasNext, onPageChange }: PaginationProps) {
+export function Pagination({ page, pageSize, total, hasNext, onPageChange, ariaLabel = 'Пагінація' }: PaginationProps) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const currentPage = Math.min(Math.max(1, page), totalPages)
   const firstItem = total === 0 ? 0 : (currentPage - 1) * pageSize + 1
@@ -18,7 +19,7 @@ export function Pagination({ page, pageSize, total, hasNext, onPageChange }: Pag
   if (totalPages <= 1 && total === 0) return null
 
   return (
-    <nav className="pagination" aria-label="Пагінація рецептів">
+    <nav className="pagination" aria-label={ariaLabel}>
       <p className="pagination-summary" aria-live="polite">Показано {firstItem}–{lastItem} із {total}</p>
       <div className="pagination-controls">
         <button

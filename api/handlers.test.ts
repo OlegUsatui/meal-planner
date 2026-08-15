@@ -8,7 +8,7 @@ import me from './me.js'
 const mocks = vi.hoisted(() => ({
   auth: vi.fn().mockResolvedValue({ client: {}, user: { id: 'user-1', email: 'user@example.com' }, isAdmin: false }),
   recipes: { list: vi.fn(), listPage: vi.fn(), get: vi.fn(), createUploaded: vi.fn(), update: vi.fn(), updateUploaded: vi.fn(), archive: vi.fn(), remove: vi.fn() },
-  products: { list: vi.fn(), create: vi.fn(), remove: vi.fn() },
+  products: { list: vi.fn(), listPage: vi.fn(), create: vi.fn(), remove: vi.fn() },
   mealPlan: { list: vi.fn(), upsert: vi.fn() },
 }))
 
@@ -66,6 +66,9 @@ describe('REST handlers', () => {
     mocks.products.create.mockResolvedValue({ id: 'product-1' })
     await productCollection({ method: 'GET', url: '/api/products?query=rice', headers: {} }, response())
     expect(mocks.products.list).toHaveBeenCalledWith({ query: 'rice', category: undefined, includeArchived: false })
+    mocks.products.listPage.mockResolvedValueOnce({ items: [], page: 2, pageSize: 24, total: 50, hasNext: true })
+    await productCollection({ method: 'GET', url: '/api/products?query=rice&page=2&pageSize=24&includeArchived=true', headers: {} }, response())
+    expect(mocks.products.listPage).toHaveBeenCalledWith({ query: 'rice', category: undefined, includeArchived: true, page: 2, pageSize: 24 })
     await productCollection({ method: 'POST', headers: {}, body: { name: 'Rice' } }, response())
     expect(mocks.products.create).toHaveBeenCalledWith({ name: 'Rice' })
 

@@ -6,6 +6,14 @@ import type {
   UpdateProductInput,
 } from '../types.js'
 
+export interface ProductPage {
+  items: Product[]
+  page: number
+  pageSize: number
+  total: number
+  hasNext: boolean
+}
+
 export interface ProductImportItem extends CreateProductInput {
   sourceKey: string
 }
@@ -20,6 +28,7 @@ export interface ProductRepository {
   importCatalog?(items: ProductImportItem[]): Promise<ProductImportResult>
   get(id: ProductId): Promise<Product>
   list(options?: ProductListOptions): Promise<Product[]>
+  listPage?(options: ProductListOptions & { page: number; pageSize: number }): Promise<ProductPage>
   update(id: ProductId, input: UpdateProductInput): Promise<Product>
   archive(id: ProductId): Promise<void>
   remove?(id: ProductId): Promise<void>

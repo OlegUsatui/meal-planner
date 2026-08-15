@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { normalizeProductName, hasValidationErrors, validateProductInput } from '../features/products/domain/product.js'
 import type { CreateProductInput, Product, ProductListOptions, UpdateProductInput } from '../features/products/types.js'
-import { ProductRepositoryError, type ProductRepository } from '../features/products/repositories/product-repository.js'
+import { ProductRepositoryError, type ProductPage, type ProductRepository } from '../features/products/repositories/product-repository.js'
 import { cleanName, currentUserId } from './common.js'
 
 interface ProductRow { id: string; owner_id: string | null; name: string; normalized_name: string; category: string; base_unit: Product['baseUnit']; archived_at: string | null; created_at: string; updated_at: string }
@@ -41,6 +41,27 @@ export class SupabaseProductRepository implements ProductRepository {
     const counts = new Map<string, number>()
     for (const ingredient of ingredients as unknown as IngredientRow[]) counts.set(ingredient.product_id, (counts.get(ingredient.product_id) ?? 0) + 1)
     return rows.map((row) => this.toProduct(row, counts.get(row.id) ?? 0))
+  }
+
+  async listPage(options: ProductListOptions & { page: number; pageSize: number }): Promise<ProductPage> {
+    const page = Math.max(1, options.page)
+    const pageSize = Math.min(100, Math.max(1, options.pageSize))
+    let productQuery = this.client.from('products').select('*', { count: 'exact' }).order('name')
+    if (!options.includeArchived) productQuery = productQuery.is('archived_at', null)
+    const query = options.query ? normalizeProductName(options.query) : ''
+    if (query) productQuery = productQuery.ilike('normalized_name', `%${escapeLikePattern(query)}%`)
+    if (options.category) productQuery = productQuery.eq('category', options.category)
+    const from = (page - 1) * pageSize
+    const { data, error, count } = await productQuery.range(from, from + pageSize - 1)
+    if (error) throw repositoryError(error.message, 'Не вдалося завантажити продукти.')
+    const rows = (data ?? []) as unknown as ProductRow[]
+    if (!rows.length) return { items: [], page, pageSize, total: count ?? 0, hasNext: false }
+    const { data: ingredients, error: ingredientsError } = await this.client.from('recipe_ingredients').select('product_id')
+    if (ingredientsError) throw repositoryError(ingredientsError.message, 'Не вдалося завантажити використання продукту.')
+    const counts = new Map<string, number>()
+    for (const ingredient of ingredients as unknown as IngredientRow[]) counts.set(ingredient.product_id, (counts.get(ingredient.product_id) ?? 0) + 1)
+    const total = count ?? 0
+    return { items: rows.map((row) => this.toProduct(row, counts.get(row.id) ?? 0)), page, pageSize, total, hasNext: from + rows.length < total }
   }
 
   async update(id: string, input: UpdateProductInput): Promise<Product> {
@@ -105,4 +126,8 @@ export class SupabaseProductRepository implements ProductRepository {
 
 function repositoryError(details: string, fallback: string): ProductRepositoryError {
   return new ProductRepositoryError('invalid-product', `${fallback} ${details}`)
+}
+
+function escapeLikePattern(value: string): string {
+  return value.replace(/[\\%_]/g, '\\$&')
 }
