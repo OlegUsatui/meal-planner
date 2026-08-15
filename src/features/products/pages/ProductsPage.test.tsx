@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { ProductRepositoryProvider } from '../repositories/ProductRepositoryContext'
 import type { ProductRepository } from '../repositories/product-repository'
 import { ProductsPage } from './ProductsPage'
+import { QueryTestProvider } from '../../../shared/testing/QueryTestProvider'
 
 function renderPage(repository: ProductRepository) {
   const router = createMemoryRouter(
@@ -12,9 +13,9 @@ function renderPage(repository: ProductRepository) {
     { initialEntries: ['/products'] },
   )
   return render(
-    <ProductRepositoryProvider repository={repository}>
+    <QueryTestProvider><ProductRepositoryProvider repository={repository}>
       <RouterProvider router={router} />
-    </ProductRepositoryProvider>,
+    </ProductRepositoryProvider></QueryTestProvider>,
   )
 }
 
@@ -53,7 +54,7 @@ describe('ProductsPage', () => {
     expect(await screen.findByRole('heading', { name: 'Перший', level: 2 })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Перейти на наступну сторінку' }))
     expect(await screen.findByRole('heading', { name: 'Другий', level: 2 })).toBeInTheDocument()
-    expect(repository.listPage).toHaveBeenNthCalledWith(2, { includeArchived: false, query: '', page: 2, pageSize: 24 })
+    expect(repository.listPage).toHaveBeenNthCalledWith(2, { includeArchived: false, query: '', page: 2, pageSize: 24 }, expect.any(AbortSignal))
   })
 })
 

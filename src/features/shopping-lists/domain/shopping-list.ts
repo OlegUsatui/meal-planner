@@ -25,6 +25,7 @@ export interface ShoppingSource {
   slot: MealSlot
   recipeId: string
   recipeName: string
+  servings: number
   quantityBase: number
 }
 
@@ -63,7 +64,7 @@ export function buildShoppingList(
         sources: [],
       }
       current.quantityBase = Math.round((current.quantityBase + quantityBase) * 1000) / 1000
-      current.sources.push({ date: entry.date, slot: entry.slot, recipeId: recipe.id, recipeName: recipe.name, quantityBase })
+      current.sources.push({ date: entry.date, slot: entry.slot, recipeId: recipe.id, recipeName: recipe.name, servings: entry.servings, quantityBase })
       grouped.set(product.id, current)
     }
   }

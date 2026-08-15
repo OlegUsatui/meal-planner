@@ -99,6 +99,11 @@ export class DexieProductRepository implements ProductRepository {
     if (!changed) throw new ProductRepositoryError('not-found', 'Продукт не знайдено')
   }
 
+  async restore(id: string): Promise<void> {
+    const changed = await this.database.products.update(id, { archivedAt: null, updatedAt: this.runtime.now() })
+    if (!changed) throw new ProductRepositoryError('not-found', 'Продукт не знайдено')
+  }
+
   private assertValid(input: CreateProductInput): void {
     if (hasValidationErrors(validateProductInput(input))) {
       throw new ProductRepositoryError('invalid-product', 'Некоректний продукт')

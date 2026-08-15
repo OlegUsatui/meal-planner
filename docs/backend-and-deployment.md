@@ -26,8 +26,9 @@ Permanent deletion is rejected when a product is referenced by recipe ingredient
 1. Create a Supabase project.
 2. Run `supabase/migrations/20260814000000_initial_schema.sql` in the Supabase SQL editor or through the Supabase CLI.
 3. Run `supabase/migrations/20260815000000_admin_roles.sql`.
-4. Configure email/password sign-up and the site URL in Supabase Auth.
-5. Run the seed command with Supabase and R2 credentials. It uploads the stable system image keys directly to R2:
+4. Run `supabase/migrations/20260815010000_ux_profiles_optional_images.sql`. The `/api/me` endpoint intentionally returns `schema-not-ready` until this migration adds `profiles.onboarding_completed_at`.
+5. Configure email/password sign-up and the site URL in Supabase Auth.
+6. Run the seed command with Supabase and R2 credentials. It uploads the stable system image keys directly to R2:
 
 ```sh
 SUPABASE_URL=https://your-project.supabase.co \
@@ -41,11 +42,11 @@ npm run seed:supabase
 
 The service-role key is only for the one-time seed command. It must never be placed in `VITE_*` variables or committed. To promote the first admin, run `update public.profiles set role = 'admin' where id = 'USER_UUID_HERE';` from a trusted SQL session.
 
-6. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in Vercel Environment Variables.
-7. Set `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` in Vercel Environment Variables for the Functions. Keep `SUPABASE_SERVICE_ROLE_KEY` only in the local seed/migration environment.
-8. Set `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, and `R2_PUBLIC_BASE_URL` in Vercel. Never expose the R2 access key or secret in `VITE_*` variables.
-9. In the R2 bucket settings, configure CORS for the Vercel origin and local development origin with `PUT`, `GET`, and `HEAD` methods and the `Content-Type` request header. Direct browser uploads use the presigned R2 S3 URL and therefore require this CORS rule.
-10. Deploy with build command `npm run build` and output directory `dist`.
+7. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in Vercel Environment Variables.
+8. Set `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` in Vercel Environment Variables for the Functions. Keep `SUPABASE_SERVICE_ROLE_KEY` only in the local seed/migration environment.
+9. Set `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, and `R2_PUBLIC_BASE_URL` in Vercel. Never expose the R2 access key or secret in `VITE_*` variables.
+10. In the R2 bucket settings, configure CORS for the Vercel origin and local development origin with `PUT`, `GET`, and `HEAD` methods and the `Content-Type` request header. Direct browser uploads use the presigned R2 S3 URL and therefore require this CORS rule.
+11. Deploy with build command `npm run build` and output directory `dist`.
 
 The browser does not call Supabase PostgREST or R2 with credentials. For a recipe photo, it requests `/api/recipes/upload-url`, uploads the blob with a direct presigned `PUT`, then sends recipe metadata to `/api/recipes`. Public system recipes use stable R2 CDN URLs; private user recipes receive presigned read URLs.
 

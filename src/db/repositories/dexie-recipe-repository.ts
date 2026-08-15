@@ -2,7 +2,7 @@ import type { MealPlannerDatabase } from '../database'
 import { hasRecipeValidationErrors, normalizeRecipeName, validateRecipeInput } from '../../features/recipes/domain/recipe'
 import { normalizeQuantity } from '../../features/products/domain/product'
 import { RecipeRepositoryError, type RecipeRepository } from '../../features/recipes/repositories/recipe-repository'
-import type { CreateRecipeInput, Recipe, RecipeImageInput, UpdateRecipeInput } from '../../features/recipes/types'
+import type { CreateRecipeInput, Recipe, RecipeImageInput, RecipeSummary, UpdateRecipeInput } from '../../features/recipes/types'
 import { uniqueClassifications } from '../../features/recipes/domain/recipe-taxonomy'
 
 type Runtime = { now: () => string; id: () => string }
@@ -17,12 +17,13 @@ export class DexieRecipeRepository implements RecipeRepository {
     this.runtime = runtime
   }
 
-  async list(query = ''): Promise<Recipe[]> {
+  async list(query = ''): Promise<RecipeSummary[]> {
     const normalizedQuery = normalizeRecipeName(query)
     const records = (await this.database.recipes.toArray())
       .filter((recipe) => !recipe.archivedAt && (!normalizedQuery || recipe.normalizedName.includes(normalizedQuery)))
       .sort((left, right) => left.name.localeCompare(right.name, 'uk-UA', { sensitivity: 'base' }))
-    return Promise.all(records.map((record) => this.toRecipe(record.id)))
+    const recipes = await Promise.all(records.map((record) => this.toRecipe(record.id)))
+    return recipes.map(toSummary)
   }
 
   async get(id: string): Promise<Recipe> { return this.toRecipe(id) }
@@ -30,11 +31,10 @@ export class DexieRecipeRepository implements RecipeRepository {
   async create(input: CreateRecipeInput): Promise<Recipe> {
     const recipeId = this.runtime.id()
     await this.database.transaction('rw', this.database.recipes, this.database.recipeIngredients, this.database.imageAssets, this.database.products, async () => {
-      assertImage(input.image)
       const ingredients = await this.prepareIngredients(input)
       const now = this.runtime.now()
-      const imageAssetId = this.runtime.id()
-      await this.database.imageAssets.add({ id: imageAssetId, ...input.image, createdAt: now })
+      const imageAssetId = input.image ? this.runtime.id() : null
+      if (input.image && imageAssetId) { assertImage(input.image); await this.database.imageAssets.add({ id: imageAssetId, ...input.image, createdAt: now }) }
       await this.database.recipes.add({ id: recipeId, name: cleanName(input.name), normalizedName: normalizeRecipeName(input.name), imageAssetId, instructions: input.instructions.trim(), caloriesPerServing: input.caloriesPerServing, proteinGramsPerServing: input.proteinGramsPerServing, fatGramsPerServing: input.fatGramsPerServing, carbsGramsPerServing: input.carbsGramsPerServing, preparationTimeMinMinutes: input.preparationTimeMinMinutes, preparationTimeMaxMinutes: input.preparationTimeMaxMinutes, classifications: uniqueClassifications(input.classifications), archivedAt: null, createdAt: now, updatedAt: now })
       await this.database.recipeIngredients.bulkAdd(ingredients.map((ingredient) => ({ id: this.runtime.id(), recipeId, ...ingredient })))
     })
@@ -48,7 +48,8 @@ export class DexieRecipeRepository implements RecipeRepository {
       const ingredients = await this.prepareIngredients(input, id)
       const now = this.runtime.now()
       let imageAssetId = current.imageAssetId
-      if (input.image) {
+      if (input.image === null) imageAssetId = null
+      else if (input.image) {
         assertImage(input.image)
         imageAssetId = this.runtime.id()
         await this.database.imageAssets.add({ id: imageAssetId, ...input.image, createdAt: now })
@@ -56,7 +57,7 @@ export class DexieRecipeRepository implements RecipeRepository {
       await this.database.recipes.update(id, { name: cleanName(input.name), normalizedName: normalizeRecipeName(input.name), imageAssetId, instructions: input.instructions.trim(), caloriesPerServing: input.caloriesPerServing, proteinGramsPerServing: input.proteinGramsPerServing, fatGramsPerServing: input.fatGramsPerServing, carbsGramsPerServing: input.carbsGramsPerServing, preparationTimeMinMinutes: input.preparationTimeMinMinutes, preparationTimeMaxMinutes: input.preparationTimeMaxMinutes, classifications: uniqueClassifications(input.classifications), updatedAt: now })
       await this.database.recipeIngredients.where({ recipeId: id }).delete()
       await this.database.recipeIngredients.bulkAdd(ingredients.map((ingredient) => ({ id: this.runtime.id(), recipeId: id, ...ingredient })))
-      if (input.image) await this.database.imageAssets.delete(current.imageAssetId)
+      if (input.image !== undefined && current.imageAssetId) await this.database.imageAssets.delete(current.imageAssetId)
     })
     return this.get(id)
   }
@@ -81,15 +82,19 @@ export class DexieRecipeRepository implements RecipeRepository {
   private async toRecipe(id: string): Promise<Recipe> {
     const record = await this.database.recipes.get(id)
     if (!record) throw new RecipeRepositoryError('not-found', 'Рецепт не знайдено')
-    const [image, ingredientRecords] = await Promise.all([this.database.imageAssets.get(record.imageAssetId), this.database.recipeIngredients.where({ recipeId: id }).toArray()])
-    if (!image) throw new RecipeRepositoryError('not-found', 'Фото рецепту не знайдено')
+    const [image, ingredientRecords] = await Promise.all([record.imageAssetId ? this.database.imageAssets.get(record.imageAssetId) : undefined, this.database.recipeIngredients.where({ recipeId: id }).toArray()])
     const ingredients = await Promise.all(ingredientRecords.map(async (ingredient) => {
       const product = await this.database.products.get(ingredient.productId)
       if (!product) throw new RecipeRepositoryError('invalid-product', 'Продукт рецепту не знайдено')
       return { ...ingredient, productName: product.name, productBaseUnit: product.baseUnit }
     }))
-    return { ...record, classifications: record.classifications ?? [], image: imageToInput(image), ingredients, ownerId: null, isSystem: false }
+    return { ...record, classifications: record.classifications ?? [], image: image ? imageToInput(image) : null, ingredients, ownerId: null, isSystem: false }
   }
+}
+
+function toSummary(recipe: Recipe): RecipeSummary {
+  const { normalizedName: _normalizedName, instructions: _instructions, caloriesPerServing: _calories, proteinGramsPerServing: _protein, fatGramsPerServing: _fat, carbsGramsPerServing: _carbs, createdAt: _createdAt, updatedAt: _updatedAt, ingredients: _ingredients, ...summary } = recipe
+  return summary
 }
 
 function cleanName(name: string) { return name.trim().replace(/\s+/gu, ' ') }

@@ -1,19 +1,58 @@
 # Products
 
 ## Purpose
-Maintain the reusable product catalogue used by recipe ingredients.
 
-## Route and UI
-`/products` lists name, category, unit, recipe usage, and actions. The catalogue is server-paginated at 24 products per page with numbered pagination, previous/next controls, and a visible result range. Search, archive visibility, and the current page are preserved in URL parameters. `/products/new` and `/products/:id` edit name, category, and base unit. Archived products stay visible when requested and remain readable by existing recipes.
+Maintain reusable ingredient names, categories, and base units for recipes and shopping calculations.
 
-## Import and storage
-The bundled catalogue import keeps only name, category, and unit. System product records are stored in Supabase `products` with a null owner; personal products are scoped to the authenticated user. No stock, package, price, purchase, or transaction fields exist.
+## Routes
 
-Bundled PDF imports map OCR variants and measurement fragments from all three recipe books to a controlled Ukrainian catalogue. Existing products are reused by normalized name and base unit, and only genuinely missing canonical products are created. Recipe imports never clear user-created products. Alternative ingredients after `або`, water, salt, non-quantified seasonings, and source-layout fragments are ignored.
+- `/products?q=&category=&archived=true&page=` — server-paginated catalogue with URL-backed state.
+- `/products/new` and `/products/:productId` — create/edit/detail.
 
-Product CRUD is performed through the authenticated `/api/products` repository client. Product usage counts are calculated server-side in one ingredient query for a list response, and standard API errors are shown in the page error state. Administrators can edit/archive any product, including system products, and can request permanent deletion; permanent deletion is blocked when ingredients reference the product.
+## Flows
 
-Catalogue reads may request `page`, `pageSize`, `query`, and `includeArchived` and return `{ items, page, pageSize, total, hasNext }`. A page beyond the available range is normalized by the UI after the response.
+Search with 300 ms debounce, filter by category/archive state, create or edit, archive, and restore. Existing recipe references remain readable.
 
-## Acceptance
-Duplicate active names are rejected, referenced units are locked, archive is non-destructive, and desktop/mobile list and form states expose loading, empty, error, and validation feedback. After the PDF import, OCR fragments, quantity annotations, and alternative ingredients do not appear as catalogue rows.
+## Desktop UI
+
+Catalogue table/list, labelled filters, result range, pagination, and primary create action.
+
+## Mobile UI
+
+Equivalent card presentation with full-width filters and 44 px actions; no horizontal overflow at 320 px.
+
+## Actions
+
+Search, filter, paginate, create, edit, archive, restore, and admin-only permanent delete when unreferenced.
+
+## State and storage
+
+Query/category/archive/page live in the URL. Products are server-backed; archived products remain referenced but are excluded from new ingredient choices. Catalogue/detail reads reuse the five-minute authenticated session cache and cancel superseded searches. Create/update/archive/restore/delete invalidates product catalogues, recipe ingredient pickers, and dashboard data.
+
+## Validation
+
+Names are trimmed and normalized for duplicates. A referenced base unit is locked. New values use the controlled taxonomy: Овочі та зелень; Фрукти; М’ясо та птиця; Риба та морепродукти; Молочні продукти; Яйця; Крупи та макарони; Бобові; Горіхи та насіння; Рослинний білок; Соуси та олії; Спеції та зелень; Інше.
+
+## UI states
+
+Loading, empty catalogue, no filtered results, request error, inline validation, archived badge, deprecated legacy category, and restore error are explicit.
+
+## Accessibility
+
+Search and filters have labels, filter state uses native controls, pagination exposes current/disabled state, and destructive actions use accessible dialogs.
+
+## Tricky cases
+
+Ambiguous legacy categories are never rewritten automatically; edit shows the old value as deprecated until manually replaced. Referenced units cannot change. Archive is non-destructive.
+
+## Acceptance criteria
+
+URL state restores after reload/back; active ingredient pickers exclude archived products; archived records restore; controlled taxonomy applies only to new/manual edits.
+
+## Tests
+
+Domain tests cover normalization/taxonomy. Component tests cover URL filters, validation, archive/restore, locked units, and legacy values. Repository tests cover pagination and reference guards.
+
+## Dependencies
+
+Recipes, shopping aggregation, authenticated API, shared pagination/dialogs, and importer taxonomy.

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -6,6 +6,7 @@ import { RecipeRepositoryProvider } from '../repositories/RecipeRepositoryContex
 import type { RecipeRepository } from '../repositories/recipe-repository'
 import type { Recipe } from '../types'
 import { RecipesPage } from './RecipesPage'
+import { QueryTestProvider } from '../../../shared/testing/QueryTestProvider'
 
 function LocationProbe() {
   return <output data-testid="location">{useLocation().search}</output>
@@ -23,18 +24,18 @@ describe('RecipesPage categories', () => {
       { ...base, id: 'old', name: 'Старий рецепт', normalizedName: 'старий рецепт', classifications: [] },
     ]
     const repository: RecipeRepository = { list: vi.fn().mockResolvedValue(recipes), get: vi.fn(), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
-    render(<MemoryRouter><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider></MemoryRouter>)
+    render(<QueryTestProvider><MemoryRouter><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider></MemoryRouter></QueryTestProvider>)
     expect(await screen.findByText('Омлет')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('tab', { name: 'Обід' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Обід' }))
     expect(screen.getByText('Салат')).toBeInTheDocument()
     expect(screen.queryByText('Омлет')).not.toBeInTheDocument()
-    await userEvent.click(screen.getByRole('tab', { name: 'Без категорії' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Без категорії' }))
     expect(screen.getByText('Старий рецепт')).toBeInTheDocument()
   })
 
   it('shows a retryable error instead of an empty catalogue when loading fails', async () => {
     const repository: RecipeRepository = { list: vi.fn().mockRejectedValue(new Error('network')), get: vi.fn(), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
-    render(<MemoryRouter><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider></MemoryRouter>)
+    render(<QueryTestProvider><MemoryRouter><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider></MemoryRouter></QueryTestProvider>)
     expect(await screen.findByRole('alert')).toHaveTextContent('Не вдалося завантажити рецепти')
     expect(screen.getByRole('button', { name: 'Повторити' })).toBeInTheDocument()
   })
@@ -46,11 +47,11 @@ describe('RecipesPage categories', () => {
         .mockResolvedValueOnce({ items: [{ ...base, id: 'two', name: 'Другий', normalizedName: 'другий', classifications: [] }], page: 2, pageSize: 24, total: 25, hasNext: false }),
       get: vi.fn(), create: vi.fn(), update: vi.fn(), archive: vi.fn(),
     }
-    render(<MemoryRouter><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider></MemoryRouter>)
+    render(<QueryTestProvider><MemoryRouter><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider></MemoryRouter></QueryTestProvider>)
     expect(await screen.findByText('Перший')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Перейти на наступну сторінку' }))
     expect(await screen.findByText('Другий')).toBeInTheDocument()
-    expect(repository.listPage).toHaveBeenNthCalledWith(2, '', { page: 2, pageSize: 24 })
+    expect(repository.listPage).toHaveBeenNthCalledWith(2, '', { page: 2, pageSize: 24 }, expect.any(AbortSignal))
   })
 
   it('restores catalogue filters and page from the URL and resets page when searching', async () => {
@@ -58,15 +59,15 @@ describe('RecipesPage categories', () => {
       list: vi.fn(), listPage: vi.fn().mockResolvedValue({ items: [], page: 2, pageSize: 24, total: 25, hasNext: false }),
       get: vi.fn(), create: vi.fn(), update: vi.fn(), archive: vi.fn(),
     }
-    render(<MemoryRouter initialEntries={['/recipes?q=суп&section=lunch&subcategory=lunch-soups&page=2']}><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider><LocationProbe /></MemoryRouter>)
+    render(<QueryTestProvider><MemoryRouter initialEntries={['/recipes?q=суп&section=lunch&subcategory=lunch-soups&page=2']}><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider><LocationProbe /></MemoryRouter></QueryTestProvider>)
 
     expect(await screen.findByDisplayValue('суп')).toBeInTheDocument()
     expect(screen.getByTestId('location')).toHaveTextContent('?q=суп&section=lunch&subcategory=lunch-soups&page=2')
-    expect(repository.listPage).toHaveBeenCalledWith('суп', { page: 2, pageSize: 24, mealType: 'lunch', subcategoryId: 'lunch-soups' })
+    expect(repository.listPage).toHaveBeenCalledWith('суп', { page: 2, pageSize: 24, mealType: 'lunch', subcategoryId: 'lunch-soups' }, expect.any(AbortSignal))
     await userEvent.clear(screen.getByRole('searchbox', { name: 'Пошук рецептів' }))
     expect(screen.getByRole('searchbox', { name: 'Пошук рецептів' })).toHaveValue('')
     expect(screen.getByTestId('location')).toHaveTextContent('?section=lunch&subcategory=lunch-soups')
-    expect(repository.listPage).toHaveBeenLastCalledWith('', { page: 1, pageSize: 24, mealType: 'lunch', subcategoryId: 'lunch-soups' })
+    await waitFor(() => expect(repository.listPage).toHaveBeenLastCalledWith('', { page: 1, pageSize: 24, mealType: 'lunch', subcategoryId: 'lunch-soups' }, expect.any(AbortSignal)))
   })
 
   it('keeps all subcategory options available in the filter panel', async () => {
@@ -74,7 +75,7 @@ describe('RecipesPage categories', () => {
       list: vi.fn(), listPage: vi.fn().mockResolvedValue({ items: [], page: 1, pageSize: 24, total: 0, hasNext: false }),
       get: vi.fn(), create: vi.fn(), update: vi.fn(), archive: vi.fn(),
     }
-    render(<MemoryRouter initialEntries={['/recipes?section=lunch']}><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider></MemoryRouter>)
+    render(<QueryTestProvider><MemoryRouter initialEntries={['/recipes?section=lunch']}><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider></MemoryRouter></QueryTestProvider>)
 
     const panel = await screen.findByRole('group', { name: 'Підкатегорії' })
     expect(panel).toHaveClass('recipe-subcategory-filters')
@@ -91,13 +92,13 @@ describe('RecipesPage categories', () => {
       ], page: 1, pageSize: 24, total: 3, hasNext: false }),
       get: vi.fn(), create: vi.fn(), update: vi.fn(), archive: vi.fn(),
     }
-    render(<MemoryRouter initialEntries={['/recipes?planDate=2026-08-15&planSlot=breakfast&planServings=1&planMode=add&section=lunch']}><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider></MemoryRouter>)
+    render(<QueryTestProvider><MemoryRouter initialEntries={['/recipes?planDate=2026-08-15&planSlot=breakfast&planServings=1&planMode=add&section=lunch']}><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider></MemoryRouter></QueryTestProvider>)
 
     expect(await screen.findByText('Сніданковий рецепт')).toBeInTheDocument()
     expect(screen.queryByText('Обідній рецепт')).not.toBeInTheDocument()
     expect(screen.queryByText('Старий рецепт')).not.toBeInTheDocument()
-    expect(screen.queryByRole('tablist', { name: 'Прийом їжі' })).not.toBeInTheDocument()
-    expect(repository.listPage).toHaveBeenCalledWith('', { page: 1, pageSize: 24, mealType: 'breakfast' })
+    expect(screen.queryByRole('group', { name: 'Прийом їжі' })).not.toBeInTheDocument()
+    expect(repository.listPage).toHaveBeenCalledWith('', { page: 1, pageSize: 24, mealType: 'breakfast' }, expect.any(AbortSignal))
     expect(screen.getByRole('link', { name: /Сніданковий рецепт/ })).toHaveAttribute('href', expect.stringContaining('section=breakfast'))
   })
 })

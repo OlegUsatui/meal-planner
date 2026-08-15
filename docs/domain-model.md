@@ -1,19 +1,33 @@
 # Domain model
 
-The app is server-backed. Supabase is the source of truth for products, recipes, images, and meal-plan entries; the shopping list is a read-only projection. Every personal record belongs to an authenticated account. System records have no owner and are read-only for ordinary users; admins may manage them while preserving system ownership.
+Supabase is the production source of truth. Personal records belong to one authenticated account; system products/recipes use a null owner and remain read-only to ordinary users.
+
+## Profile
+
+`id`, role, and nullable `onboardingCompletedAt`. Completion is idempotent and exposed by `GET/PATCH /api/me`.
 
 ## Product
 
-`id`, `ownerId` (nullable for system products), `name`, `normalizedName`, `category`, `baseUnit` (`g`, `ml`, `pcs`), archive and timestamps. A product used by a recipe cannot change unit. Archived products remain readable in saved recipes and historical plans, but are unavailable for new recipe ingredients.
+`id`, nullable `ownerId`, normalized name, controlled category, base unit (`g`, `ml`, `pcs`), archive and timestamps. Referenced units are locked. Archived products remain readable but unavailable to new ingredients. Ambiguous legacy categories are retained until manual edit.
 
 ## Recipe
 
-Recipes contain `ownerId` (nullable for system recipes), name, one-serving ingredient quantities, optional nutrition per serving, optional minimum/maximum preparation time in minutes, instructions, a Storage image path, archive/timestamps, ingredients, and multiple classifications. Equal time bounds represent an exact duration; different bounds are displayed as a range such as `20–25 хв`. A classification is a unique pair of meal type (`breakfast`, `lunch`, `dinner`, `snack`) and a fixed subcategory ID. System recipes are read-only; personal recipes are private and editable by their owner.
+`id`, nullable `ownerId`, name, instructions, nullable image metadata, optional nutrition/time, classifications, archive/timestamps, and one-serving ingredients. Personal images may be absent, replaced, or removed. A classification is a unique meal-type/subcategory pair.
+
+`RecipeSummary` is the catalogue/planner projection: ID, name, classifications, preparation-time bounds, archive state, image metadata, owner ID, and system flag. It intentionally contains no instructions, nutrition, ingredients, or timestamps. A full `Recipe` is fetched only for detail, editing, or the selected onboarding shopping preview.
 
 ## MealPlanEntry
 
-`date` (`YYYY-MM-DD`), `slot` (`breakfast`, `lunch`, `dinner`, `snack`), `recipeId`, `servings` (1–99), and timestamps. One entry is allowed per `(date, slot)`. Past dates are read-only. Archived recipe references remain visible in historical entries.
+Local date (`YYYY-MM-DD`), slot, recipe ID, servings 1–99, and timestamps. `(owner,date,slot)` is unique. Past dates are read-only and archived recipe references remain readable.
 
-## Derived shopping item
+## DashboardSummary
 
-For each future plan entry (`date >= today`), ingredient demand is `quantityBase × plannedServings`. Items with the same `productId` are aggregated. Each item exposes product name/category/unit, total base quantity, and source recipe/date/slot rows. No shopping records, checks, prices, package rounding, manual rows, or history are stored.
+Today entries, next entry, seven-day distinct shopping count, personal-content flags, and whether the account has any plan entry.
+
+## Shopping projection
+
+For each entry in inclusive `{from,to?}`, demand equals one-serving ingredient quantity times planned servings. Rows aggregate by product and retain date, slot, recipe, servings, and contribution sources. No shopping state is persisted.
+
+## AccountExportManifestV1
+
+Versioned personal profile/content/plan data, referenced system IDs/names, and short-lived personal-image URLs. System records are not duplicated.

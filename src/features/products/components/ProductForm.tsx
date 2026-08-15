@@ -1,5 +1,5 @@
 import { cloneElement, useState, type FormEvent, type HTMLAttributes, type ReactElement } from 'react'
-import { validateProductInput, type BaseUnit, type ProductValidationErrors } from '../domain/product'
+import { productCategories, validateProductInput, type BaseUnit, type ProductValidationErrors } from '../domain/product'
 import type { CreateProductInput, UpdateProductInput } from '../types'
 
 export interface ProductFormValues {
@@ -16,12 +16,6 @@ type ProductFormProps = {
   | { mode: 'create'; onSubmit: (value: CreateProductInput) => Promise<void> }
   | { mode: 'edit'; onSubmit: (value: UpdateProductInput) => Promise<void> }
 )
-
-const categories = [
-  'Білкові продукти', 'Овочі та фрукти', 'Овочі та зелень', 'Фрукти та ягоди',
-  'Молочні продукти', 'М’ясо та риба', 'Крупи та основи', 'Крупи', 'Бакалія',
-  'Соуси, олії та добавки', 'Напої', 'Заморожені продукти', 'Інше',
-]
 
 const defaults: ProductFormValues = { name: '', category: '', baseUnit: 'g' }
 
@@ -59,7 +53,8 @@ export function ProductForm(props: ProductFormProps) {
       <Field label="Категорія" error={errors.category}>
         <select value={values.category} onChange={(event) => update('category', event.target.value)}>
           <option value="">Оберіть категорію</option>
-          {categories.map((category) => <option key={category}>{category}</option>)}
+          {values.category && !productCategories.includes(values.category as typeof productCategories[number]) && <option value={values.category}>{values.category} (застаріла категорія — оберіть нову)</option>}
+          {productCategories.map((category) => <option key={category}>{category}</option>)}
         </select>
       </Field>
       <Field label="Базова одиниця">

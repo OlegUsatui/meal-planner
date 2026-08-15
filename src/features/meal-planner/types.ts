@@ -8,8 +8,13 @@ export interface MealPlanEntry extends MealPlanInput {
   updatedAt: string
 }
 
+export interface MealPlanRange {
+  from?: string
+  to?: string
+}
+
 export interface MealPlanRepository {
-  list(from?: string): Promise<MealPlanEntry[]>
+  list(range?: MealPlanRange, signal?: AbortSignal): Promise<MealPlanEntry[]>
   getByDateSlot(date: string, slot: MealSlot): Promise<MealPlanEntry | undefined>
   upsert(input: MealPlanInput): Promise<MealPlanEntry>
   remove(id: MealPlanId): Promise<void>

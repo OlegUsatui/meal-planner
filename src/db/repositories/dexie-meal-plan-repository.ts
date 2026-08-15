@@ -1,6 +1,6 @@
 import type { MealPlannerDatabase } from '../database'
 import { isPastMealPlanDate, validateMealPlanInput, type MealPlanInput, type MealSlot } from '../../features/meal-planner/domain/meal-plan'
-import { MealPlanRepositoryError, type MealPlanEntry, type MealPlanRepository } from '../../features/meal-planner/types'
+import { MealPlanRepositoryError, type MealPlanEntry, type MealPlanRange, type MealPlanRepository } from '../../features/meal-planner/types'
 
 interface Runtime {
   now: () => string
@@ -23,10 +23,10 @@ export class DexieMealPlanRepository implements MealPlanRepository {
     this.runtime = runtime
   }
 
-  async list(from = ''): Promise<MealPlanEntry[]> {
+  async list(range: MealPlanRange = {}): Promise<MealPlanEntry[]> {
     const records = await this.database.mealPlanEntries.toArray()
     return records
-      .filter((record) => !from || record.date >= from)
+      .filter((record) => (!range.from || record.date >= range.from) && (!range.to || record.date <= range.to))
       .sort((left, right) => left.date.localeCompare(right.date) || left.dateSlot.localeCompare(right.dateSlot))
       .map(toEntry)
   }

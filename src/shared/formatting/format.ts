@@ -18,6 +18,12 @@ export function formatQuantity(value: number, unit: BaseUnit): string {
   return `${numberFormatter.format(value)} ${unit === 'pcs' ? 'шт' : unit}`
 }
 
+export function formatShoppingQuantity(value: number, unit: BaseUnit): string {
+  if (unit === 'g' && value >= 1000) return `${numberFormatter.format(value / 1000)} кг`
+  if (unit === 'ml' && value >= 1000) return `${numberFormatter.format(value / 1000)} л`
+  return formatQuantity(value, unit)
+}
+
 export function formatNokInput(ore: number): string {
   return (ore / 100).toFixed(2).replace('.', ',')
 }

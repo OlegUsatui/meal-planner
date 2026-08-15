@@ -2,7 +2,7 @@
 
 ## 1. Purpose and user value
 
-Maintain reusable dishes that drive meal plans and the derived shopping list. A recipe contains name, photo, one-serving ingredient quantities, nutrition per serving, preparation time, preparation text, and one or more meal-type/subcategory classifications.
+Maintain reusable dishes that drive meal plans and the derived shopping list. A recipe contains name, optional photo, one-serving ingredient quantities, optional nutrition/time, preparation text, and one or more meal-type/subcategory classifications.
 
 ## 2. Routes and entry points
 
@@ -31,7 +31,7 @@ Generated breakfast and dinner records retain exact previous OCR titles only as 
 ### Create recipe
 
 1. Enter a unique name, choose one or more categories, add optional nutrition per serving, preparation time, and preparation text.
-2. Select an image and review its preview.
+2. Optionally select an image and review, replace, or remove it.
 3. Add one or more active products with positive quantity and compatible unit.
 4. Save the aggregate; image, recipe, and ingredients commit atomically.
 5. Navigate to detail with success feedback.
@@ -95,9 +95,9 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 ## 8. Validation and business rules
 
 - Name: trimmed, 1–160 characters.
-- Photo: required, decodable image MIME type, compressed to a maximum 1600 px long side at 0.82 quality and rejected if its processed WebP exceeds 2 MB.
+- Photo: optional for personal recipes. When supplied it must be decodable, compressed to a maximum 1600 px long side, and no larger than 2 MB. Missing images use the branded placeholder.
 - Nutrition fields are optional non-negative numbers per serving.
-- Preparation time is optional and uses whole-minute `from`/`to` bounds from 0 to 1440. Both bounds are required together; an exact duration repeats the same value.
+- Preparation time is optional. Exact time uses one field; an explicit range switch reveals the second bound. Values are whole minutes from 0 to 1440.
 - New and edited recipes require at least one valid classification. One recipe may belong to several meal types or subcategories; duplicate pairs are rejected.
 - The taxonomy is fixed from the approved breakfast, lunch, and dinner references. `snack` initially contains the single `Перекуси` subcategory. Informational PDF sections are not recipe categories.
 - Legacy recipes migrated with no classifications remain visible under `Без категорії` and in every meal picker until edited.
@@ -141,7 +141,7 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 
 ## 12. Acceptance criteria
 
-- A valid recipe with image and ingredients persists atomically and survives reload offline.
+- A valid personal recipe with ingredients persists atomically with or without a photo; a missing photo renders the branded placeholder.
 - Invalid or incompatible ingredient rows identify the exact field and block save.
 - Serving selector scales all ingredient quantities without editing stored recipe values.
 - Recipe edits affect the live future shopping projection without creating or rewriting snapshots.
@@ -155,7 +155,7 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 - Unit: recipe validation, duplicate products, serving scaling, compatible units.
 - Component: catalogue states, image preview/error, dynamic ingredient groups, detail scaling, archive confirmation.
 - Repository: transactional aggregate save, image replacement cleanup, rollback, affected-date mutation recording.
-- E2E: create a product-backed recipe with a photo, plan it, edit an ingredient, and observe the live shopping-list update.
+- E2E: create a product-backed recipe without a photo, plan it, edit an ingredient, and observe the live shopping-list update.
 - Accessibility: form grouping, image errors, focus after dynamic add/remove.
 
 ## 14. Dependencies
@@ -166,4 +166,4 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 - [Business rules: serving scaling](../business-rules.md#serving-scaling)
 - [Design system: photography](../design-system.md#photography)
 
-Recipe data is loaded through the authenticated `/api/recipes` repository client. Catalogue reads use `page`, `pageSize`, `query`, `mealType`, `subcategoryId`, `uncategorized`, and admin-only `includeArchived` query parameters and return `{ items, page, pageSize, total, hasNext }`. Administrators can edit/archive any recipe, including system recipes, and can request permanent deletion; permanent deletion is blocked when a meal-plan entry references the recipe. System image updates use server-selected `system/...` R2 paths; personal images use private presigned R2 URLs. Creating or editing a photo requests `/api/recipes/upload-url`, uploads directly to R2 with `PUT`, and then saves metadata through the recipe endpoint. The browser Supabase client is not used for recipe data.
+Recipe data is loaded through the authenticated `/api/recipes` repository client. Catalogue reads use `page`, `pageSize`, `query`, `mealType`, `subcategoryId`, `uncategorized`, `systemOnly`, and admin-only `includeArchived` query parameters and return lightweight `RecipeSummary` items in `{ items, page, pageSize, total, hasNext }`. Summary payloads contain no instructions, nutrition, or ingredients. Detail uses `/api/recipes/:id` and returns the complete aggregate. Catalogue/detail reads use the authenticated session memory cache for five minutes, cancel superseded searches, and keep prior content visible if a background refresh fails. Recipe writes invalidate catalogue, matching detail, dashboard, and shopping queries. Administrators can edit/archive any recipe, including system recipes, and can request permanent deletion; permanent deletion is blocked when a meal-plan entry references the recipe. System image updates use server-selected `system/...` R2 paths; personal images use private presigned R2 URLs. Creating or editing a photo requests `/api/recipes/upload-url`, uploads directly to R2 with `PUT`, and then saves metadata through the recipe endpoint. The browser Supabase client is not used for recipe data.

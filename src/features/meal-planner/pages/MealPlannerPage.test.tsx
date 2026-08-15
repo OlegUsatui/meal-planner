@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -8,6 +8,8 @@ import type { Recipe } from '../../recipes/types'
 import { MealPlanRepositoryProvider } from '../repositories/MealPlanRepositoryContext'
 import type { MealPlanRepository } from '../types'
 import { MealPlannerPage } from './MealPlannerPage'
+import { MealPlanEntryPage } from './MealPlanEntryPage'
+import { QueryTestProvider } from '../../../shared/testing/QueryTestProvider'
 
 const recipe: Recipe = { id: 'recipe-1', name: 'Рисова миска', normalizedName: 'рисова миска', instructions: 'Змішати все.', classifications: [{ mealType: 'breakfast', subcategoryId: 'breakfast-eggs' }, { mealType: 'lunch', subcategoryId: 'lunch-salad-bowls' }, { mealType: 'dinner', subcategoryId: 'dinner-complete-plate' }, { mealType: 'snack', subcategoryId: 'snack-general' }], caloriesPerServing: 400, proteinGramsPerServing: 20, fatGramsPerServing: 10, carbsGramsPerServing: 60, preparationTimeMinMinutes: 20, preparationTimeMaxMinutes: 25, archivedAt: null, createdAt: 'now', updatedAt: 'now', image: { blob: new Blob(['image'], { type: 'image/webp' }), mimeType: 'image/webp', width: 200, height: 120, byteSize: 5 }, ingredients: [{ id: 'ingredient-1', productId: 'rice', productName: 'Рис', productBaseUnit: 'g', quantityBase: 100, enteredQuantity: 100, enteredUnit: 'g' }] }
 
@@ -15,29 +17,67 @@ describe('MealPlannerPage', () => {
   beforeEach(() => { vi.useFakeTimers({ shouldAdvanceTime: true }); vi.setSystemTime(new Date('2026-08-14T12:00:00')); vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test'); vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined) })
   afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
 
-  it('renders a week, opens recipe details and exposes add/remove actions', async () => {
+  it('loads only the visible week and adds a recipe without leaving the calendar', async () => {
     const plan: MealPlanRepository = { list: vi.fn().mockResolvedValue([{ id: 'entry-1', date: '2026-08-14', slot: 'breakfast', recipeId: recipe.id, servings: 2, createdAt: 'now', updatedAt: 'now' }]), getByDateSlot: vi.fn(), upsert: vi.fn(), remove: vi.fn().mockResolvedValue(undefined) }
     const recipes: RecipeRepository = { list: vi.fn().mockResolvedValue([recipe]), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
-    const router = createMemoryRouter([{ path: '/plan', element: <MealPlannerPage /> }, { path: '/recipes/:recipeId', element: <h1>Сторінка рецепту</h1> }, { path: '/recipes', element: <h1>Вибір рецепту</h1> }], { initialEntries: ['/plan'] })
-    const { container } = render(<RecipeRepositoryProvider repository={recipes}><MealPlanRepositoryProvider repository={plan}><RouterProvider router={router} /></MealPlanRepositoryProvider></RecipeRepositoryProvider>)
+    const router = createMemoryRouter([{ path: '/plan', element: <MealPlannerPage /> }, { path: '/plan/add', element: <MealPlanEntryPage /> }, { path: '/recipes/:recipeId', element: <h1>Сторінка рецепту</h1> }], { initialEntries: ['/plan?date=2026-08-14'] })
+    const { container } = render(<QueryTestProvider><RecipeRepositoryProvider repository={recipes}><MealPlanRepositoryProvider repository={plan}><RouterProvider router={router} /></MealPlanRepositoryProvider></RecipeRepositoryProvider></QueryTestProvider>)
     expect(await screen.findByRole('heading', { name: 'План харчування' })).toBeInTheDocument()
     expect(container.querySelectorAll('.week-day')).toHaveLength(7)
+    expect(plan.list).toHaveBeenCalledWith({ from: '2026-08-10', to: '2026-08-16' }, expect.any(AbortSignal))
 
     await userEvent.click(screen.getByRole('button', { name: 'Відкрити рецепт Рисова миска' }))
     expect(router.state.location.pathname).toBe('/recipes/recipe-1')
     router.navigate('/plan')
     expect(await screen.findByRole('heading', { name: 'План харчування' })).toBeInTheDocument()
 
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
-    await userEvent.click(screen.getByRole('button', { name: 'Дії для Рисова миска' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Видалити' }))
-    expect(plan.remove).toHaveBeenCalledWith('entry-1')
-
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /Додати страву/ }).length).toBeGreaterThan(0))
     const add = screen.getAllByRole('button', { name: /Додати страву/ }).find((button) => !(button as HTMLButtonElement).disabled)
     expect(add).toBeDefined()
     await userEvent.click(add!)
-    expect(router.state.location.pathname).toBe('/recipes')
-    expect(router.state.location.search).toContain('planDate=2026-08-14')
-    expect(router.state.location.search).toContain('planMode=add')
+    expect(router.state.location.pathname).toBe('/plan/add')
+    expect(await screen.findByRole('heading', { name: 'Додати страву' })).toBeInTheDocument()
+    expect(screen.queryByText('Обрана страва')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Рисова миска/ })).toHaveClass('recipe-card')
+    expect(screen.queryByLabelText('Підкатегорія')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Кількість порцій')).not.toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Підкатегорії' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Додати до плану' })).not.toBeInTheDocument()
+    const recipeCard = screen.getByRole('button', { name: /Рисова миска/ })
+    await userEvent.click(recipeCard)
+    expect(screen.getByRole('button', { name: 'Додати до плану' })).toHaveClass('meal-plan-entry-submit')
+    await userEvent.click(screen.getByRole('button', { name: 'Салати-боули' }))
+    expect(screen.queryByRole('button', { name: 'Додати до плану' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Усі підкатегорії' }))
+    const recipeCardAfterFilter = screen.getByRole('button', { name: /Рисова миска/ })
+    await userEvent.click(recipeCardAfterFilter)
+    expect(screen.getByRole('button', { name: 'Додати до плану' })).toBeInTheDocument()
+    await userEvent.click(recipeCardAfterFilter)
+    expect(screen.queryByRole('button', { name: 'Додати до плану' })).not.toBeInTheDocument()
+    await userEvent.click(recipeCardAfterFilter)
+    await userEvent.click(screen.getByRole('button', { name: 'Додати до плану' }))
+    expect(plan.upsert).toHaveBeenCalledWith(expect.objectContaining({ recipeId: recipe.id, servings: 1 }))
+  })
+
+  it('replaces and removes a planned meal with explicit confirmations', async () => {
+    const plan: MealPlanRepository = { list: vi.fn().mockResolvedValue([{ id: 'entry-1', date: '2026-08-14', slot: 'breakfast', recipeId: recipe.id, servings: 2, createdAt: 'now', updatedAt: 'now' }]), getByDateSlot: vi.fn(), upsert: vi.fn().mockResolvedValue({}), remove: vi.fn().mockResolvedValue(undefined) }
+    const recipes: RecipeRepository = { list: vi.fn().mockResolvedValue([recipe]), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
+    const router = createMemoryRouter([{ path: '/plan', element: <MealPlannerPage /> }, { path: '/plan/add', element: <MealPlanEntryPage /> }], { initialEntries: ['/plan?date=2026-08-14'] })
+    render(<QueryTestProvider><RecipeRepositoryProvider repository={recipes}><MealPlanRepositoryProvider repository={plan}><RouterProvider router={router} /></MealPlanRepositoryProvider></RecipeRepositoryProvider></QueryTestProvider>)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Дії для Рисова миска' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Замінити' }))
+    expect(await screen.findByRole('heading', { name: 'Замінити страву' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Замінити в плані' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Замінити в плані' }))
+    expect(plan.upsert).toHaveBeenCalledWith(expect.objectContaining({ recipeId: recipe.id, servings: 2 }))
+    router.navigate('/plan')
+    await screen.findByRole('heading', { name: 'План харчування' })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Дії для Рисова миска' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Видалити' }))
+    expect(screen.getByRole('dialog', { name: 'Видалити страву з плану?' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Видалити з плану' }))
+    expect(plan.remove).toHaveBeenCalledWith('entry-1')
   })
 })

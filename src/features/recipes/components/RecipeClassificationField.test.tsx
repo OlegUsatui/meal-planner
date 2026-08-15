@@ -10,6 +10,7 @@ describe('RecipeClassificationField', () => {
     await userEvent.click(screen.getByLabelText('Сніданки з яєць'))
     expect(onChange).toHaveBeenLastCalledWith([{ mealType: 'breakfast', subcategoryId: 'breakfast-eggs' }])
     rerender(<RecipeClassificationField value={[{ mealType: 'breakfast', subcategoryId: 'breakfast-eggs' }]} onChange={onChange} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Обід' }))
     await userEvent.click(screen.getByLabelText('Салати-боули'))
     expect(onChange).toHaveBeenLastCalledWith([{ mealType: 'breakfast', subcategoryId: 'breakfast-eggs' }, { mealType: 'lunch', subcategoryId: 'lunch-salad-bowls' }])
   })

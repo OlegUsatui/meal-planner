@@ -29,7 +29,7 @@ export function Pagination({ page, pageSize, total, hasNext, onPageChange, ariaL
           aria-label="Перейти на попередню сторінку"
           onClick={() => onPageChange(currentPage - 1)}
         >
-          <span aria-hidden="true">←</span><span>Попередня</span>
+          <ArrowLeft aria-hidden="true" /><span>Попередня</span>
         </button>
         <div className="pagination-pages" aria-label="Сторінки">
           {items.map((item) => item === 'ellipsis-start' || item === 'ellipsis-end'
@@ -52,7 +52,7 @@ export function Pagination({ page, pageSize, total, hasNext, onPageChange, ariaL
           aria-label="Перейти на наступну сторінку"
           onClick={() => onPageChange(currentPage + 1)}
         >
-          <span>Наступна</span><span aria-hidden="true">→</span>
+          <span>Наступна</span><ArrowRight aria-hidden="true" />
         </button>
       </div>
     </nav>
@@ -65,3 +65,4 @@ function getPageItems(currentPage: number, totalPages: number): PageItem[] {
   if (currentPage >= totalPages - 2) return [1, 'ellipsis-start', totalPages - 3, totalPages - 2, totalPages - 1, totalPages]
   return [1, 'ellipsis-start', currentPage - 1, currentPage, currentPage + 1, 'ellipsis-end', totalPages]
 }
+import { ArrowLeft, ArrowRight } from 'lucide-react'

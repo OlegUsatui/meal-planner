@@ -26,11 +26,12 @@ export interface ProductImportResult {
 export interface ProductRepository {
   create(input: CreateProductInput): Promise<Product>
   importCatalog?(items: ProductImportItem[]): Promise<ProductImportResult>
-  get(id: ProductId): Promise<Product>
-  list(options?: ProductListOptions): Promise<Product[]>
-  listPage?(options: ProductListOptions & { page: number; pageSize: number }): Promise<ProductPage>
+  get(id: ProductId, signal?: AbortSignal): Promise<Product>
+  list(options?: ProductListOptions, signal?: AbortSignal): Promise<Product[]>
+  listPage?(options: ProductListOptions & { page: number; pageSize: number }, signal?: AbortSignal): Promise<ProductPage>
   update(id: ProductId, input: UpdateProductInput): Promise<Product>
   archive(id: ProductId): Promise<void>
+  restore?(id: ProductId): Promise<void>
   remove?(id: ProductId): Promise<void>
 }
 

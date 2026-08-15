@@ -4,6 +4,19 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            { name: 'react-vendor', test: /node_modules\/(react|react-dom|react-router|scheduler)\// },
+            { name: 'supabase-vendor', test: /node_modules\/@supabase\//, maxSize: 250_000 },
+            { name: 'icons', test: /node_modules\/lucide-react\// },
+          ],
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({
@@ -12,12 +25,12 @@ export default defineConfig({
       manifest: {
         name: 'Meal Planner',
         short_name: 'Meal Planner',
-        description: 'Локальне планування харчування, запасів і покупок',
+        description: 'Планування харчування, рецептів і покупок',
         lang: 'uk',
         start_url: '/',
         display: 'standalone',
-        background_color: '#fff9f3',
-        theme_color: '#e86f6f',
+        background_color: '#f6f2ea',
+        theme_color: '#365846',
         icons: [
           {
             src: '/app-icon.svg',

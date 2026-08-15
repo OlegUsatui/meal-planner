@@ -6,7 +6,9 @@ if (existsSync('.env.local')) loadEnvFile('.env.local')
 
 const command = process.platform === 'win32' ? 'vercel.cmd' : 'vercel'
 const port = process.env.MEAL_PLANNER_PORT ?? '3000'
-const child = spawn(command, ['dev', '--listen', port], {
+const args = ['dev', '--listen', port, '--yes']
+if (process.env.VERCEL_TOKEN) args.push('--token', process.env.VERCEL_TOKEN)
+const child = spawn(command, args, {
   env: process.env,
   stdio: 'inherit',
 })

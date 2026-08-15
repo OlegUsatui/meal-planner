@@ -17,13 +17,13 @@ export interface ApiResponse {
   end?: (body?: string) => void
 }
 
-export type ApiErrorCode = 'bad-request' | 'unauthorized' | 'forbidden' | 'not-found' | 'conflict' | 'validation' | 'internal'
+export type ApiErrorCode = 'bad-request' | 'unauthorized' | 'reauthentication-required' | 'forbidden' | 'not-found' | 'conflict' | 'validation' | 'account-delete-partial' | 'schema-not-ready' | 'internal'
 
 export class ApiError extends Error {
-  readonly status: 400 | 401 | 403 | 404 | 409 | 422 | 500
+  readonly status: 400 | 401 | 403 | 404 | 409 | 422 | 500 | 503
   readonly code: ApiErrorCode
 
-  constructor(status: 400 | 401 | 403 | 404 | 409 | 422 | 500, code: ApiErrorCode, message: string) {
+  constructor(status: 400 | 401 | 403 | 404 | 409 | 422 | 500 | 503, code: ApiErrorCode, message: string) {
     super(message)
     this.name = 'ApiError'
     this.status = status

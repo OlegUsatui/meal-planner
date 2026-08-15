@@ -16,7 +16,7 @@ export interface RecipeRecord {
   id: string
   name: string
   normalizedName: string
-  imageAssetId: string
+  imageAssetId: string | null
   instructions: string
   caloriesPerServing: number | null
   proteinGramsPerServing: number | null

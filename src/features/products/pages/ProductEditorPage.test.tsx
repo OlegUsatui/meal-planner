@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { ProductRepositoryProvider } from '../repositories/ProductRepositoryContext'
 import { ProductRepositoryError, type ProductRepository } from '../repositories/product-repository'
 import { ProductEditorPage } from './ProductEditorPage'
+import { QueryTestProvider } from '../../../shared/testing/QueryTestProvider'
 
 function repositoryStub(): ProductRepository {
   return {
@@ -28,13 +29,13 @@ describe('ProductEditorPage', () => {
       { initialEntries: ['/products/new'] },
     )
     render(
-      <ProductRepositoryProvider repository={repository}>
+      <QueryTestProvider><ProductRepositoryProvider repository={repository}>
         <RouterProvider router={router} />
-      </ProductRepositoryProvider>,
+      </ProductRepositoryProvider></QueryTestProvider>,
     )
     const user = userEvent.setup()
     await user.type(screen.getByLabelText('Назва продукту'), 'Гречка')
-    await user.selectOptions(screen.getByLabelText('Категорія'), 'Крупи')
+    await user.selectOptions(screen.getByLabelText('Категорія'), 'Крупи та макарони')
     await user.click(screen.getByRole('button', { name: 'Створити продукт' }))
 
     expect(await screen.findByRole('heading', { name: 'Каталог готовий' })).toBeInTheDocument()
@@ -50,13 +51,13 @@ describe('ProductEditorPage', () => {
       { initialEntries: ['/products/new'] },
     )
     render(
-      <ProductRepositoryProvider repository={repository}>
+      <QueryTestProvider><ProductRepositoryProvider repository={repository}>
         <RouterProvider router={router} />
-      </ProductRepositoryProvider>,
+      </ProductRepositoryProvider></QueryTestProvider>,
     )
     const user = userEvent.setup()
     await user.type(screen.getByLabelText('Назва продукту'), 'Гречка')
-    await user.selectOptions(screen.getByLabelText('Категорія'), 'Крупи')
+    await user.selectOptions(screen.getByLabelText('Категорія'), 'Крупи та макарони')
     await user.click(screen.getByRole('button', { name: 'Створити продукт' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
@@ -84,9 +85,9 @@ describe('ProductEditorPage', () => {
       { initialEntries: ['/products/milk'] },
     )
     render(
-      <ProductRepositoryProvider repository={repository}>
+      <QueryTestProvider><ProductRepositoryProvider repository={repository}>
         <RouterProvider router={router} />
-      </ProductRepositoryProvider>,
+      </ProductRepositoryProvider></QueryTestProvider>,
     )
     const user = userEvent.setup()
     const archiveButton = await screen.findByRole('button', { name: 'Архівувати' })

@@ -80,7 +80,7 @@ export async function importLunchPdfRecipes(
       const timestamp = now()
       const products = await database.products.toArray()
       const productByKey = new Map(products.map((product) => [productKey(product.name, product.baseUnit), product]))
-      const recipeImageIds = (await database.recipes.toArray()).map((recipe) => recipe.imageAssetId)
+      const recipeImageIds = (await database.recipes.toArray()).flatMap((recipe) => recipe.imageAssetId ? [recipe.imageAssetId] : [])
 
       await database.mealPlanEntries.clear()
       await database.recipeIngredients.clear()

@@ -1,6 +1,6 @@
 import type { MealPlannerDatabase } from '../database'
 import { buildShoppingList, type ShoppingListItem } from '../../features/shopping-lists/domain/shopping-list'
-import type { ShoppingListRepository } from '../../features/shopping-lists/types'
+import type { ShoppingListRange, ShoppingListRepository } from '../../features/shopping-lists/types'
 
 export class DexieShoppingListRepository implements ShoppingListRepository {
   private readonly database: MealPlannerDatabase
@@ -9,7 +9,7 @@ export class DexieShoppingListRepository implements ShoppingListRepository {
     this.database = database
   }
 
-  async list(today = new Intl.DateTimeFormat('sv-SE').format(new Date())): Promise<ShoppingListItem[]> {
+  async list(range: ShoppingListRange): Promise<ShoppingListItem[]> {
     const [products, recipes, ingredients, entries] = await Promise.all([
       this.database.products.toArray(),
       this.database.recipes.toArray(),
@@ -25,6 +25,6 @@ export class DexieShoppingListRepository implements ShoppingListRepository {
         return product ? [{ productId: product.id, quantityBase: ingredient.quantityBase }] : []
       }),
     }))
-    return buildShoppingList(entries, recipeViews, products, today)
+    return buildShoppingList(entries.filter((entry) => !range.to || entry.date <= range.to), recipeViews, products, range.from)
   }
 }

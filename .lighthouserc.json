@@ -1,0 +1,30 @@
+{
+  "ci": {
+    "collect": {
+      "staticDistDir": "./dist",
+      "url": ["http://localhost/auth"],
+      "numberOfRuns": 3,
+      "settings": {
+        "preset": "perf",
+        "formFactor": "mobile",
+        "screenEmulation": {
+          "mobile": true,
+          "width": 390,
+          "height": 844,
+          "deviceScaleFactor": 2,
+          "disabled": false
+        }
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:accessibility": ["error", { "minScore": 1 }],
+        "categories:performance": ["error", { "minScore": 0.9 }]
+      }
+    },
+    "upload": {
+      "target": "filesystem",
+      "outputDir": ".lighthouseci"
+    }
+  }
+}

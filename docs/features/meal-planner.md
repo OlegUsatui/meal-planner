@@ -1,27 +1,59 @@
 # Meal planner
 
-## Purpose and route
+## Purpose
 
-`/plan` is a responsive weekly calendar for assigning recipes to breakfast, lunch, dinner, and snack slots.
+Plan recipes into dated meal slots while preserving the selected week and surrounding context.
 
-## Desktop and mobile UI
+## Routes
 
-Desktop shows seven day columns with four meal slots each. Planned meals are photo cards with recipe name and servings; empty slots expose an add action. Mobile shows a horizontal seven-day selector and the four full-width slots of the selected day. Navigation supports previous/next week and returning to today.
+- `/plan?date=YYYY-MM-DD` — Monday-first visible week.
+- `/plan/add?date=YYYY-MM-DD&slot=...` — full-page add/replace flow; replacement also carries `entryId`, `recipeId`, and `servings` context.
+- `GET /api/meal-plan?from&to` — inclusive visible-week read.
 
 ## Flows
 
-Adding or replacing navigates to the recipe catalogue in plan-selection mode. The catalogue includes recipes for the selected slot; opening a recipe uses the standard recipe detail page, where the user confirms "Додати до плану" or "Замінити в плані" with 1–99 servings. The plan date, slot, servings, and mode travel in URL parameters, and successful selection returns to the same plan date. Clicking a meal card opens the standard recipe detail page instead of a details modal. A separate card menu provides replace and confirmed delete actions. Past dates remain read-only.
+Select an empty slot → open the full-page picker → search/filter an eligible recipe with chips → explicitly select a recipe → add from the action bar. New entries use one serving by default; replacements preserve the existing serving count. Existing entries use the same page for explicit replacement and confirmed remove remains in the calendar.
+
+## Desktop UI
+
+Seven-column week calendar. Add/replace navigates to a dedicated selection page and returns to the same week/date after saving. The selection page uses the same recipe-card grid and visual hierarchy as the Recipes catalogue; its fixed bottom action bar keeps the primary action visible without a duplicate selected-recipe summary panel.
+
+## Mobile UI
+
+Date strip plus one selected day, visible “Сьогодні” action, and a dedicated full-height mobile selection page. Category filters are horizontally scrollable chips, the add action stays above the bottom navigation while scrolling, and the calendar is usable at 320 px without horizontal page overflow.
+
+## Actions
+
+Change week/day, return to today, add, replace, remove, open detail, search/filter on the selection page, retry a stale read, and recover a missing recipe.
 
 ## State and storage
 
-`MealPlanRepository` persists date, slot, recipe ID, servings, and timestamps. `(date, slot)` remains unique. Active recipes populate the picker; archived recipes referenced by existing entries are loaded by ID and remain readable.
+Only the visible inclusive week is requested. The selected date lives in the URL. Visible ranges are cached for 30 seconds with stale-while-refresh UI; recipe cards/pickers reuse five-minute summaries. Writes use the meal-plan repository, preserve one entry per date/slot, and invalidate every meal-plan range plus dashboard and shopping projections.
 
-## Accessibility and states
+## Validation
 
-The page provides loading/error states, missing-recipe fallback, visible focus, keyboard-operable controls, and a recoverable route-based recipe selection flow. Past dates keep add/replace controls unavailable.
+Date and slot must be valid; servings are an integer from 1 to 99; archived recipes cannot be newly selected. Past slots are read-only.
 
-## Acceptance and tests
+## UI states
 
-Tests cover Monday-first week boundaries, navigation helpers, seven days/four slots, add/replace/delete, recipe details, nutrition and ingredient scaling, archived references, read-only past dates, and desktop/mobile layout contracts.
+Initial loading, empty week/slot, ready, stale calendar with retry, local action error, offline banner, and missing-recipe state are distinct.
 
-The calendar uses `/api/meal-plan` for entries and `/api/recipes` for selectable recipes. Both calls carry the Supabase access token through the shared API client; loading failures remain visible as a retryable plan error instead of an empty calendar.
+## Accessibility
+
+The selection page has a labelled search, chips with `aria-pressed`, keyboard-safe recipe cards/buttons with selectable and deselectable state, changing subcategory clears the active recipe selection, the action bar is rendered only for an active selection, remove uses shared `ConfirmDialog`, controls have accessible names, and reduced motion is respected.
+
+## Tricky cases
+
+A failed refresh keeps stale calendar data. Replace shows current → new and commits only through “Замінити в плані”. Missing recipe references remain removable and never crash the week.
+
+## Acceptance criteria
+
+The API receives only the visible week; date survives reload/back; add and replace preserve context through `/plan/add` and return to the same date; planned detail scales ingredients/nutrition and returns to the same date.
+
+## Tests
+
+Domain tests cover date ranges and slot rules. Component tests cover responsive add/replace/remove, stale data, local errors, menus, and missing recipes. E2E covers desktop/mobile core planning.
+
+## Dependencies
+
+Recipes, meal-plan API/repositories, shared dialog/confirm primitives, dashboard contextual links, and URL routing.

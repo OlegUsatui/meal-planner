@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Soup } from 'lucide-react'
 
 export function RecipeImage({ blob, url: sourceUrl, alt, className }: { blob?: Blob; url?: string; alt: string; className: string }) {
   const [url, setUrl] = useState('')
@@ -7,5 +8,5 @@ export function RecipeImage({ blob, url: sourceUrl, alt, className }: { blob?: B
     setUrl(next)
     return () => { if (next.startsWith('blob:')) URL.revokeObjectURL(next) }
   }, [blob, sourceUrl])
-  return url ? <img src={url} alt={alt} className={className} /> : <span className={`${className} image-placeholder`} aria-hidden="true">🍲</span>
+  return url ? <img src={url} alt={alt} className={className} /> : <span className={`${className} image-placeholder`} aria-hidden="true"><Soup /></span>
 }

@@ -22,7 +22,9 @@ export interface SignedUpload {
 }
 
 export class ApiClient {
-  async get<T>(path: string): Promise<T> { return this.request<T>(path) }
+  async get<T>(path: string, options?: { signal?: AbortSignal }): Promise<T> {
+    return this.request<T>(path, { signal: options?.signal })
+  }
 
   async post<T>(path: string, body: unknown): Promise<T> { return this.request<T>(path, { method: 'POST', body: JSON.stringify(body) }) }
 
@@ -41,7 +43,9 @@ export class ApiClient {
   }
 
   private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
+    throwIfAborted(init.signal)
     const token = await this.accessToken()
+    throwIfAborted(init.signal)
     if (!token) throw new ApiClientError(401, 'unauthorized', 'Потрібна авторизація')
     const headers = new Headers(init.headers)
     headers.set('Authorization', `Bearer ${token}`)
@@ -50,6 +54,7 @@ export class ApiClient {
     const payload = await parsePayload(response)
     if (!response.ok) {
       const error = payload as ApiErrorEnvelope
+      if (response.status === 401) window.dispatchEvent(new Event('meal-planner:session-expired'))
       throw new ApiClientError(response.status, error.error?.code ?? 'internal', error.error?.message ?? 'Не вдалося виконати запит')
     }
     return (payload as ApiEnvelope<T>).data
@@ -60,6 +65,10 @@ export class ApiClient {
     const { data } = await supabase.auth.getSession()
     return data.session?.access_token ?? null
   }
+}
+
+function throwIfAborted(signal: AbortSignal | null | undefined): void {
+  if (signal?.aborted) throw signal.reason ?? new DOMException('The operation was aborted.', 'AbortError')
 }
 
 async function parsePayload(response: Response): Promise<unknown> {

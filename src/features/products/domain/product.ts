@@ -1,6 +1,12 @@
 export type BaseUnit = 'g' | 'ml' | 'pcs'
 export type DisplayUnit = 'g' | 'kg' | 'ml' | 'l' | 'pcs'
 
+export const productCategories = [
+  'Овочі та зелень', 'Фрукти', 'М’ясо та птиця', 'Риба та морепродукти',
+  'Молочні продукти', 'Яйця', 'Крупи та макарони', 'Бобові', 'Горіхи та насіння',
+  'Рослинний білок', 'Соуси та олії', 'Спеції та зелень', 'Інше',
+] as const
+
 export interface ProductInput {
   name: string
   category: string

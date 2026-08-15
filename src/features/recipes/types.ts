@@ -21,31 +21,34 @@ export interface RecipeIngredient extends RecipeIngredientInput {
   productBaseUnit: BaseUnit
 }
 
-export interface Recipe {
+export interface RecipeSummary {
   id: RecipeId
   name: string
+  preparationTimeMinMinutes: number | null
+  preparationTimeMaxMinutes: number | null
+  classifications: RecipeClassification[]
+  archivedAt: string | null
+  image: RecipeImageInput | null
+  ownerId?: string | null
+  isSystem?: boolean
+}
+
+export interface Recipe extends RecipeSummary {
   normalizedName: string
   instructions: string
   caloriesPerServing: number | null
   proteinGramsPerServing: number | null
   fatGramsPerServing: number | null
   carbsGramsPerServing: number | null
-  preparationTimeMinMinutes: number | null
-  preparationTimeMaxMinutes: number | null
-  classifications: RecipeClassification[]
-  archivedAt: string | null
   createdAt: string
   updatedAt: string
-  image: RecipeImageInput
   ingredients: RecipeIngredient[]
-  ownerId?: string | null
-  isSystem?: boolean
 }
 
 export interface CreateRecipeInput extends RecipeInput {
-  image: RecipeImageInput
+  image: RecipeImageInput | null
 }
 
 export interface UpdateRecipeInput extends RecipeInput {
-  image?: RecipeImageInput
+  image?: RecipeImageInput | null
 }

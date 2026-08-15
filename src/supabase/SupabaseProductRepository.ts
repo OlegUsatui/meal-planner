@@ -91,6 +91,16 @@ export class SupabaseProductRepository implements ProductRepository {
     if (error) throw repositoryError(error.message, 'Не вдалося архівувати продукт.')
   }
 
+  async restore(id: string): Promise<void> {
+    const ownerId = await currentUserId(this.client); const current = await this.get(id)
+    if (current.isSystem && !this.isAdmin) throw new ProductRepositoryError('forbidden', 'Системний продукт не можна відновлювати')
+    if (!this.isAdmin && current.ownerId !== ownerId) throw new ProductRepositoryError('forbidden', 'Продукт належить іншому користувачу')
+    let query = this.client.from('products').update({ archived_at: null, updated_at: new Date().toISOString() }).eq('id', id)
+    if (!this.isAdmin) query = query.eq('owner_id', ownerId)
+    const { error } = await query
+    if (error) throw repositoryError(error.message, 'Не вдалося відновити продукт.')
+  }
+
   async remove(id: string): Promise<void> {
     if (!this.isAdmin) throw new ProductRepositoryError('forbidden', 'Безповоротно видаляти продукти може лише адміністратор')
     await this.get(id)

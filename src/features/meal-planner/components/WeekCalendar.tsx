@@ -1,4 +1,4 @@
-import type { Recipe } from '../../recipes/types'
+import type { RecipeSummary } from '../../recipes/types'
 import { mealSlots, parseLocalDate, type MealSlot } from '../domain/meal-plan'
 import type { MealPlanEntry } from '../types'
 import { MealCard } from './MealCard'
@@ -8,12 +8,12 @@ interface Props {
   today: string
   selectedDate: string
   entries: MealPlanEntry[]
-  recipes: Map<string, Recipe>
+  recipes: Map<string, RecipeSummary>
   onSelectDate: (date: string) => void
   onAdd: (date: string, slot: MealSlot) => void
   onReplace: (entry: MealPlanEntry) => void
   onRemove: (entry: MealPlanEntry) => void
-  onOpen: (entry: MealPlanEntry, recipe: Recipe, trigger: HTMLElement) => void
+  onOpen: (entry: MealPlanEntry, recipe: RecipeSummary, trigger: HTMLElement) => void
 }
 
 export function WeekCalendar(props: Props) {

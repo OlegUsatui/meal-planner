@@ -27,4 +27,11 @@ describe('DexieRecipeRepository', () => {
     expect(await database.imageAssets.count()).toBe(1)
     expect(await database.recipeIngredients.count()).toBe(1)
   })
+
+  it('creates a valid personal recipe without an image asset', async () => {
+    const recipe = await repository.create({ name: 'Рис без фото', instructions: 'Зварити.', caloriesPerServing: null, proteinGramsPerServing: null, fatGramsPerServing: null, carbsGramsPerServing: null, preparationTimeMinMinutes: null, preparationTimeMaxMinutes: null, classifications: [{ mealType: 'lunch', subcategoryId: 'lunch-salad-bowls' }], image: null, ingredients: [{ productId: 'rice', enteredQuantity: 100, enteredUnit: 'g' }] })
+    expect(recipe.image).toBeNull()
+    expect(await database.imageAssets.count()).toBe(0)
+    expect((await database.recipes.get(recipe.id))?.imageAssetId).toBeNull()
+  })
 })

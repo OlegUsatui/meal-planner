@@ -25,8 +25,8 @@ describe('derived shopping list', () => {
         baseUnit: 'g',
         quantityBase: 700,
         sources: [
-          { date: '2026-08-14', slot: 'dinner', recipeId: 'recipe-a', recipeName: 'Суп', quantityBase: 400 },
-          { date: '2026-08-15', slot: 'lunch', recipeId: 'recipe-b', recipeName: 'Паста', quantityBase: 300 },
+          { date: '2026-08-14', slot: 'dinner', recipeId: 'recipe-a', recipeName: 'Суп', servings: 4, quantityBase: 400 },
+          { date: '2026-08-15', slot: 'lunch', recipeId: 'recipe-b', recipeName: 'Паста', servings: 2, quantityBase: 300 },
         ],
       },
     ])

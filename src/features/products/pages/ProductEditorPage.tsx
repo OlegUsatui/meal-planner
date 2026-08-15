@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useRef, useState } from 'react'
+import { ArrowLeft } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ProductForm, type ProductFormValues } from '../components/ProductForm'
 import { ArchiveProductDialog } from '../components/ArchiveProductDialog'
@@ -7,39 +9,36 @@ import { useProductRepository } from '../repositories/useProductRepository'
 import type { CreateProductInput, Product, UpdateProductInput } from '../types'
 import { useOptionalAuth } from '../../auth/useAuth'
 import { PermanentDeleteDialog } from '../../../shared/ui/PermanentDeleteDialog'
-
-type LoadState =
-  | { status: 'loading' }
-  | { status: 'error'; message: string }
-  | { status: 'ready'; product: Product }
+import { cacheTimes, queryKeys } from '../../../app/query/query-client'
+import { invalidateProductData } from '../../../app/query/invalidation'
 
 export function ProductEditorPage() {
   const { productId } = useParams()
   const repository = useProductRepository()
+  const queryClient = useQueryClient()
   const navigate = useNavigate()
-  const [loadState, setLoadState] = useState<LoadState>({ status: 'loading' })
   const [submitError, setSubmitError] = useState<string>()
   const [showArchive, setShowArchive] = useState(false)
   const archiveButtonRef = useRef<HTMLButtonElement>(null)
   const [showPermanentDelete, setShowPermanentDelete] = useState(false)
   const auth = useOptionalAuth()
+  const userId = auth?.session?.user.id ?? 'test-session'
   const isAdmin = auth?.isAdmin ?? false
   const isCreate = !productId
 
-  useEffect(() => {
-    if (!productId) return
-    let active = true
-    repository
-      .get(productId)
-      .then((product) => active && setLoadState({ status: 'ready', product }))
-      .catch(() => active && setLoadState({ status: 'error', message: 'Не вдалося завантажити продукт' }))
-    return () => { active = false }
-  }, [productId, repository])
+  const productQuery = useQuery<Product>({
+    queryKey: queryKeys.products(userId, { id: productId }),
+    queryFn: ({ signal }) => repository.get(productId!, signal),
+    staleTime: cacheTimes.catalogueStale,
+    refetchOnWindowFocus: false,
+    enabled: Boolean(productId),
+  })
 
   const saveCreate = async (input: CreateProductInput) => {
     setSubmitError(undefined)
     try {
       await repository.create(input)
+      await invalidateProductData(queryClient, userId)
       navigate('/products', { replace: true })
     } catch (error: unknown) {
       setSubmitError(errorMessage(error))
@@ -51,6 +50,7 @@ export function ProductEditorPage() {
     setSubmitError(undefined)
     try {
       await repository.update(productId, input)
+      await invalidateProductData(queryClient, userId)
       navigate('/products', { replace: true })
     } catch (error: unknown) {
       setSubmitError(errorMessage(error))
@@ -61,11 +61,18 @@ export function ProductEditorPage() {
     if (!productId) return
     try {
       await repository.archive(productId)
+      await invalidateProductData(queryClient, userId)
       navigate('/products', { replace: true })
     } catch {
       setShowArchive(false)
       setSubmitError('Не вдалося архівувати продукт. Спробуйте ще раз.')
     }
+  }
+
+  const restore = async () => {
+    if (!productId || !repository.restore) return
+    try { await repository.restore(productId); await invalidateProductData(queryClient, userId); navigate('/products?archived=true', { replace: true }) }
+    catch { setSubmitError('Не вдалося відновити продукт. Спробуйте ще раз.') }
   }
 
   const closeArchive = () => {
@@ -77,6 +84,7 @@ export function ProductEditorPage() {
     if (!productId || !repository.remove) return
     try {
       await repository.remove(productId)
+      await invalidateProductData(queryClient, userId)
       navigate('/products', { replace: true })
     } catch (error: unknown) {
       setShowPermanentDelete(false)
@@ -84,25 +92,25 @@ export function ProductEditorPage() {
     }
   }
 
-  if (!isCreate && loadState.status === 'loading') {
+  if (!isCreate && productQuery.isPending) {
     return <div className="loading-panel" aria-live="polite">Завантажуємо продукт…</div>
   }
-  if (!isCreate && loadState.status === 'error') {
-    return <div className="form-alert" role="alert">{loadState.message}</div>
+  if (!isCreate && productQuery.isError) {
+    return <div className="form-alert" role="alert">Не вдалося завантажити продукт.<button type="button" className="button button-secondary" onClick={() => void productQuery.refetch()}>Повторити</button></div>
   }
 
-  const product = !isCreate && loadState.status === 'ready' ? loadState.product : undefined
-  if (product?.isSystem && !isAdmin) return <section className="page editor-page"><Link className="back-link" to="/products">← До продуктів</Link><header className="editor-header"><div><p className="eyebrow">Системний каталог</p><h1>{product.name}</h1><p className="page-intro">Цей продукт входить до вбудованого каталогу й доступний усім користувачам. Його може змінювати лише адміністратор.</p></div></header></section>
+  const product = !isCreate ? productQuery.data : undefined
+  if (product?.isSystem && !isAdmin) return <section className="page editor-page"><Link className="back-link" to="/products"><ArrowLeft aria-hidden="true" /> До продуктів</Link><header className="editor-header"><div><p className="eyebrow">Системний каталог</p><h1>{product.name}</h1><p className="page-intro">Цей продукт входить до вбудованого каталогу й доступний усім користувачам. Його може змінювати лише адміністратор.</p></div></header></section>
   return (
     <section className="page editor-page">
-      <Link className="back-link" to="/products">← До продуктів</Link>
+      <Link className="back-link" to="/products"><ArrowLeft aria-hidden="true" /> До продуктів</Link>
       <header className="editor-header">
         <div>
           <p className="eyebrow">{isCreate ? 'Новий інгредієнт' : product?.category}</p>
           <h1>{isCreate ? 'Створити продукт' : product?.name}</h1>
           <p className="page-intro">Вкажіть назву, категорію та одиницю, щоб використовувати продукт у рецептах.</p>
         </div>
-        {product && <div className="editor-actions">{!product.archivedAt && <button ref={archiveButtonRef} className="button button-danger-ghost" onClick={() => setShowArchive(true)}>Архівувати</button>}{isAdmin && <button className="button button-danger-ghost" onClick={() => setShowPermanentDelete(true)}>Видалити назавжди</button>}</div>}
+        {product && <div className="editor-actions">{product.archivedAt && repository.restore && <button className="button button-secondary" onClick={() => void restore()}>Відновити з архіву</button>}{!product.archivedAt && <button ref={archiveButtonRef} className="button button-danger-ghost" onClick={() => setShowArchive(true)}>Архівувати</button>}{isAdmin && <button className="button button-danger-ghost" onClick={() => setShowPermanentDelete(true)}>Видалити назавжди</button>}</div>}
       </header>
 
       <div className="form-card">

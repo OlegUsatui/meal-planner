@@ -1,104 +1,59 @@
 # Onboarding
 
-## 1. Purpose and user value
+## Purpose
 
-Introduce the server-backed product model, explain account persistence, and route the user toward the minimum usable setup: a product, a recipe, then a planned meal. Account creation happens before the application shell.
+Help a new user plan one useful system recipe before teaching optional catalogue management.
 
-## 2. Routes and entry points
+## Routes
 
-- Route: `/welcome`.
-- First application start redirects here while `AppSettings.onboardingCompleted` is false.
-- Settings may reopen the informational screens without resetting completion.
+- `/welcome?returnTo=...` — required first-run flow.
+- `/welcome?info=1` — informational Settings entry that never changes completion.
+- `GET/PATCH /api/me` — reads and idempotently writes onboarding completion.
 
-## 3. User flows
+## Flows
 
-### First run
+Value introduction → date and meal slot → eligible system-recipe picker → servings → first plan entry → scaled shopping preview. Skip completes onboarding without creating content and returns to the requested safe route.
 
-1. User sees the value proposition and three-step setup summary.
-2. The auth page explains that data and photos are stored in the user's server account and are available across devices.
-3. User selects “Почати”.
-4. Completion is persisted and the user moves to `/products/new`.
+## Desktop UI
 
-### Skip setup guidance
+Centered editorial card with a dialog recipe picker and a persistent sense of progress.
 
-1. User chooses “Перейти до застосунку”.
-2. Confirmation copy states that setup can be started from empty states.
-3. Completion is persisted and the user moves to the dashboard.
+## Mobile UI
 
-## 4. Desktop composition
+Single-column layout at 320 px; the recipe picker becomes a full-height drawer and primary action remains reachable without horizontal scrolling.
 
-- Centered two-column hero: food image/motif on the left, title and benefits on the right.
-- “Як почати” section with numbered Product → Recipe → Plan cards.
-- Persistent account-storage notice with an information icon.
-- Primary “Почати” and tertiary “Перейти до застосунку” actions.
+## Actions
 
-## 5. Mobile composition
+Start, select date/slot/recipe/servings, retry a failed read/write, finish, or skip. Personal product and recipe creation are not prerequisites.
 
-- Single-column layout with compact 4:3 hero image.
-- Benefits and setup steps stack vertically.
-- Primary action spans the content width; skip remains a text action.
-- Content scrolls normally and respects safe-area insets.
+## State and storage
 
-## 6. Actions and responses
+`profiles.onboarding_completed_at` is the server authority. Draft selections are transient. Completion is written only after the plan entry saves or after explicit Skip. The picker requests `systemOnly=true` summaries once per session; the selected full recipe is fetched only before rendering the shopping preview.
 
-| Action | Response |
-| --- | --- |
-| Start | Persist completion, navigate to product creation |
-| Skip | Persist completion, navigate to dashboard |
-| Open data explanation | Explain account storage and cross-device access |
-| Reopen from Settings | Display content without changing existing data |
+## Validation
 
-## 7. State, models, and storage
+Date uses `YYYY-MM-DD`; slot is a supported meal slot; recipe must be eligible and system-backed; servings are a whole number from 1 to 99.
 
-- Supabase Auth creates the account and `profiles` row.
-- Personal records are authorized by the authenticated user's ID; system recipes are read-only.
-- Completion write occurs before navigation; on failure the user remains on the page with retry.
+## UI states
 
-## 8. Validation and business rules
+Profile loading, picker loading, empty system catalogue, recoverable error, saving, and success preview are explicit. Failed writes retain the user’s selections.
 
-- No form validation is required.
-- The app must not claim offline writes or full offline synchronization in this version.
-- Dismissing onboarding does not create sample data.
+## Accessibility
 
-## 9. UI states
+One page heading, explicit labels, 44 px targets, focus trap/restore in the picker, Escape handling, visible focus, and polite status updates.
 
-- **Loading:** branded skeleton while settings/database opens.
-- **Error:** database startup failure uses the application recovery boundary, not a fake onboarding state.
-- **Offline:** the shell may be installed, but sign-in and data changes require a connection.
-- **Confirmation:** skip does not need a modal; its consequence is non-destructive.
-- **Returning view:** when opened from Settings, back returns to Settings and setup actions remain available.
+## Tricky cases
 
-## 10. Accessibility and keyboard
+Repeated PATCH calls are idempotent. Info mode cannot mark a profile complete. Unsafe `returnTo` values are ignored. A plan-write error cannot complete onboarding.
 
-- One page-level heading and ordered list for setup steps.
-- Illustration is decorative unless it conveys unique information.
-- Focus moves to the heading after route navigation.
-- Buttons have explicit text and predictable order.
+## Acceptance criteria
 
-## 11. Tricky cases
+A new account can plan its first meal without creating a product or recipe; skip reaches the dashboard; the requested route is restored after completion; shopping preview uses selected servings.
 
-- If settings exist but completion is missing after migration, default to false without resetting other data.
-- A failed completion write must not navigate and cause onboarding to reappear unexpectedly.
-- Private/incognito limitations may be explained but must not be detected through invasive heuristics.
+## Tests
 
-## 12. Acceptance criteria
+Component tests cover start, skip, retry, picker, servings, success, and info mode. API/repository tests cover default incomplete and idempotent transition.
 
-- A new database opens onboarding exactly once until the user completes or skips it.
-- “Почати” navigates to product creation only after completion is saved.
-- Reload after completion opens the dashboard.
-- Copy explicitly says data is stored in the account and available across devices.
-- Layout is usable at 320 px and keyboard accessible.
+## Dependencies
 
-## 13. Tests
-
-- Unit: settings default and completion transition.
-- Component: start/skip navigation, failed write, expanded explanation, returning mode.
-- E2E: fresh database → onboarding → product creation; reload skips onboarding.
-- Accessibility: heading structure, button names, focus on route entry.
-
-## 14. Dependencies
-
-- [Product overview](../product-overview.md)
-- [Architecture: offline behavior](../architecture.md#offline-and-pwa-behavior)
-- [Settings](settings.md)
-- [Products](products.md)
+Authenticated profile, system recipes, meal-plan repository, shopping calculation, responsive dialog/drawer, and route guard.

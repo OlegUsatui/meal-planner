@@ -8,12 +8,22 @@ import { MealPlanRepositoryProvider } from '../../meal-planner/repositories/Meal
 import type { MealPlanRepository } from '../../meal-planner/types'
 import type { Recipe } from '../types'
 import { RecipeDetailPage } from './RecipeDetailPage'
+import { QueryTestProvider } from '../../../shared/testing/QueryTestProvider'
 
 describe('RecipeDetailPage', () => {
+  it('announces successful creation on the recipe detail page', async () => {
+    const recipe: Recipe = { id: 'recipe-1', name: 'Рецепт без фото', normalizedName: 'рецепт без фото', instructions: 'Подати.', classifications: [], caloriesPerServing: null, proteinGramsPerServing: null, fatGramsPerServing: null, carbsGramsPerServing: null, preparationTimeMinMinutes: null, preparationTimeMaxMinutes: null, archivedAt: null, createdAt: 'now', updatedAt: 'now', image: null, ingredients: [] }
+    const repository: RecipeRepository = { list: vi.fn(), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
+    const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn(), remove: vi.fn() }
+    render(<QueryTestProvider><MemoryRouter initialEntries={['/recipes/recipe-1?created=1']}><RecipeRepositoryProvider repository={repository}><MealPlanRepositoryProvider repository={mealPlan}><Routes><Route path="/recipes/:recipeId" element={<RecipeDetailPage />} /></Routes></MealPlanRepositoryProvider></RecipeRepositoryProvider></MemoryRouter></QueryTestProvider>)
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Рецепт створено')
+  })
+
   it('shows a retryable error when the recipe cannot be loaded', async () => {
     const repository: RecipeRepository = { list: vi.fn(), get: vi.fn().mockRejectedValue(new Error('network')), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
     const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn(), remove: vi.fn() }
-    render(<MemoryRouter initialEntries={['/recipes/recipe-1']}><RecipeRepositoryProvider repository={repository}><MealPlanRepositoryProvider repository={mealPlan}><Routes><Route path="/recipes/:recipeId" element={<RecipeDetailPage />} /></Routes></MealPlanRepositoryProvider></RecipeRepositoryProvider></MemoryRouter>)
+    render(<QueryTestProvider><MemoryRouter initialEntries={['/recipes/recipe-1']}><RecipeRepositoryProvider repository={repository}><MealPlanRepositoryProvider repository={mealPlan}><Routes><Route path="/recipes/:recipeId" element={<RecipeDetailPage />} /></Routes></MealPlanRepositoryProvider></RecipeRepositoryProvider></MemoryRouter></QueryTestProvider>)
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Не вдалося завантажити рецепт')
     expect(screen.getByRole('button', { name: 'Повторити' })).toBeInTheDocument()
@@ -25,7 +35,7 @@ describe('RecipeDetailPage', () => {
     const repository: RecipeRepository = { list: vi.fn(), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
     const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn().mockResolvedValue({}), remove: vi.fn() }
     const router = createMemoryRouter([{ path: '/recipes/:recipeId', element: <RecipeDetailPage /> }, { path: '/plan', element: <h1>План</h1> }], { initialEntries: ['/recipes/recipe-1?planDate=2026-08-15&planSlot=dinner&planServings=3&planMode=add'] })
-    render(<RecipeRepositoryProvider repository={repository}><MealPlanRepositoryProvider repository={mealPlan}><RouterProvider router={router} /></MealPlanRepositoryProvider></RecipeRepositoryProvider>)
+    render(<QueryTestProvider><RecipeRepositoryProvider repository={repository}><MealPlanRepositoryProvider repository={mealPlan}><RouterProvider router={router} /></MealPlanRepositoryProvider></RecipeRepositoryProvider></QueryTestProvider>)
 
     expect(await screen.findByRole('button', { name: 'Додати до плану' })).toBeInTheDocument()
     expect(screen.getByLabelText('Порцій')).toHaveValue('3')

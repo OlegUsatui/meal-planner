@@ -91,6 +91,16 @@ export class MealPlannerDatabase extends Dexie {
       record.preparationTimeMaxMinutes = legacyTime
       delete record.preparationTimeMinutes
     }))
+    this.version(6).stores({
+      products: '&id, normalizedName, category, archivedAt, updatedAt',
+      recipes: '&id, normalizedName, archivedAt, updatedAt, imageAssetId',
+      recipeIngredients: '&id, recipeId, productId, &[recipeId+productId]',
+      mealPlanEntries: '&id, &dateSlot, date, recipeId',
+      imageAssets: '&id, createdAt',
+      appSettings: '&id',
+    }).upgrade((transaction) => transaction.table('recipes').toCollection().modify((record) => {
+      record.imageAssetId ??= null
+    }))
   }
 }
 

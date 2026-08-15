@@ -26,8 +26,29 @@ describe('SupabaseRecipeRepository.listPage', () => {
 
     expect(result.total).toBe(1)
     expect(result.items[0]?.id).toBe('seed:breakfast:69')
+    expect(result.items[0]).not.toHaveProperty('instructions')
+    expect(result.items[0]).not.toHaveProperty('ingredients')
+    expect(result.items[0]).not.toHaveProperty('caloriesPerServing')
+    expect(urls.some((url) => url.includes('/recipe_ingredients?'))).toBe(false)
     expect(urls.some((url) => url.includes('classifications=cs.%5B%7B%22mealType%22%3A%22breakfast%22%7D%5D'))).toBe(true)
     expect(urls.some((url) => url.includes('[object+Object]'))).toBe(false)
+    fetchMock.mockRestore()
+  })
+
+  it('returns only system recipe summaries when requested', async () => {
+    const urls: string[] = []
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      urls.push(String(input))
+      return new Response('[]', { status: 200, headers: { 'content-range': '*/0' } })
+    })
+    const repository = new SupabaseRecipeRepository(
+      createClient('https://example.supabase.co', 'test-key'),
+      { imageUrl: vi.fn() } as unknown as R2Storage,
+    )
+
+    await repository.listPage('', { page: 1, pageSize: 24, systemOnly: true })
+
+    expect(urls.some((url) => url.includes('owner_id=is.null'))).toBe(true)
     fetchMock.mockRestore()
   })
 })
