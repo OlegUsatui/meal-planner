@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js'
 import { ApiError, header, type ApiRequest } from './http.js'
+import { serverEnvironment, type ServerEnvironment } from './environment.js'
 
 export interface AuthContext {
   client: SupabaseClient
@@ -15,7 +16,7 @@ export function bearerToken(request: ApiRequest): string {
   return token
 }
 
-export async function authenticate(request: ApiRequest, environment: Record<string, string | undefined> = process.env): Promise<AuthContext> {
+export async function authenticate(request: ApiRequest, environment: ServerEnvironment = serverEnvironment()): Promise<AuthContext> {
   const token = bearerToken(request)
   const url = environment.SUPABASE_URL
   const key = environment.SUPABASE_PUBLISHABLE_KEY

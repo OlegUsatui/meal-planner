@@ -1,5 +1,6 @@
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { serverEnvironment, type ServerEnvironment } from './environment.js'
 
 export interface R2Config {
   accountId: string
@@ -9,7 +10,7 @@ export interface R2Config {
   publicBaseUrl?: string
 }
 
-export function readR2Config(environment: Record<string, string | undefined> = process.env): R2Config {
+export function readR2Config(environment: ServerEnvironment = serverEnvironment()): R2Config {
   const accountId = environment.R2_ACCOUNT_ID
   const accessKeyId = environment.R2_ACCESS_KEY_ID
   const secretAccessKey = environment.R2_SECRET_ACCESS_KEY
@@ -33,7 +34,7 @@ export class R2Storage {
 
   constructor(config?: R2Config) {
     this.config = config ?? optionalR2Config()
-    this.publicBaseUrl = this.config?.publicBaseUrl ?? cleanBaseUrl(process.env.R2_PUBLIC_BASE_URL)
+    this.publicBaseUrl = this.config?.publicBaseUrl ?? cleanBaseUrl(serverEnvironment().R2_PUBLIC_BASE_URL)
     if (this.config) this.client = new S3Client({ region: 'auto', endpoint: `https://${this.config.accountId}.r2.cloudflarestorage.com`, credentials: { accessKeyId: this.config.accessKeyId, secretAccessKey: this.config.secretAccessKey } })
   }
 
