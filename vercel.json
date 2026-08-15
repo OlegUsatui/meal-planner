@@ -3,6 +3,10 @@
   "devCommand": "vite --host 127.0.0.1 --port $PORT",
   "rewrites": [
     {
+      "source": "/api/account/export",
+      "destination": "/api/account?route=export"
+    },
+    {
       "source": "/((?!api(?:/|$)|@vite(?:/|$)|@vite-plugin-pwa(?:/|$)|@react-refresh(?:/|$)|@id(?:/|$)|@fs(?:/|$)|src(?:/|$)|node_modules(?:/|$)|__vite_ping(?:$|/)|.*\\.[^/]+$).*)",
       "destination": "/index.html"
     }

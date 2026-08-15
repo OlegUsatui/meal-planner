@@ -1,9 +1,14 @@
+import { buildAccountExport } from './_lib/account-export.js'
 import { bearerToken } from './_lib/auth.js'
-import { ApiError, type ApiRequest, type ApiResponse } from './_lib/http.js'
+import { ApiError, queryParam, type ApiRequest, type ApiResponse } from './_lib/http.js'
 import { R2Storage } from './_lib/r2.js'
 import { authorized } from './_lib/routes.js'
 
 export default async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
+  if (queryParam(request, 'route') === 'export') {
+    await authorized(request, response, ({ client, user }) => buildAccountExport(client, user), 200, ['GET'])
+    return
+  }
   await authorized(request, response, async ({ client, user }) => {
     assertFreshJwt(bearerToken(request))
     const { data: recipes, error: recipesError } = await client.from('recipes').select('image_path').eq('owner_id', user.id)
