@@ -46,7 +46,7 @@ export class ApiClient {
     const headers = new Headers(init.headers)
     headers.set('Authorization', `Bearer ${token}`)
     if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
-    const response = await fetch(path, { ...init, headers })
+    const response = await fetch(path, { ...init, headers, cache: 'no-store' })
     const payload = await parsePayload(response)
     if (!response.ok) {
       const error = payload as ApiErrorEnvelope

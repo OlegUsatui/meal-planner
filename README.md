@@ -32,6 +32,7 @@ npm install
 ## Commands
 
 ```sh
+npm run start
 npm run dev
 npm run test
 npm run lint
@@ -40,6 +41,11 @@ npm run build
 npm run test:e2e
 npm run seed:supabase
 ```
+
+Use `npm run start` for local development with the API routes enabled, then open
+<http://localhost:3000>. The Vite port printed during startup is an internal
+port and should not be opened directly. Use `npm run dev` only for frontend
+work that does not require `/api/*` routes.
 
 For backend schema, seed import, Supabase Auth, Storage, and Vercel deployment, see [`docs/backend-and-deployment.md`](docs/backend-and-deployment.md).
 

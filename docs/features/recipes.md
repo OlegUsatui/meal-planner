@@ -39,7 +39,7 @@ Generated breakfast and dinner records retain exact previous OCR titles only as 
 ### Browse and open
 
 1. Search active recipes by case-insensitive name; search and category filters are sent to the API.
-2. Browse 24 recipes per server-paginated page and use previous/next controls.
+2. Browse 24 recipes per server-paginated page with numbered pagination, previous/next controls, and a visible result range. Search, category filters, and the current page are preserved in the URL.
 3. Open a food-first card.
 4. Change the transient serving selector to view scaled ingredients.
 5. Add to plan or edit.
@@ -88,7 +88,7 @@ Generated breakfast and dinner records retain exact previous OCR titles only as 
 - Reads active `Product` records for ingredient selection.
 - Reads plan entries when calculating archive impact.
 - Form draft, object URL, and transient serving selection are UI-only.
-- Search query may live in URL `?q=` for recoverable navigation.
+- Search query, meal section, subcategory, and current page live in URL parameters `q`, `section`, `subcategory`, and `page` for recoverable navigation and direct links.
 
 ## 8. Validation and business rules
 
@@ -144,7 +144,7 @@ Generated breakfast and dinner records retain exact previous OCR titles only as 
 - Serving selector scales all ingredient quantities without editing stored recipe values.
 - Recipe edits affect the live future shopping projection without creating or rewriting snapshots.
 - Archived recipes remain historically readable and disappear from new-plan selection.
-- Catalogue requests return at most 24 recipes and expose total/next-page metadata; server filters match the visible category/search state.
+- Catalogue requests return at most 24 recipes and expose total/next-page metadata; server filters match the visible category/search state. Pagination exposes numbered pages, a result range, accessible current/disabled states, and normalizes a page beyond the available range.
 - A failed detail request is recoverable through an explicit retry action.
 - No out-of-scope metadata fields appear.
 

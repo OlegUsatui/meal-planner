@@ -27,21 +27,25 @@ export function publicImageUrl(baseUrl: string, path: string): string {
 }
 
 export class R2Storage {
-  private readonly config: R2Config
-  private readonly client: S3Client
+  private readonly config?: R2Config
+  private readonly client?: S3Client
+  private readonly publicBaseUrl?: string
 
-  constructor(config: R2Config = readR2Config()) {
-    this.config = config
-    this.client = new S3Client({ region: 'auto', endpoint: `https://${config.accountId}.r2.cloudflarestorage.com`, credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey } })
+  constructor(config?: R2Config) {
+    this.config = config ?? optionalR2Config()
+    this.publicBaseUrl = this.config?.publicBaseUrl ?? cleanBaseUrl(process.env.R2_PUBLIC_BASE_URL)
+    if (this.config) this.client = new S3Client({ region: 'auto', endpoint: `https://${this.config.accountId}.r2.cloudflarestorage.com`, credentials: { accessKeyId: this.config.accessKeyId, secretAccessKey: this.config.secretAccessKey } })
   }
 
   async createSignedUploadUrl(path: string, contentType: string, expiresIn = 900): Promise<{ path: string; signedUrl: string }> {
-    const command = new PutObjectCommand({ Bucket: this.config.bucketName, Key: path, ContentType: contentType })
-    return { path, signedUrl: await getSignedUrl(this.client, command, { expiresIn }) }
+    const { config, client } = this.requirePrivateStorage()
+    const command = new PutObjectCommand({ Bucket: config.bucketName, Key: path, ContentType: contentType })
+    return { path, signedUrl: await getSignedUrl(client, command, { expiresIn }) }
   }
 
   async imageUrl(path: string, expiresIn = 3600): Promise<string | undefined> {
-    if (this.config.publicBaseUrl && isSystemImagePath(path)) return publicImageUrl(this.config.publicBaseUrl, path)
+    if (this.publicBaseUrl && isSystemImagePath(path)) return publicImageUrl(this.publicBaseUrl, path)
+    if (!this.config || !this.client) return undefined
     try {
       const command = new GetObjectCommand({ Bucket: this.config.bucketName, Key: path })
       return await getSignedUrl(this.client, command, { expiresIn })
@@ -49,12 +53,24 @@ export class R2Storage {
   }
 
   async upload(path: string, body: Uint8Array | Buffer, contentType: string): Promise<void> {
-    await this.client.send(new PutObjectCommand({ Bucket: this.config.bucketName, Key: path, Body: body, ContentType: contentType }))
+    const { config, client } = this.requirePrivateStorage()
+    await client.send(new PutObjectCommand({ Bucket: config.bucketName, Key: path, Body: body, ContentType: contentType }))
   }
 
   async remove(path: string): Promise<void> {
-    await this.client.send(new DeleteObjectCommand({ Bucket: this.config.bucketName, Key: path }))
+    const { config, client } = this.requirePrivateStorage()
+    await client.send(new DeleteObjectCommand({ Bucket: config.bucketName, Key: path }))
   }
+
+  private requirePrivateStorage(): { config: R2Config; client: S3Client } {
+    if (!this.config || !this.client) throw new Error('R2 не налаштовано')
+    return { config: this.config, client: this.client }
+  }
+}
+
+function optionalR2Config(): R2Config | undefined {
+  try { return readR2Config() }
+  catch { return undefined }
 }
 
 function cleanBaseUrl(value: string | undefined): string | undefined {

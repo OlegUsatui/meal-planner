@@ -1,8 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "devCommand": "vite --host 127.0.0.1 --port $PORT",
   "rewrites": [
     {
-      "source": "/((?!api(?:/|$)).*)",
+      "source": "/((?!api(?:/|$)|@vite(?:/|$)|@vite-plugin-pwa(?:/|$)|@react-refresh(?:/|$)|@id(?:/|$)|@fs(?:/|$)|src(?:/|$)|node_modules(?:/|$)|__vite_ping(?:$|/)|.*\\.[^/]+$).*)",
       "destination": "/index.html"
     }
   ]

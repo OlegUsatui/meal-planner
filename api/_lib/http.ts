@@ -32,6 +32,8 @@ export class ApiError extends Error {
 }
 
 export function sendJson(response: ApiResponse, status: number, body: unknown): void {
+  response.setHeader?.('Cache-Control', 'private, no-store, max-age=0')
+  response.setHeader?.('Vary', 'Authorization')
   response.status(status).json(body)
 }
 

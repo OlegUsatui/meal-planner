@@ -7,6 +7,7 @@ Meal Planner uses Vercel Functions as a REST API, Supabase for Auth/Postgres, Cl
 - Supabase Auth provides email/password accounts and password reset.
 - PostgreSQL stores products, recipes, recipe ingredients, and per-user meal plans.
 - Cloudflare R2 stores recipe photo objects using the existing `recipes.image_path` key. `system/...` objects are served from the configured public R2 custom domain; `<user-id>/...` objects are private and returned through short-lived presigned GET URLs.
+- Read-only catalogue responses can still use `R2_PUBLIC_BASE_URL` for system images when private R2 credentials are absent. Private image URLs and all upload/delete operations require the account ID, access key, secret, and bucket configuration.
 - Row Level Security exposes system records to authenticated users, restricts personal records to their owner, and grants product/recipe management to profiles with `role = 'admin'`.
 - The browser contains only Auth session state, temporary image previews, and the API client. Supabase is the source of truth for application data; R2 is the source of truth for image bytes.
 - Authenticated API routes include `GET /api/me`, the existing product/recipe/plan/shopping routes, and admin-only `DELETE /api/products/:id?permanent=true` and `DELETE /api/recipes/:id?permanent=true`. Default DELETE remains archive. Paginated recipe reads additionally accept admin-only `includeArchived`; upload URLs choose owner or `system/` R2 paths server-side.

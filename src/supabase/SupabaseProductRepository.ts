@@ -36,7 +36,7 @@ export class SupabaseProductRepository implements ProductRepository {
     const query = options.query ? normalizeProductName(options.query) : ''
     const rows = (data as unknown as ProductRow[]).filter((row) => options.includeArchived || !row.archived_at).filter((row) => !query || row.normalized_name.includes(query)).filter((row) => !options.category || row.category === options.category)
     if (!rows.length) return []
-    const { data: ingredients, error: ingredientsError } = await this.client.from('recipe_ingredients').select('product_id').in('product_id', rows.map((row) => row.id))
+    const { data: ingredients, error: ingredientsError } = await this.client.from('recipe_ingredients').select('product_id')
     if (ingredientsError) throw repositoryError(ingredientsError.message, 'Не вдалося завантажити використання продукту.')
     const counts = new Map<string, number>()
     for (const ingredient of ingredients as unknown as IngredientRow[]) counts.set(ingredient.product_id, (counts.get(ingredient.product_id) ?? 0) + 1)

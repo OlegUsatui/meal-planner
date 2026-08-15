@@ -1,11 +1,15 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { RecipeRepositoryProvider } from '../repositories/RecipeRepositoryContext'
 import type { RecipeRepository } from '../repositories/recipe-repository'
 import type { Recipe } from '../types'
 import { RecipesPage } from './RecipesPage'
+
+function LocationProbe() {
+  return <output data-testid="location">{useLocation().search}</output>
+}
 
 const base: Omit<Recipe, 'id' | 'name' | 'normalizedName' | 'classifications'> = { instructions: 'Готувати', caloriesPerServing: null, proteinGramsPerServing: null, fatGramsPerServing: null, carbsGramsPerServing: null, preparationTimeMinMinutes: null, preparationTimeMaxMinutes: null, archivedAt: null, createdAt: 'now', updatedAt: 'now', image: { blob: new Blob(['image']), mimeType: 'image/webp', width: 10, height: 10, byteSize: 5 }, ingredients: [] }
 
@@ -44,8 +48,24 @@ describe('RecipesPage categories', () => {
     }
     render(<MemoryRouter><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider></MemoryRouter>)
     expect(await screen.findByText('Перший')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Наступна сторінка' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Перейти на наступну сторінку' }))
     expect(await screen.findByText('Другий')).toBeInTheDocument()
     expect(repository.listPage).toHaveBeenNthCalledWith(2, '', { page: 2, pageSize: 24 })
+  })
+
+  it('restores catalogue filters and page from the URL and resets page when searching', async () => {
+    const repository: RecipeRepository = {
+      list: vi.fn(), listPage: vi.fn().mockResolvedValue({ items: [], page: 2, pageSize: 24, total: 25, hasNext: false }),
+      get: vi.fn(), create: vi.fn(), update: vi.fn(), archive: vi.fn(),
+    }
+    render(<MemoryRouter initialEntries={['/recipes?q=суп&section=lunch&subcategory=lunch-soups&page=2']}><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider><LocationProbe /></MemoryRouter>)
+
+    expect(await screen.findByDisplayValue('суп')).toBeInTheDocument()
+    expect(screen.getByTestId('location')).toHaveTextContent('?q=суп&section=lunch&subcategory=lunch-soups&page=2')
+    expect(repository.listPage).toHaveBeenCalledWith('суп', { page: 2, pageSize: 24, mealType: 'lunch', subcategoryId: 'lunch-soups' })
+    await userEvent.clear(screen.getByRole('searchbox', { name: 'Пошук рецептів' }))
+    expect(screen.getByRole('searchbox', { name: 'Пошук рецептів' })).toHaveValue('')
+    expect(screen.getByTestId('location')).toHaveTextContent('?section=lunch&subcategory=lunch-soups')
+    expect(repository.listPage).toHaveBeenLastCalledWith('', { page: 1, pageSize: 24, mealType: 'lunch', subcategoryId: 'lunch-soups' })
   })
 })
