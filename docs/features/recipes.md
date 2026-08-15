@@ -49,7 +49,7 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 ### Edit and replace image
 
 1. Open editor with original entered quantities/units.
-2. Modify fields, ingredients, or photo.
+2. Modify fields, ingredients, or photo. A selected photo opens a local 4:3 crop editor with drag positioning, proportional zoom, reset, apply, and cancel controls; the original image remains unchanged until save.
 3. Save atomically; future planned requirements and the live shopping list use current recipe data on their next read.
 
 ### Archive
@@ -76,7 +76,7 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 | Action | Response |
 | --- | --- |
 | Search and categories | Query the server with pagination filters without losing the current query on back navigation |
-| Select image | Validate/decode/compress, show local preview, then upload to the authenticated user's Storage path on save |
+| Select image | Open the local 4:3 crop editor; apply validates, decodes, crops, and compresses the result before uploading to the authenticated user's Storage path on save |
 | Add ingredient | Append empty product/quantity/unit group |
 | Select product | Restrict unit options to the product dimension |
 | Change servings on detail | Recalculate display-only ingredient quantities through the stepper |
@@ -95,7 +95,7 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 ## 8. Validation and business rules
 
 - Name: trimmed, 1–160 characters.
-- Photo: optional for personal recipes. When supplied it must be decodable, compressed to a maximum 1600 px long side, and no larger than 2 MB. Missing images use the branded placeholder.
+- Photo: optional for personal recipes. When supplied it is cropped to a 4:3 frame, must be decodable, compressed to a maximum 1600 px long side, and no larger than 2 MB. Missing images use the branded placeholder.
 - Nutrition fields are optional non-negative numbers per serving.
 - Preparation time is optional. Exact time uses one field; an explicit range switch reveals the second bound. Values are whole minutes from 0 to 1440.
 - New and edited recipes require at least one valid classification. One recipe may belong to several meal types or subcategories; duplicate pairs are rejected.
@@ -115,6 +115,7 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 - **No products:** creation form explains dependency and links to product creation while preserving draft/return context where supported.
 - **Loading:** card/detail/form skeletons.
 - **Image processing:** preview placeholder with progress; form fields remain available.
+- **Image editor:** local crop preview supports pointer/touch positioning, zoom, reset, apply, and cancel; failed processing keeps the editor open and the draft intact.
 - **Quota/storage error:** preserve draft and current preview, explain upload failure, retry or choose a smaller image.
 - **Missing image integrity error:** neutral placeholder and non-destructive repair prompt.
 - **Catalogue request error:** keep the page visible with a retry action rather than showing an empty catalogue.
@@ -126,6 +127,7 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 - Search has visible label or accessible name and clear button.
 - Recipe card link name is recipe title; decorative thumbnail avoids duplicate announcement.
 - Image input has instructions, accepted formats, preview alt, and error association.
+- Image editor exposes labelled zoom controls, keyboard-operable buttons, a 4:3 crop preview, and a cancel action that preserves the existing image.
 - Ingredient groups use fieldsets/legends or equivalent semantic grouping; remove names the product/row.
 - Serving stepper exposes labelled increment/decrement controls and announces the current value through the native input/live interaction.
 
@@ -153,7 +155,7 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 ## 13. Tests
 
 - Unit: recipe validation, duplicate products, serving scaling, compatible units.
-- Component: catalogue states, image preview/error, dynamic ingredient groups, detail scaling, archive confirmation.
+- Component: catalogue states, image preview/editor/error, dynamic ingredient groups, detail scaling, archive confirmation.
 - Repository: transactional aggregate save, image replacement cleanup, rollback, affected-date mutation recording.
 - E2E: create a product-backed recipe without a photo, plan it, edit an ingredient, and observe the live shopping-list update.
 - Accessibility: form grouping, image errors, focus after dynamic add/remove.

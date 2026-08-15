@@ -3,9 +3,10 @@ import { ImageMinus, Plus, Trash2 } from 'lucide-react'
 import { parseQuantity, type DisplayUnit } from '../../products/domain/product'
 import type { Product } from '../../products/types'
 import { hasRecipeValidationErrors, validateRecipeInput, type RecipeValidationErrors } from '../domain/recipe'
-import { imageFileFromClipboard, processRecipeImage } from '../image/process-recipe-image'
+import { imageFileFromClipboard } from '../image/process-recipe-image'
 import type { CreateRecipeInput, Recipe, RecipeImageInput, UpdateRecipeInput } from '../types'
 import { RecipeClassificationField } from './RecipeClassificationField'
+import { RecipeImageEditor } from './RecipeImageEditor'
 
 type Row = { key: string; productId: string; quantity: string; unit: DisplayUnit }
 type Props = { products: Product[]; recipe?: Recipe; onSubmit: (value: CreateRecipeInput | UpdateRecipeInput) => Promise<void>; error?: string }
@@ -14,6 +15,7 @@ const newRow = (): Row => ({ key: crypto.randomUUID(), productId: '', quantity: 
 
 export function RecipeForm({ products, recipe, onSubmit, error }: Props) {
   const formRef = useRef<HTMLFormElement>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
   const [name, setName] = useState(recipe?.name ?? '')
   const [instructions, setInstructions] = useState(recipe?.instructions ?? '')
   const [calories, setCalories] = useState(String(recipe?.caloriesPerServing ?? ''))
@@ -26,6 +28,7 @@ export function RecipeForm({ products, recipe, onSubmit, error }: Props) {
   const [classifications, setClassifications] = useState(recipe?.classifications ?? [])
   const [rows, setRows] = useState<Row[]>(recipe?.ingredients.map((item) => ({ key: item.id, productId: item.productId, quantity: String(item.enteredQuantity).replace('.', ','), unit: item.enteredUnit })) ?? [newRow()])
   const [image, setImage] = useState<RecipeImageInput>()
+  const [imageFile, setImageFile] = useState<File>()
   const [removeImage, setRemoveImage] = useState(false)
   const [preview, setPreview] = useState<string>()
   const [message, setMessage] = useState<string>()
@@ -38,12 +41,14 @@ export function RecipeForm({ products, recipe, onSubmit, error }: Props) {
   const change = <T,>(setter: (value: T) => void, value: T) => { setter(value); setDirty(true) }
   const updateRow = (index: number, update: Partial<Row>) => { setRows((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, ...update } : row)); setDirty(true) }
   const selectProduct = (index: number, productId: string) => { const product = products.find((item) => item.id === productId); updateRow(index, { productId, unit: product?.baseUnit ?? 'g' }) }
-  const selectImage = async (file?: File) => {
+  const selectImage = (file?: File) => {
     if (!file) return
-    try { const processed = await processRecipeImage(file); setImage(processed); setRemoveImage(false); setPreview((old) => { if (old) URL.revokeObjectURL(old); return URL.createObjectURL(processed.blob!) }); setMessage(undefined); setDirty(true) }
-    catch (reason: unknown) { setMessage(reason instanceof Error ? reason.message : 'Не вдалося обробити фото') }
+    if (!file.type.startsWith('image/')) { setMessage('Оберіть файл зображення'); return }
+    setImageFile(file); setMessage(undefined)
   }
-  const pasteImage = (event: ClipboardEvent<HTMLFormElement>) => { const file = imageFileFromClipboard(event.clipboardData); if (!file) return; event.preventDefault(); void selectImage(file) }
+  const applyImage = (processed: RecipeImageInput & { blob: Blob }) => { setImage(processed); setImageFile(undefined); if (imageInputRef.current) imageInputRef.current.value = ''; setRemoveImage(false); setPreview((old) => { if (old) URL.revokeObjectURL(old); return URL.createObjectURL(processed.blob) }); setMessage(undefined); setDirty(true) }
+  const cancelImageEditor = () => { setImageFile(undefined); if (imageInputRef.current) imageInputRef.current.value = '' }
+  const pasteImage = (event: ClipboardEvent<HTMLFormElement>) => { const file = imageFileFromClipboard(event.clipboardData); if (!file) return; event.preventDefault(); selectImage(file) }
   const optionalNumber = (value: string) => value.trim() ? Number(value.replace(',', '.')) : null
   const ingredients = () => rows.map((row) => { try { return { productId: row.productId, enteredQuantity: parseQuantity(row.quantity), enteredUnit: row.unit } } catch { return { productId: row.productId, enteredQuantity: Number.NaN, enteredUnit: row.unit } } })
   const focusFirstError = (nextErrors: RecipeValidationErrors) => { const order: Array<keyof RecipeValidationErrors> = ['name', 'classifications', 'ingredients', 'nutrition', 'preparationTime', 'instructions']; const first = order.find((key) => nextErrors[key]); formRef.current?.querySelector<HTMLElement>(`[data-field="${first}"]`)?.focus() }
@@ -67,7 +72,7 @@ export function RecipeForm({ products, recipe, onSubmit, error }: Props) {
     <section className="form-section"><p className="eyebrow">Інгредієнти</p><fieldset className="ingredient-fieldset" tabIndex={-1} data-field="ingredients"><legend className="sr-only">Інгредієнти рецепту</legend>{rows.map((row, index) => { const product = products.find((item) => item.id === row.productId); return <div className="ingredient-row" key={row.key}><label>Продукт<select value={row.productId} onChange={(event) => selectProduct(index, event.target.value)}><option value="">Оберіть продукт</option>{products.filter((item) => !item.archivedAt).map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label><label>Кількість<input inputMode="decimal" value={row.quantity} onChange={(event) => updateRow(index, { quantity: event.target.value })} /></label><label>Одиниця<select value={row.unit} onChange={(event) => updateRow(index, { unit: event.target.value as DisplayUnit })}>{units(product?.baseUnit ?? 'g').map((unit) => <option key={unit}>{unit}</option>)}</select></label><button type="button" className="icon-button danger" aria-label={`Видалити інгредієнт ${index + 1}`} onClick={() => { setRows((current) => current.filter((_, rowIndex) => rowIndex !== index)); setDirty(true) }} disabled={rows.length === 1}><Trash2 aria-hidden="true" /></button></div>})}<button type="button" className="button button-secondary" onClick={() => { setRows((current) => [...current, newRow()]); setDirty(true) }}><Plus aria-hidden="true" /> Додати продукт</button></fieldset>{errors.ingredients && <span className="field-error">{errors.ingredients}</span>}</section>
     <section className="form-section optional-section"><p className="eyebrow">Деталі · необов’язково</p><fieldset className="nutrition-fieldset" tabIndex={-1} data-field="nutrition"><legend>Харчова цінність на 1 порцію</legend><div className="form-grid"><NumberField label="Калорії, ккал" value={calories} onChange={(value) => change(setCalories, value)} /><NumberField label="Білки, г" value={protein} onChange={(value) => change(setProtein, value)} /><NumberField label="Жири, г" value={fat} onChange={(value) => change(setFat, value)} /><NumberField label="Вуглеводи, г" value={carbs} onChange={(value) => change(setCarbs, value)} /></div>{errors.nutrition && <span className="field-error">{errors.nutrition}</span>}</fieldset>
       <fieldset className="time-fieldset" tabIndex={-1} data-field="preparationTime"><legend>Час приготування</legend><div className="form-grid"><label className="field">{timeRange ? 'Від, хв' : 'Точний час, хв'}<input inputMode="numeric" value={preparationTime} onChange={(event) => change(setPreparationTime, event.target.value)} /></label>{timeRange && <label className="field">До, хв<input inputMode="numeric" value={preparationTimeMax} onChange={(event) => change(setPreparationTimeMax, event.target.value)} /></label>}</div><label className="switch-field"><input type="checkbox" checked={timeRange} onChange={(event) => change(setTimeRange, event.target.checked)} /> Вказати діапазон часу</label>{errors.preparationTime && <span className="field-error">{errors.preparationTime}</span>}</fieldset>
-      <label className="field">Фото рецепту <span className="optional-label">необов’язково</span><input type="file" accept="image/*" onChange={(event) => void selectImage(event.target.files?.[0])} /><span className="field-hint">Оберіть файл або вставте скріншот через Ctrl+V. До 1600 px і 2 MB.</span></label>{(preview || (!removeImage && recipe?.image)) && <div className="recipe-image-edit"><img className="recipe-preview" src={preview ?? recipe?.image?.url} alt="Поточне фото рецепту" /><button type="button" className="button button-danger-ghost" onClick={() => { setImage(undefined); setPreview(undefined); setRemoveImage(true); setDirty(true) }}><ImageMinus aria-hidden="true" /> Прибрати фото</button></div>}</section>
+      <label className="field">Фото рецепту <span className="optional-label">необов’язково</span><input ref={imageInputRef} type="file" accept="image/*" onChange={(event) => selectImage(event.target.files?.[0])} /><span className="field-hint">Оберіть файл або вставте скріншот через Ctrl+V. Після вибору налаштуйте кадр 4:3.</span></label>{imageFile ? <RecipeImageEditor file={imageFile} onApply={applyImage} onCancel={cancelImageEditor} /> : (preview || (!removeImage && recipe?.image)) && <div className="recipe-image-edit"><img className="recipe-preview" src={preview ?? recipe?.image?.url} alt="Поточне фото рецепту" /><button type="button" className="button button-danger-ghost" onClick={() => { setImage(undefined); setPreview(undefined); setRemoveImage(true); setDirty(true) }}><ImageMinus aria-hidden="true" /> Прибрати фото</button></div>}</section>
     <section className="form-section"><p className="eyebrow">Приготування</p><label className="field">Спосіб приготування <span aria-hidden="true">*</span><textarea data-field="instructions" aria-invalid={Boolean(errors.instructions)} aria-describedby={errors.instructions ? 'recipe-instructions-error' : undefined} rows={10} value={instructions} onChange={(event) => change(setInstructions, event.target.value)} /></label>{errors.instructions && <span id="recipe-instructions-error" className="field-error">{errors.instructions}</span>}</section>
     <div className="sticky-save"><span>{dirty ? 'Є незбережені зміни' : 'Усі зміни збережено'}</span><button className="button button-primary" disabled={pending}>{pending ? 'Зберігаємо…' : 'Зберегти рецепт'}</button></div>
   </form>
