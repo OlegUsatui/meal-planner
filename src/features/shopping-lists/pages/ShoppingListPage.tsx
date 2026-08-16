@@ -9,6 +9,7 @@ import { useShoppingListRepository } from '../repositories/useShoppingListReposi
 import type { ShoppingListRange } from '../types'
 import { cacheTimes, queryKeys } from '../../../app/query/query-client'
 import { useOptionalAuth } from '../../auth/useAuth'
+import { readShoppingChecks, shoppingChecksStorageKey, writeShoppingChecks } from '../domain/shopping-checks'
 
 const localToday = () => new Intl.DateTimeFormat('sv-SE').format(new Date())
 const presets = [{ value: 'today', label: 'Сьогодні', days: 1 }, { value: '7', label: '7 днів', days: 7 }, { value: '14', label: '14 днів', days: 14 }, { value: 'all', label: 'Увесь план' }, { value: 'custom', label: 'Власний діапазон' }] as const
@@ -62,19 +63,47 @@ export function ShoppingListPage() {
   }
 
   return <section className="page shopping-page">
-    <header className="page-header"><div><p className="eyebrow">Автоматично з плану</p><h1>Покупки</h1><p>Читайте список, друкуйте або діліться ним. Позначки й ручні позиції не зберігаються.</p></div><Link className="button button-secondary" to={`/plan?date=${range.from}`}>Відкрити план</Link></header>
+    <header className="page-header"><div><p className="eyebrow">Автоматично з плану</p><h1>Покупки</h1><p>Позначайте придбане, друкуйте або діліться списком. Позначки зберігаються на цьому пристрої.</p></div><Link className="button button-secondary" to={`/plan?date=${range.from}`}>Відкрити план</Link></header>
     <div className="shopping-toolbar"><div><div className="range-presets" aria-label="Період списку">{presets.map((item) => <button key={item.value} type="button" aria-pressed={preset === item.value} onClick={() => choosePreset(item.value)}>{item.label}</button>)}</div>{preset === 'custom' && <div className="custom-date-range"><label>Від<input type="date" value={range.from} max={range.to} onChange={(event) => changeCustomDate('from', event.target.value)} /></label><label>До<input type="date" value={range.to ?? range.from} min={range.from} onChange={(event) => changeCustomDate('to', event.target.value)} /></label></div>}</div><div className="shopping-actions"><button type="button" className="icon-action" onClick={() => window.print()}><Printer aria-hidden="true" /> Друк</button><button type="button" className="icon-action" onClick={() => void share()}><Share2 aria-hidden="true" /> Поділитися</button><button type="button" className="icon-action" onClick={exportCsv}><Download aria-hidden="true" /> CSV</button></div></div>
     {notice && <p className="toast-inline" role="status">{notice}</p>}
     {itemsQuery.isPending && <div className="shopping-skeleton" role="status">Завантажуємо список на обраний період…</div>}
     {itemsQuery.isError && <div className="form-alert stale-banner" role="alert"><span>{items.length ? 'Показуємо останній завантажений список.' : 'Не вдалося завантажити список.'}</span><button className="button button-secondary" type="button" onClick={() => void itemsQuery.refetch()}>Повторити</button></div>}
     {!itemsQuery.isPending && !items.length && <div className="empty-state"><h2>На цей період покупок немає</h2><p>Додайте рецепт у конкретний слот плану — список перерахується автоматично.</p><Link className="button button-primary" to={`/plan?date=${range.from}`}>Запланувати страву</Link></div>}
-    {!!items.length && <div className="shopping-groups">{groups.map(([category, categoryItems]) => <section className="shopping-group" key={category}><h2>{category}</h2><div>{categoryItems.map((item) => <ShoppingRow item={item} key={item.productId} />)}</div></section>)}</div>}
+    {!!items.length && <ShoppingChecklist key={shoppingChecksStorageKey(userId, range)} groups={groups} storageKey={shoppingChecksStorageKey(userId, range)} />}
   </section>
 }
 
-function ShoppingRow({ item }: { item: ShoppingListItem }) {
+function ShoppingChecklist({ groups, storageKey }: { groups: Array<[string, ShoppingListItem[]]>; storageKey: string }) {
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(() => readShoppingChecks(storageKey))
+  const items = groups.flatMap(([, categoryItems]) => categoryItems)
+  const itemIds = new Set(items.map((item) => item.productId))
+  const visibleCheckedIds = new Set([...checkedIds].filter((productId) => itemIds.has(productId)))
+
+  function toggle(productId: string, checked: boolean) {
+    const next = new Set(visibleCheckedIds)
+    if (checked) next.add(productId)
+    else next.delete(productId)
+    setCheckedIds(next)
+    writeShoppingChecks(storageKey, next)
+  }
+
+  function reset() {
+    setCheckedIds(new Set())
+    writeShoppingChecks(storageKey, [])
+  }
+
+  return <>
+    <div className="shopping-progress-bar">
+      <p className="shopping-progress" role="status" aria-label="Прогрес покупок">Куплено {visibleCheckedIds.size} з {items.length}</p>
+      <button type="button" className="button button-ghost" onClick={reset} disabled={visibleCheckedIds.size === 0}>Скинути позначки</button>
+    </div>
+    <div className="shopping-groups">{groups.map(([category, categoryItems]) => <section className="shopping-group" key={category}><h2>{category}</h2><div>{categoryItems.map((item) => <ShoppingRow item={item} checked={visibleCheckedIds.has(item.productId)} onToggle={toggle} key={item.productId} />)}</div></section>)}</div>
+  </>
+}
+
+function ShoppingRow({ item, checked, onToggle }: { item: ShoppingListItem; checked: boolean; onToggle: (productId: string, checked: boolean) => void }) {
   const [open, setOpen] = useState(false)
-  return <article className="shopping-item"><button type="button" className="shopping-item-summary" aria-expanded={open} onClick={() => setOpen((value) => !value)}><span>{item.productName}<small>{item.sources.length} {item.sources.length === 1 ? 'джерело' : 'джерела'}</small></span><strong>{formatShoppingQuantity(item.quantityBase, item.baseUnit)}</strong></button>{open && <ul className="shopping-sources">{item.sources.map((source, index) => <li key={`${source.date}:${source.slot}:${source.recipeId}:${index}`}><span>{new Date(`${source.date}T12:00:00`).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })} · {mealSlots.find((slot) => slot.value === source.slot)?.label} · {source.recipeName} · {source.servings} порц.</span><strong>{formatShoppingQuantity(source.quantityBase, item.baseUnit)}</strong></li>)}</ul>}</article>
+  return <article className={`shopping-item ${checked ? 'is-checked' : ''}`}><div className="shopping-item-main"><label className="shopping-check"><input type="checkbox" aria-label={`Куплено: ${item.productName}`} checked={checked} onChange={(event) => onToggle(item.productId, event.target.checked)} /><span aria-hidden="true" /></label><button type="button" className="shopping-item-summary" aria-expanded={open} onClick={() => setOpen((value) => !value)}><span>{item.productName}<small>{item.sources.length} {item.sources.length === 1 ? 'джерело' : 'джерела'}</small></span><strong>{formatShoppingQuantity(item.quantityBase, item.baseUnit)}</strong></button></div>{open && <ul className="shopping-sources">{item.sources.map((source, index) => <li key={`${source.date}:${source.slot}:${source.recipeId}:${index}`}><span>{new Date(`${source.date}T12:00:00`).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })} · {mealSlots.find((slot) => slot.value === source.slot)?.label} · {source.recipeName} · {source.servings} порц.</span><strong>{formatShoppingQuantity(source.quantityBase, item.baseUnit)}</strong></li>)}</ul>}</article>
 }
 
 function rangeFor(preset: string, params: URLSearchParams): ShoppingListRange {
