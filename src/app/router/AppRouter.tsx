@@ -32,7 +32,6 @@ export const router = createBrowserRouter([
       { path: 'recipes', element: <RecipesPage /> },
       { path: 'recipes/new', element: <RecipeEditorPage /> },
       { path: 'recipes/:recipeId', element: <RecipeDetailPage /> },
-      { path: 'recipes/:recipeId/edit', element: <RecipeEditorPage /> },
       { path: 'inventory', element: <Navigate to="/products" replace /> },
       { path: 'shopping', element: <ShoppingListPage /> },
       { path: 'settings', element: <SettingsPage /> },

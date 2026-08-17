@@ -9,7 +9,6 @@ Maintain reusable dishes that drive meal plans and the derived shopping list. A 
 - Catalogue: `/recipes`.
 - Create: `/recipes/new`.
 - Detail: `/recipes/:recipeId`.
-- Edit: `/recipes/:recipeId/edit`.
 - Entry from primary navigation, planner selection flow, dashboard, and product usage context.
 
 ### Bundled lunch book import
@@ -46,11 +45,12 @@ Generated breakfast and dinner records retain exact previous OCR titles only as 
 
 When opened from the planner with `planDate`, `planSlot`, `planServings`, and `planMode` URL parameters, the catalogue becomes a plan-selection flow. The recipe detail page preserves that context and exposes an add/replace action that returns to the selected plan date after saving.
 
-### Edit and replace image
+### Inline edit and replace image
 
-1. Open editor with original entered quantities/units.
-2. Modify fields, ingredients, or photo. A selected photo opens a local 4:3 crop editor with drag positioning, proportional zoom, reset, apply, and cancel controls; the original image remains unchanged until save.
-3. Save atomically; future planned requirements and the live shopping list use current recipe data on their next read.
+1. Open the recipe detail and choose the pencil action for the hero, nutrition, ingredients, or instructions block.
+2. Modify only that block in place; save or cancel without leaving the detail route. Only one block is edited at a time so the aggregate remains consistent.
+3. Choose photo editing from the hero image. A modal provides a local 4:3 crop editor with drag positioning, proportional zoom, reset, apply, cancel, and remove controls; applying stages the preview in the hero block until the hero block is saved.
+4. Save atomically; future planned requirements and the live shopping list use current recipe data on their next read.
 
 ### Archive
 
@@ -61,14 +61,15 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 
 - Catalogue header with search and primary “Новий рецепт”. Category filter buttons wrap onto additional rows without horizontal scrolling when the available width is limited.
 - 3–4 column photo card grid; optional archived toggle is secondary.
-- Detail: editorial hero with large 4:3 image, title, taxonomy, metadata and management actions; nutrition, servings, ingredients and instructions use separate readable panels below.
-- Editor: centered 760 px form; ingredient rows align product, quantity, unit, and remove action.
+- Detail: editorial hero with large 4:3 image, title, taxonomy, metadata and management actions; nutrition, servings, ingredients and instructions use separate readable panels below, each with an inline edit action for manageable recipes.
+- Create: centered 760 px form; ingredient rows align product, quantity, unit, and remove action.
 
 ## 5. Mobile composition
 
 - Full-width search and one/two-column card grid based on minimum width.
 - Detail stacks image, title, metadata, nutrition cards, serving stepper, ingredients and instructions; plan-context actions stay visible in a mobile fixed action bar.
-- Editor is a full page. Each ingredient is a labelled mini-card, not a compressed row.
+- Inline block editors remain readable on mobile. Each ingredient is a labelled mini-card, not a compressed row.
+- Photo editing opens in a modal sized for touch crop controls.
 - Image picker supports camera/photo library through browser file input without requiring native APIs.
 
 ## 6. Actions and responses
@@ -76,11 +77,11 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 | Action | Response |
 | --- | --- |
 | Search and categories | Query the server with pagination filters without losing the current query on back navigation |
-| Select image | Open the local 4:3 crop editor; apply validates, decodes, crops, and compresses the result before uploading to the authenticated user's Storage path on save |
+| Select image | Open the photo modal and local 4:3 crop editor; apply validates, decodes, crops, and compresses the result before uploading to the authenticated user's Storage path when the hero block is saved |
 | Add ingredient | Append empty product/quantity/unit group |
 | Select product | Restrict unit options to the product dimension |
 | Change servings on detail | Recalculate display-only ingredient quantities through the stepper |
-| Save | Commit recipe aggregate and image transactionally |
+| Save block | Commit the complete recipe aggregate with only the selected block changed and update the detail view in place |
 | Add to plan | Open date/slot/servings planner flow |
 | Archive | Confirm references, set archive timestamp |
 
@@ -89,7 +90,7 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 - Owns `Recipe`, `RecipeIngredient`, and recipe `ImageAsset` lifecycle.
 - Reads active `Product` records for ingredient selection.
 - Reads plan entries when calculating archive impact.
-- Form draft, object URL, and transient serving selection are UI-only.
+- Inline block drafts, photo modal state, object URLs, and transient serving selection are UI-only until the corresponding block is saved.
 - Search query, meal section, subcategory, current page, and planner selection context live in URL parameters. Planner context uses `planDate`, `planSlot`, `planServings`, and `planMode` for recoverable navigation and direct links.
 
 ## 8. Validation and business rules
@@ -116,6 +117,7 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 - **Loading:** card/detail/form skeletons.
 - **Image processing:** preview placeholder with progress; form fields remain available.
 - **Image editor:** local crop preview supports pointer/touch positioning, zoom, reset, apply, and cancel; failed processing keeps the editor open and the draft intact.
+- **Inline edit:** each block exposes save/cancel actions; failed persistence keeps the block draft and exposes an inline error.
 - **Quota/storage error:** preserve draft and current preview, explain upload failure, retry or choose a smaller image.
 - **Missing image integrity error:** neutral placeholder and non-destructive repair prompt.
 - **Catalogue request error:** keep the page visible with a retry action rather than showing an empty catalogue.
@@ -137,6 +139,7 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 - Replacing the same image must not revoke preview before save/cancel completes.
 - Recipe edits immediately change derived demand for future planned dates on the next shopping-list read.
 - Current recipe edits also change unconsumed historical/future plan display; immutable versions are explicitly outside v1.
+- Only one detail block is editable at a time; cancelling discards that block's unsaved draft.
 - Bundled title corrections never replace a user-entered title unless it exactly matches a recorded OCR alias.
 - Archiving a recipe does not remove it from existing slots.
 - Object URLs must be revoked to prevent memory leaks.
@@ -147,6 +150,9 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 - Invalid or incompatible ingredient rows identify the exact field and block save.
 - Serving selector scales all ingredient quantities without editing stored recipe values.
 - Recipe edits affect the live future shopping projection without creating or rewriting snapshots.
+- Every manageable detail block can be edited and saved without navigating away; cancel restores the read-only block.
+- Photo changes use a separate accessible modal and do not persist until the hero block is saved.
+- `/recipes/:recipeId/edit` is not a supported route; `/recipes/new` remains the create flow.
 - Archived recipes remain historically readable and disappear from new-plan selection.
 - Catalogue requests return at most 24 recipes and expose total/next-page metadata; server filters match the visible category/search state. Pagination exposes numbered pages, a result range, accessible current/disabled states, and normalizes a page beyond the available range.
 - A failed detail request is recoverable through an explicit retry action.
@@ -155,7 +161,7 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 ## 13. Tests
 
 - Unit: recipe validation, duplicate products, serving scaling, compatible units.
-- Component: catalogue states, image preview/editor/error, dynamic ingredient groups, detail scaling, archive confirmation.
+- Component: catalogue states, image preview/editor/error, dynamic ingredient groups, detail scaling, inline block editing, photo modal, archive confirmation.
 - Repository: transactional aggregate save, image replacement cleanup, rollback, affected-date mutation recording.
 - E2E: create a product-backed recipe without a photo, plan it, edit an ingredient, and observe the live shopping-list update.
 - Accessibility: form grouping, image errors, focus after dynamic add/remove.
@@ -168,4 +174,4 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 - [Business rules: serving scaling](../business-rules.md#serving-scaling)
 - [Design system: photography](../design-system.md#photography)
 
-Recipe data is loaded through the authenticated `/api/recipes` repository client. Catalogue reads use `page`, `pageSize`, `query`, `mealType`, `subcategoryId`, `uncategorized`, `systemOnly`, and admin-only `includeArchived` query parameters and return lightweight `RecipeSummary` items in `{ items, page, pageSize, total, hasNext }`. Summary payloads contain no instructions, nutrition, or ingredients. Detail uses `/api/recipes/:id` and returns the complete aggregate. Catalogue/detail reads use the authenticated session memory cache for five minutes, cancel superseded searches, and keep prior content visible if a background refresh fails. Recipe writes invalidate catalogue, matching detail, dashboard, and shopping queries. Administrators can edit/archive any recipe, including system recipes, and can request permanent deletion; permanent deletion is blocked when a meal-plan entry references the recipe. System image updates use server-selected `system/...` R2 paths; personal images use private presigned R2 URLs. Creating or editing a photo requests `/api/recipes/upload-url`, uploads directly to R2 with `PUT`, and then saves metadata through the recipe endpoint. The browser Supabase client is not used for recipe data.
+Recipe data is loaded through the authenticated `/api/recipes` repository client. Catalogue reads use `page`, `pageSize`, `query`, `mealType`, `subcategoryId`, `uncategorized`, `systemOnly`, and admin-only `includeArchived` query parameters and return lightweight `RecipeSummary` items in `{ items, page, pageSize, total, hasNext }`. Summary payloads contain no instructions, nutrition, or ingredients. Detail uses `/api/recipes/:id` and returns the complete aggregate. Catalogue/detail reads use the authenticated session memory cache for five minutes, cancel superseded searches, and keep prior content visible if a background refresh fails. Recipe writes invalidate catalogue, matching detail, dashboard, and shopping queries. Administrators can edit/archive any recipe, including system recipes, and can request permanent deletion; permanent deletion is blocked when a meal-plan entry references the recipe. Inline block writes still use the aggregate recipe update contract. System image updates use server-selected `system/...` R2 paths; personal images use private presigned R2 URLs. Creating or editing a photo requests `/api/recipes/upload-url`, uploads directly to R2 with `PUT`, and then saves metadata through the recipe endpoint. The browser Supabase client is not used for recipe data.
