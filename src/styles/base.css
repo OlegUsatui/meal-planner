@@ -28,11 +28,13 @@ main h1[tabindex="-1"]:focus { outline: none; }
 .button-secondary { color: var(--ink); background: var(--surface); border-color: var(--border); }
 .button-ghost { color: var(--muted); background: transparent; border-color: var(--border); }
 .action-menu { position: relative; }
-.action-menu-list { position: absolute; z-index: 30; top: calc(100% + 4px); right: 0; min-width: 132px; padding: 5px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow); }
-.action-menu-list button { width: 100%; min-height: 40px; padding: 8px 10px; color: var(--ink); text-align: left; background: transparent; border: 0; border-radius: 7px; cursor: pointer; font: inherit; font-size: .82rem; }
+.action-menu-list { position: absolute; z-index: 30; top: calc(100% + 4px); right: 0; min-width: 220px; padding: 5px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow); }
+.action-menu-list button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 40px; padding: 8px 10px; color: var(--ink); text-align: left; white-space: nowrap; background: transparent; border: 0; border-radius: 7px; cursor: pointer; font: inherit; font-size: .82rem; }
 .action-menu-list button:hover, .action-menu-list button:focus-visible { background: var(--canvas); }
 .action-menu-list button.danger { color: var(--danger); }
 .segmented-control { display: inline-flex; align-items: center; gap: 3px; }
+.recipe-media-4x3 { aspect-ratio: 4 / 3; object-fit: cover; object-position: center; }
+.recipe-media-4x3.image-placeholder { display: grid; place-items: center; }
 .button-danger { color: #fff; background: var(--danger); }
 .button-danger-ghost { color: var(--danger); background: transparent; border-color: #e4bcbc; }
 .button:disabled { opacity: .55; cursor: not-allowed; transform: none; }

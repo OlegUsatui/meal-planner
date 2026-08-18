@@ -114,7 +114,7 @@ export function ProductEditorPage() {
         {isCreate ? (
           <ProductForm mode="create" onSubmit={saveCreate} submitError={submitError} />
         ) : product ? (
-          <ProductForm mode="edit" onSubmit={saveEdit} submitError={submitError} isBaseUnitLocked={product.isBaseUnitLocked} initialValues={toFormValues(product)} />
+          <ProductForm mode="edit" onSubmit={saveEdit} submitError={submitError} recipeUsageCount={product.recipeUsageCount} initialValues={toFormValues(product)} />
         ) : null}
       </div>
 
@@ -135,7 +135,7 @@ function toFormValues(product: Product): ProductFormValues {
 function errorMessage(error: unknown): string {
   if (error instanceof ProductRepositoryError) {
     if (error.code === 'duplicate-name') return 'Продукт із такою назвою вже існує.'
-    if (error.code === 'base-unit-locked') return 'Базову одиницю вже не можна змінити.'
+    if (error.code === 'base-unit-locked') return 'Не вдалося оновити базову одиницю.'
     if (error.code === 'in-use') return error.message
     if (error.code === 'forbidden') return error.message
   }

@@ -14,6 +14,8 @@ export async function invalidateProductData(queryClient: QueryClient, userId: st
     queryClient.invalidateQueries({ queryKey: ['products', userId] }),
     queryClient.invalidateQueries({ queryKey: ['recipes', userId] }),
     queryClient.invalidateQueries({ queryKey: ['dashboard', userId] }),
+    queryClient.invalidateQueries({ queryKey: ['meal-plan', userId] }),
+    queryClient.invalidateQueries({ queryKey: ['shopping-list', userId] }),
   ])
 }
 

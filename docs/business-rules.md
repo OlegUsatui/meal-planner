@@ -1,6 +1,7 @@
 # Business rules
 
 - New products require a normalized unique name, controlled taxonomy category, and base unit. Legacy category values stay deprecated until manually edited.
+- Changing a product base unit keeps every linked ingredient's numeric value, replaces its displayed unit with the new base unit, and updates normalized shopping quantities atomically after explicit confirmation.
 - Recipe ingredients require active products, positive compatible metric quantities, and no duplicate product IDs.
 - Personal recipe photos are optional. Removing one nulls all metadata; an existing photo is preserved unless explicitly replaced/removed.
 - Nutrition is optional and non-negative. Exact preparation time uses equal bounds; range bounds are 0–1440 minutes and minimum cannot exceed maximum.

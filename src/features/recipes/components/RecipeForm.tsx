@@ -1,39 +1,39 @@
 import { useEffect, useRef, useState, type ClipboardEvent, type FormEvent } from 'react'
-import { ImageMinus, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { parseQuantity } from '../../products/domain/product'
 import type { Product } from '../../products/types'
 import { hasRecipeValidationErrors, validateRecipeInput, type RecipeValidationErrors } from '../domain/recipe'
 import type { RecipeClassification } from '../domain/recipe-taxonomy'
 import { imageFileFromClipboard } from '../image/process-recipe-image'
-import type { CreateRecipeInput, RecipeImageInput } from '../types'
+import type { CreateRecipeInput, Recipe, RecipeImageInput } from '../types'
 import { RecipeClassificationField } from './RecipeClassificationField'
-import { RecipeImageEditor } from './RecipeImageEditor'
+import { RecipeImageDialog } from './RecipeImageDialog'
+import { RecipePhotoCard } from './RecipePhotoCard'
 import { RecipeIngredientRow, type RecipeIngredientDraft } from './RecipeIngredientRow'
 import { FormField } from '../../../shared/ui/FormField'
 import { Alert } from '../../../shared/ui/Alert'
 import { Button } from '../../../shared/ui/Button'
 
 type Row = RecipeIngredientDraft
-type Props = { products: Product[]; onSubmit: (value: CreateRecipeInput) => Promise<void>; error?: string }
+type Props = { products: Product[]; onSubmit: (value: CreateRecipeInput) => Promise<void>; error?: string; initialValue?: Recipe; onCancel?: () => void }
 const newRow = (): Row => ({ key: crypto.randomUUID(), productId: '', quantity: '', unit: 'g' })
 
-export function RecipeForm({ products, onSubmit, error }: Props) {
+export function RecipeForm({ products, onSubmit, error, initialValue, onCancel }: Props) {
   const formRef = useRef<HTMLFormElement>(null)
-  const imageInputRef = useRef<HTMLInputElement>(null)
-  const [name, setName] = useState('')
-  const [instructions, setInstructions] = useState('')
-  const [calories, setCalories] = useState('')
-  const [protein, setProtein] = useState('')
-  const [fat, setFat] = useState('')
-  const [carbs, setCarbs] = useState('')
-  const [preparationTime, setPreparationTime] = useState('')
-  const [preparationTimeMax, setPreparationTimeMax] = useState('')
-  const [timeRange, setTimeRange] = useState(false)
-  const [classifications, setClassifications] = useState<RecipeClassification[]>([])
-  const [rows, setRows] = useState<Row[]>([newRow()])
-  const [image, setImage] = useState<RecipeImageInput>()
+  const [name, setName] = useState(initialValue?.name ?? '')
+  const [instructions, setInstructions] = useState(initialValue?.instructions ?? '')
+  const [calories, setCalories] = useState(valueString(initialValue?.caloriesPerServing))
+  const [protein, setProtein] = useState(valueString(initialValue?.proteinGramsPerServing))
+  const [fat, setFat] = useState(valueString(initialValue?.fatGramsPerServing))
+  const [carbs, setCarbs] = useState(valueString(initialValue?.carbsGramsPerServing))
+  const [preparationTime, setPreparationTime] = useState(valueString(initialValue?.preparationTimeMinMinutes))
+  const [preparationTimeMax, setPreparationTimeMax] = useState(valueString(initialValue?.preparationTimeMaxMinutes))
+  const [timeRange, setTimeRange] = useState(Boolean(initialValue && initialValue.preparationTimeMinMinutes !== initialValue.preparationTimeMaxMinutes))
+  const [classifications, setClassifications] = useState<RecipeClassification[]>(initialValue?.classifications ?? [])
+  const [rows, setRows] = useState<Row[]>(() => initialRows(initialValue))
+  const [image, setImage] = useState<RecipeImageInput | null | undefined>(initialValue?.image)
   const [imageFile, setImageFile] = useState<File>()
-  const [preview, setPreview] = useState<string>()
+  const [preview, setPreview] = useState<string | undefined>(initialValue?.image?.url)
   const [message, setMessage] = useState<string>()
   const [errors, setErrors] = useState<RecipeValidationErrors>({})
   const [pending, setPending] = useState(false)
@@ -48,8 +48,8 @@ export function RecipeForm({ products, onSubmit, error }: Props) {
     if (!file.type.startsWith('image/')) { setMessage('Оберіть файл зображення'); return }
     setImageFile(file); setMessage(undefined)
   }
-  const applyImage = (processed: RecipeImageInput & { blob: Blob }) => { setImage(processed); setImageFile(undefined); if (imageInputRef.current) imageInputRef.current.value = ''; setPreview((old) => { if (old) URL.revokeObjectURL(old); return URL.createObjectURL(processed.blob) }); setMessage(undefined); setDirty(true) }
-  const cancelImageEditor = () => { setImageFile(undefined); if (imageInputRef.current) imageInputRef.current.value = '' }
+  const applyImage = (processed: RecipeImageInput & { blob: Blob }) => { setImage(processed); setImageFile(undefined); setPreview((old) => { if (old) URL.revokeObjectURL(old); return URL.createObjectURL(processed.blob) }); setMessage(undefined); setDirty(true) }
+  const removeImage = () => { setImage(undefined); setImageFile(undefined); setPreview((old) => { if (old) URL.revokeObjectURL(old); return undefined }); setDirty(true) }
   const pasteImage = (event: ClipboardEvent<HTMLFormElement>) => { const file = imageFileFromClipboard(event.clipboardData); if (!file) return; event.preventDefault(); selectImage(file) }
   const optionalNumber = (value: string) => value.trim() ? Number(value.replace(',', '.')) : null
   const ingredients = () => rows.map((row) => { try { return { productId: row.productId, enteredQuantity: parseQuantity(row.quantity), enteredUnit: row.unit } } catch { return { productId: row.productId, enteredQuantity: Number.NaN, enteredUnit: row.unit } } })
@@ -73,10 +73,12 @@ export function RecipeForm({ products, onSubmit, error }: Props) {
     <section className="form-section"><p className="eyebrow">Інгредієнти</p><fieldset className="ingredient-fieldset" tabIndex={-1} data-field="ingredients"><legend className="sr-only">Інгредієнти рецепту</legend>{rows.map((row, index) => <RecipeIngredientRow key={row.key} row={row} index={index} products={products} rowCount={rows.length} onChange={updateRow} onRemove={() => { setRows((current) => current.filter((_, rowIndex) => rowIndex !== index)); setDirty(true) }} />)}<Button type="button" variant="secondary" onClick={() => { setRows((current) => [...current, newRow()]); setDirty(true) }}><Plus aria-hidden="true" /> Додати продукт</Button></fieldset>{errors.ingredients && <span className="field-error">{errors.ingredients}</span>}</section>
     <section className="form-section optional-section"><p className="eyebrow">Деталі · необов’язково</p><fieldset className="nutrition-fieldset" tabIndex={-1} data-field="nutrition"><legend>Харчова цінність на 1 порцію</legend><div className="form-grid"><NumberField label="Калорії, ккал" value={calories} onChange={(value) => change(setCalories, value)} /><NumberField label="Білки, г" value={protein} onChange={(value) => change(setProtein, value)} /><NumberField label="Жири, г" value={fat} onChange={(value) => change(setFat, value)} /><NumberField label="Вуглеводи, г" value={carbs} onChange={(value) => change(setCarbs, value)} /></div>{errors.nutrition && <span className="field-error">{errors.nutrition}</span>}</fieldset>
       <fieldset className="time-fieldset" tabIndex={-1} data-field="preparationTime"><legend>Час приготування</legend><div className="form-grid"><FormField label={timeRange ? 'Від, хв' : 'Точний час, хв'} control={<input inputMode="numeric" value={preparationTime} onChange={(event) => change(setPreparationTime, event.target.value)} />} />{timeRange && <FormField label="До, хв" control={<input inputMode="numeric" value={preparationTimeMax} onChange={(event) => change(setPreparationTimeMax, event.target.value)} />} />}</div><label className="switch-field"><input type="checkbox" checked={timeRange} onChange={(event) => change(setTimeRange, event.target.checked)} /> Вказати діапазон часу</label>{errors.preparationTime && <span className="field-error">{errors.preparationTime}</span>}</fieldset>
-      <FormField label="Фото рецепту" optional hint="Оберіть файл або вставте скріншот через Ctrl+V. Після вибору налаштуйте кадр 4:3." control={<input ref={imageInputRef} type="file" accept="image/*" onChange={(event) => selectImage(event.target.files?.[0])} />} />{imageFile ? <RecipeImageEditor file={imageFile} onApply={applyImage} onCancel={cancelImageEditor} /> : preview && <div className="recipe-image-edit"><img className="recipe-preview" src={preview} alt="Поточне фото рецепту" /><Button type="button" variant="danger-ghost" onClick={() => { setImage(undefined); setPreview(undefined); setDirty(true) }}><ImageMinus aria-hidden="true" /> Прибрати фото</Button></div>}</section>
+      <div className="field"><label>Фото рецепту <span className="optional-label">необов’язково</span></label><p className="field-hint">Фінальний кадр 4:3 однаково відображатиметься в усьому застосунку.</p><RecipePhotoCard imageUrl={preview ?? image?.url} onSelect={selectImage} onRemove={preview || image ? removeImage : undefined} /></div>{imageFile && <RecipeImageDialog image={image ?? null} initialFile={imageFile} onApply={applyImage} onRemove={removeImage} onClose={() => setImageFile(undefined)} />}</section>
     <section className="form-section"><p className="eyebrow">Приготування</p><FormField id="recipe-instructions" label="Спосіб приготування" required error={errors.instructions} control={<textarea data-field="instructions" rows={10} value={instructions} onChange={(event) => change(setInstructions, event.target.value)} />} /></section>
-    <div className="sticky-save"><span>{dirty ? 'Є незбережені зміни' : 'Усі зміни збережено'}</span><Button type="submit" disabled={pending}>{pending ? 'Зберігаємо…' : 'Зберегти рецепт'}</Button></div>
+    <div className="sticky-save"><span>{dirty ? 'Є незбережені зміни' : 'Усі зміни збережено'}</span><div className="recipe-form-sticky-actions">{onCancel && <Button type="button" variant="secondary" disabled={pending} onClick={onCancel}>Скасувати</Button>}<Button type="submit" disabled={pending}>{pending ? 'Зберігаємо…' : 'Зберегти рецепт'}</Button></div></div>
   </form>
 }
 
 function NumberField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <FormField label={label} control={<input inputMode="decimal" value={value} onChange={(event) => onChange(event.target.value)} />} /> }
+function valueString(value: number | null | undefined): string { return value == null ? '' : String(value) }
+function initialRows(recipe?: Recipe): Row[] { return recipe?.ingredients.length ? recipe.ingredients.map((ingredient) => ({ key: ingredient.id, productId: ingredient.productId, quantity: String(ingredient.enteredQuantity).replace('.', ','), unit: ingredient.enteredUnit })) : [newRow()] }

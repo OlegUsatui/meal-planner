@@ -9,5 +9,5 @@ export function RecipeImage({ blob, url: sourceUrl, alt, className }: { blob?: B
     setUrl(next)
     return () => { if (next.startsWith('blob:')) URL.revokeObjectURL(next) }
   }, [blob, sourceUrl])
-  return <MediaPlaceholder src={url} alt={alt} className={className} fallback={<Soup aria-hidden="true" />} />
+  return <MediaPlaceholder src={url} alt={alt} className={`${className} recipe-media-4x3`} fallback={<Soup aria-hidden="true" />} />
 }

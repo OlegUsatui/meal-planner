@@ -27,11 +27,11 @@ Search, filter, paginate, create, edit, archive, restore, and admin-only permane
 
 ## State and storage
 
-Query/category/archive/page live in the URL. Products are server-backed; archived products remain referenced but are excluded from new ingredient choices. Catalogue/detail reads reuse the five-minute authenticated session cache and cancel superseded searches. Create/update/archive/restore/delete invalidates product catalogues, recipe ingredient pickers, and dashboard data.
+Query/category/archive/page live in the URL. Products are server-backed; archived products remain referenced but are excluded from new ingredient choices. Catalogue/detail reads reuse the five-minute authenticated session cache and cancel superseded searches. Create/update/archive/restore/delete invalidates product catalogues, recipe ingredient pickers, recipes, meal plans, shopping lists, and dashboard data.
 
 ## Validation
 
-Names are trimmed and normalized for duplicates. A referenced base unit is locked. New values use the controlled taxonomy: Овочі та зелень; Фрукти; М’ясо та птиця; Риба та морепродукти; Молочні продукти; Яйця; Крупи та макарони; Бобові; Горіхи та насіння; Рослинний білок; Соуси та олії; Спеції та зелень; Інше.
+Names are trimmed and normalized for duplicates. A referenced base unit can be changed after explicit confirmation; numeric ingredient values stay unchanged and the new unit propagates to all linked recipes atomically. New values use the controlled taxonomy: Овочі та зелень; Фрукти; М’ясо та птиця; Риба та морепродукти; Молочні продукти; Яйця; Крупи та макарони; Бобові; Горіхи та насіння; Рослинний білок; Соуси та олії; Спеції та зелень; Інше.
 
 ## UI states
 
@@ -43,7 +43,7 @@ Search and filters have labels, filter state uses native controls, pagination ex
 
 ## Tricky cases
 
-Ambiguous legacy categories are never rewritten automatically; edit shows the old value as deprecated until manually replaced. Referenced units cannot change. Archive is non-destructive.
+Ambiguous legacy categories are never rewritten automatically; edit shows the old value as deprecated until manually replaced. A referenced unit change previews the affected recipe count and example transformation, then updates all linked ingredient units atomically. Archive is non-destructive.
 
 ## Acceptance criteria
 
@@ -51,7 +51,7 @@ URL state restores after reload/back; active ingredient pickers exclude archived
 
 ## Tests
 
-Domain tests cover normalization/taxonomy. Component tests cover URL filters, validation, archive/restore, locked units, and legacy values. Repository tests cover pagination and reference guards.
+Domain tests cover normalization/taxonomy. Component tests cover URL filters, validation, archive/restore, referenced-unit confirmation, and legacy values. Repository tests cover pagination, atomic unit propagation, and rollback on failure.
 
 ## Dependencies
 

@@ -3,7 +3,6 @@ import { validateRecipeInput } from '../domain/recipe'
 import { InlineEditButton, InlineEditorActions } from './InlineEditorActions'
 import { optionalNumber, recipeErrorMessage, type RecipeBlockPatch } from './recipe-editing'
 import type { Recipe } from '../types'
-import { SectionHeading } from '../../../shared/ui/SectionHeading'
 import { FormField } from '../../../shared/ui/FormField'
 import { Alert } from '../../../shared/ui/Alert'
 
@@ -22,7 +21,7 @@ export function RecipeNutritionBlock({ recipe, canManage, editing, blocked, onEd
     if (validation.nutrition) { setMessage(validation.nutrition); return }
     setPending(true); try { await onSave(patch) } catch (error: unknown) { setMessage(recipeErrorMessage(error)) } finally { setPending(false) }
   }
-  return <section className="recipe-detail-panel recipe-nutrition-panel" aria-labelledby="nutrition-title"><SectionHeading eyebrow="Харчова цінність" title="На одну порцію" titleId="nutrition-title" actions={<><span className="recipe-detail-panel-note">Орієнтовно</span>{canManage && !editing && <InlineEditButton label="Редагувати харчову цінність" disabled={blocked} onClick={onEdit} />}</>} />{editing ? <form className="inline-editor-card" onSubmit={(event) => void submit(event)} noValidate><div className="form-grid">{fields.map((field) => <FormField label={field.label} key={field.key} control={<input inputMode="decimal" value={values[field.key]} onChange={(event) => setValues((current) => ({ ...current, [field.key]: event.target.value }))} />} />)}</div>{message && <Alert variant="error">{message}</Alert>}<InlineEditorActions saveLabel="Зберегти харчову цінність" pending={pending} onCancel={onCancel} /></form> : <div className="nutrition-cards">{fields.map((field) => <div className="nutrition-card" key={field.key}><span>{field.label.replace(', ккал', '').replace(', г', '')}</span><strong>{formatNutrition(recipe[field.key], field.key === 'caloriesPerServing' ? 'ккал' : 'г')}</strong></div>)}</div>}</section>
+  return <section className="recipe-detail-panel recipe-nutrition-panel" aria-label="КБЖУ"><div className="poster-section-actions">{canManage && !editing && <InlineEditButton label="Редагувати харчову цінність" disabled={blocked} onClick={onEdit} />}</div>{editing ? <form className="inline-editor-card" onSubmit={(event) => void submit(event)} noValidate><div className="form-grid">{fields.map((field) => <FormField label={field.label} key={field.key} control={<input inputMode="decimal" value={values[field.key]} onChange={(event) => setValues((current) => ({ ...current, [field.key]: event.target.value }))} />} />)}</div>{message && <Alert variant="error">{message}</Alert>}<InlineEditorActions saveLabel="Зберегти харчову цінність" pending={pending} onCancel={onCancel} /></form> : <div className="nutrition-cards">{fields.map((field) => <div className="nutrition-card" key={field.key}>{field.key !== 'caloriesPerServing' && <span>{field.label.replace(', г', '')}:</span>}<strong>{formatNutrition(recipe[field.key], field.key === 'caloriesPerServing' ? 'ккал' : 'г')}</strong>{field.key === 'caloriesPerServing' && <small>на порцію</small>}</div>)}</div>}</section>
 }
 
 function formatNutrition(value: number | null, unit: string): string { return value == null ? '—' : `${value} ${unit}` }

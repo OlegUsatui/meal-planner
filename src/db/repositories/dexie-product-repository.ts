@@ -77,9 +77,7 @@ export class DexieProductRepository implements ProductRepository {
       const current = await this.database.products.get(id)
       if (!current) throw new ProductRepositoryError('not-found', 'Продукт не знайдено')
       await this.assertUniqueName(normalizedName, id)
-      if (current.baseUnit !== input.baseUnit && await this.isUnitLocked(id)) {
-        throw new ProductRepositoryError('base-unit-locked', 'Одиницю продукту вже не можна змінити')
-      }
+      const unitChanged = current.baseUnit !== input.baseUnit
       await this.database.products.update(id, {
         name: cleanName(input.name),
         normalizedName,
@@ -87,6 +85,14 @@ export class DexieProductRepository implements ProductRepository {
         baseUnit: input.baseUnit,
         updatedAt: this.runtime.now(),
       })
+      if (unitChanged) {
+        const ingredients = await this.database.recipeIngredients.where({ productId: id }).toArray()
+        await this.database.recipeIngredients.bulkPut(ingredients.map((ingredient) => ({
+          ...ingredient,
+          quantityBase: ingredient.enteredQuantity,
+          enteredUnit: input.baseUnit,
+        })))
+      }
     })
     return this.get(id)
   }
@@ -115,10 +121,6 @@ export class DexieProductRepository implements ProductRepository {
     if (matches.some((record) => !record.archivedAt && record.id !== exceptId)) {
       throw new ProductRepositoryError('duplicate-name', 'Активний продукт із такою назвою вже існує')
     }
-  }
-
-  private async isUnitLocked(productId: string): Promise<boolean> {
-    return (await this.database.recipeIngredients.where({ productId }).count()) > 0
   }
 
   private async toProduct(record: ProductRecord): Promise<Product> {

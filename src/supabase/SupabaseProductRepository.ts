@@ -73,11 +73,22 @@ export class SupabaseProductRepository implements ProductRepository {
     const ownerId = current.ownerId ?? actorId
     const normalizedName = normalizeProductName(input.name)
     await this.assertUniqueName(normalizedName, ownerId, id)
-    if (current.baseUnit !== input.baseUnit && current.isBaseUnitLocked) throw new ProductRepositoryError('base-unit-locked', 'Одиницю продукту вже не можна змінити')
-    let query = this.client.from('products').update({ name: cleanName(input.name), normalized_name: normalizedName, category: input.category.trim(), base_unit: input.baseUnit, updated_at: new Date().toISOString() }).eq('id', id)
-    if (!this.isAdmin) query = query.eq('owner_id', actorId)
-    const { error } = await query
-    if (error) throw repositoryError(error.message, 'Не вдалося оновити продукт.')
+    const cleanInput = { name: cleanName(input.name), normalizedName, category: input.category.trim(), baseUnit: input.baseUnit }
+    if (current.baseUnit !== input.baseUnit) {
+      const { error } = await this.client.rpc('update_product_base_unit', {
+        p_product_id: id,
+        p_name: cleanInput.name,
+        p_normalized_name: cleanInput.normalizedName,
+        p_category: cleanInput.category,
+        p_base_unit: cleanInput.baseUnit,
+      })
+      if (error) throw repositoryError(error.message, 'Не вдалося оновити продукт та пов’язані рецепти.')
+    } else {
+      let query = this.client.from('products').update({ name: cleanInput.name, normalized_name: cleanInput.normalizedName, category: cleanInput.category, base_unit: cleanInput.baseUnit, updated_at: new Date().toISOString() }).eq('id', id)
+      if (!this.isAdmin) query = query.eq('owner_id', actorId)
+      const { error } = await query
+      if (error) throw repositoryError(error.message, 'Не вдалося оновити продукт.')
+    }
     return this.get(id)
   }
 

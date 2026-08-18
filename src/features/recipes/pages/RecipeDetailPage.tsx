@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Archive, Plus, Trash2 } from 'lucide-react'
+import { Archive, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog'
 import { PermanentDeleteDialog } from '../../../shared/ui/PermanentDeleteDialog'
@@ -15,11 +15,14 @@ import { RecipeHeroBlock } from '../components/RecipeHeroBlock'
 import { RecipeNutritionBlock } from '../components/RecipeNutritionBlock'
 import { RecipeIngredientsBlock } from '../components/RecipeIngredientsBlock'
 import { RecipeInstructionsBlock } from '../components/RecipeInstructionsBlock'
-import { recipeInput, type RecipeBlockPatch, type RecipeEditBlock } from '../components/recipe-editing'
+import { RecipeForm } from '../components/RecipeForm'
+import type { CreateRecipeInput } from '../types'
 import { RetryBanner } from '../../../shared/ui/RetryBanner'
 import { Alert } from '../../../shared/ui/Alert'
 import { Button } from '../../../shared/ui/Button'
 import { BackLink } from '../../../shared/ui/BackLink'
+import { ActionMenu } from '../../../shared/ui/ActionMenu'
+import { PageHeader } from '../../../shared/ui/PageHeader'
 
 export function RecipeDetailPage() {
   const { recipeId } = useParams()
@@ -40,12 +43,12 @@ export function RecipeDetailPage() {
   const plannedView = planDate && planSlot ? { date: planDate, slot: planSlot } : undefined
   const returnTo = safeReturnTo(searchParams.get('returnTo'))
   const successMessage = searchParams.get('created') === '1' ? 'Рецепт створено.' : searchParams.get('saved') === '1' ? 'Зміни збережено.' : undefined
-  const [servings, setServings] = useState(planServings ?? 1)
+  const [servings] = useState(planServings ?? 1)
   const [actionError, setActionError] = useState('')
   const [savingToPlan, setSavingToPlan] = useState(false)
   const [showPermanentDelete, setShowPermanentDelete] = useState(false)
   const [showArchive, setShowArchive] = useState(false)
-  const [editingBlock, setEditingBlock] = useState<RecipeEditBlock>()
+  const [editing, setEditing] = useState(false)
 
   const recipeQuery = useQuery({
     queryKey: queryKeys.recipe(userId, recipeId ?? 'missing'),
@@ -55,13 +58,13 @@ export function RecipeDetailPage() {
     enabled: Boolean(recipeId),
   })
   const recipe = recipeQuery.data
-  const productsQuery = useQuery({ queryKey: queryKeys.products(userId, { includeArchived: true }), queryFn: ({ signal }) => productsRepository.list({ includeArchived: true }, signal), staleTime: cacheTimes.catalogueStale, refetchOnWindowFocus: false, enabled: editingBlock === 'ingredients' })
-  const saveBlock = async (patch: RecipeBlockPatch) => {
+  const productsQuery = useQuery({ queryKey: queryKeys.products(userId, { includeArchived: true }), queryFn: ({ signal }) => productsRepository.list({ includeArchived: true }, signal), staleTime: cacheTimes.catalogueStale, refetchOnWindowFocus: false, enabled: editing })
+  const saveRecipe = async (input: CreateRecipeInput) => {
     if (!recipeId || !recipe) return
-    const updated = await repository.update(recipeId, { ...recipeInput(recipe), ...patch })
+    const updated = await repository.update(recipeId, input)
     queryClient.setQueryData(queryKeys.recipe(userId, recipeId), updated)
     await invalidateRecipeData(queryClient, userId, recipeId)
-    setEditingBlock(undefined)
+    setEditing(false)
   }
 
   if (recipeQuery.isPending) return <section className="page recipe-detail" aria-busy="true"><div className="recipe-detail-skeleton" role="status"><span className="sr-only">Завантажуємо рецепт…</span><div className="skeleton-block recipe-detail-skeleton-media" /><div className="recipe-detail-skeleton-copy"><div className="skeleton-block skeleton-eyebrow" /><div className="skeleton-block skeleton-title" /><div className="skeleton-block skeleton-line" /><div className="skeleton-block skeleton-line short" /></div></div></section>
@@ -94,15 +97,15 @@ export function RecipeDetailPage() {
     }
   }
 
-  const adjustServings = (delta: number) => setServings((current) => Math.min(99, Math.max(1, current + delta)))
   return (
-    <section className={`page recipe-detail${planContext ? ' has-plan-context' : ''}`}>
-      <div className="recipe-detail-topbar"><BackLink to={backHref}>{plannedView ? 'Назад до плану' : 'До рецептів'}</BackLink>{plannedView && <span className="recipe-context-pill">{planContext ? 'Додайте в план' : 'У плані'}</span>}</div>
+    <section className={`page recipe-detail recipe-detail-wide${planContext ? ' has-plan-context' : ''}`}>
+      <div className="recipe-detail-topbar"><BackLink to={backHref}>{plannedView ? 'Назад до плану' : 'До рецептів'}</BackLink>{!editing && <div className="recipe-detail-topbar-actions">{planContext && <Button className="recipe-topbar-plan-action" disabled={savingToPlan || !Number.isInteger(servings) || servings < 1 || servings > 99} onClick={() => void addToPlan()}>{savingToPlan ? 'Зберігаємо…' : planContext.mode === 'replace' ? 'Замінити в плані' : 'Додати до плану'} <Plus aria-hidden="true" /></Button>}{canManage && <Button variant="secondary" onClick={() => setEditing(true)}><Pencil aria-hidden="true" /> Редагувати рецепт</Button>}{canManage && <ActionMenu label="Інші дії" className="recipe-detail-more" items={[...(!recipe.archivedAt ? [{ label: 'Архівувати', icon: <Archive aria-hidden="true" />, onSelect: () => setShowArchive(true) }] : []), ...(isAdmin ? [{ label: 'Видалити назавжди', icon: <Trash2 aria-hidden="true" />, danger: true, onSelect: () => setShowPermanentDelete(true) }] : [])]} />}</div>}</div>
       {successMessage && <p className="toast-inline" role="status">{successMessage}</p>}
       {actionError && <Alert variant="error">{actionError}</Alert>}
-      <RecipeHeroBlock recipe={recipe} canManage={canManage} editing={editingBlock === 'hero'} blocked={Boolean(editingBlock && editingBlock !== 'hero')} planned={Boolean(plannedView)} onEdit={() => setEditingBlock('hero')} onCancel={() => setEditingBlock(undefined)} onSave={saveBlock} planAction={planContext && <div className="recipe-detail-plan-action"><Button disabled={savingToPlan || !Number.isInteger(servings) || servings < 1 || servings > 99} onClick={() => void addToPlan()}>{savingToPlan ? 'Зберігаємо…' : planContext.mode === 'replace' ? 'Замінити в плані' : 'Додати до плану'} <Plus aria-hidden="true" /></Button></div>} />
-      {canManage && <div className="recipe-detail-manage-actions"><details className="recipe-detail-more"><summary className="button button-ghost">Інші дії</summary><div className="recipe-detail-more-menu">{!recipe.archivedAt && <button type="button" onClick={() => setShowArchive(true)}><Archive aria-hidden="true" /> Архівувати</button>}{isAdmin && <button type="button" className="danger" onClick={() => setShowPermanentDelete(true)}><Trash2 aria-hidden="true" /> Видалити назавжди</button>}</div></details></div>}
-      <div className="recipe-detail-body"><RecipeNutritionBlock recipe={recipe} canManage={canManage} editing={editingBlock === 'nutrition'} blocked={Boolean(editingBlock && editingBlock !== 'nutrition')} onEdit={() => setEditingBlock('nutrition')} onCancel={() => setEditingBlock(undefined)} onSave={saveBlock} /><RecipeIngredientsBlock recipe={recipe} products={productsQuery.data ?? []} productsLoading={productsQuery.isPending} canManage={canManage} editing={editingBlock === 'ingredients'} blocked={Boolean(editingBlock && editingBlock !== 'ingredients')} onEdit={() => setEditingBlock('ingredients')} onCancel={() => setEditingBlock(undefined)} onSave={saveBlock} servings={servings} onAdjustServings={adjustServings} /><RecipeInstructionsBlock recipe={recipe} canManage={canManage} editing={editingBlock === 'instructions'} blocked={Boolean(editingBlock && editingBlock !== 'instructions')} onEdit={() => setEditingBlock('instructions')} onCancel={() => setEditingBlock(undefined)} onSave={saveBlock} /></div>
+      {editing ? <div className="recipe-detail-full-editor"><PageHeader eyebrow="Редагування" title="Редагування рецепта" />{productsQuery.isPending ? <p role="status">Завантажуємо продукти…</p> : <RecipeForm products={productsQuery.data ?? []} initialValue={recipe} onSubmit={saveRecipe} onCancel={() => setEditing(false)} error={productsQuery.isError ? 'Не вдалося завантажити продукти' : undefined} />}</div> : <div className="recipe-detail-layout recipe-poster recipe-poster-full-height">
+        <RecipeHeroBlock recipe={recipe} canManage={false} editing={false} blocked={false} onEdit={() => undefined} onCancel={() => undefined} onSave={async () => undefined} />
+        <div className="recipe-detail-body"><RecipeNutritionBlock recipe={recipe} canManage={false} editing={false} blocked={false} onEdit={() => undefined} onCancel={() => undefined} onSave={async () => undefined} /><RecipeIngredientsBlock recipe={recipe} products={[]} productsLoading={false} canManage={false} editing={false} blocked={false} onEdit={() => undefined} onCancel={() => undefined} onSave={async () => undefined} servings={servings} /><RecipeInstructionsBlock recipe={recipe} canManage={false} editing={false} blocked={false} onEdit={() => undefined} onCancel={() => undefined} onSave={async () => undefined} /></div>
+      </div>}
       {showArchive && <ConfirmDialog title={`Архівувати «${recipe.name}»?`} description="Рецепт зникне з вибору нових страв, але залишиться читабельним у попередніх планах." confirmLabel="Архівувати рецепт" danger onCancel={() => setShowArchive(false)} onConfirm={() => void archive()} />}
       {showPermanentDelete && <PermanentDeleteDialog name={recipe.name} entityLabel="рецепт" onCancel={() => setShowPermanentDelete(false)} onConfirm={() => void removePermanently()} />}
     </section>
