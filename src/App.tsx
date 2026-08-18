@@ -9,6 +9,7 @@ import { useAuth } from './features/auth/useAuth'
 import { AppErrorBoundary } from './app/shell/AppErrorBoundary'
 import { ResetPasswordPage } from './features/auth/ResetPasswordPage'
 import { createSessionQueryClient } from './app/query/query-client'
+import { LoadingState } from './shared/ui/LoadingState'
 
 function App() {
   const [queryClient] = useState(createSessionQueryClient)
@@ -18,7 +19,7 @@ function App() {
 
 function AuthenticatedApp() {
   const { session, loading, configurationError } = useAuth()
-  if (loading) return <main className="auth-page"><div className="loading-panel">Перевіряємо сесію…</div></main>
+  if (loading) return <main className="auth-page"><LoadingState>Перевіряємо сесію…</LoadingState></main>
   if (window.location.pathname === '/auth/reset-password') return <ResetPasswordPage />
   if (configurationError || !session) return <AuthPage />
   return <SessionApp key={session.user.id} />
@@ -32,7 +33,7 @@ function SessionApp() {
     return () => { window.removeEventListener('meal-planner:clear-session-cache', clear); queryClient.clear() }
   }, [queryClient])
 
-  return <QueryClientProvider client={queryClient}><AppProviders><Suspense fallback={<main className="route-loading" aria-busy="true"><div className="loading-panel" role="status">Завантажуємо сторінку…</div></main>}><RouterProvider router={router} /></Suspense></AppProviders></QueryClientProvider>
+  return <QueryClientProvider client={queryClient}><AppProviders><Suspense fallback={<main className="route-loading" aria-busy="true"><LoadingState>Завантажуємо сторінку…</LoadingState></main>}><RouterProvider router={router} /></Suspense></AppProviders></QueryClientProvider>
 }
 
 export default App

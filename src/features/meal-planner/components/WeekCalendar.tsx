@@ -3,6 +3,7 @@ import { mealSlots, parseLocalDate, type MealSlot } from '../domain/meal-plan'
 import type { MealPlanEntry } from '../types'
 import { DayMealCard } from './DayMealCard'
 import { WeekMealCard } from './WeekMealCard'
+import { CalendarDaySelector } from '../../../shared/ui/CalendarDaySelector'
 
 export type CalendarViewMode = 'day' | 'week'
 
@@ -23,14 +24,14 @@ interface Props {
 
 export function WeekCalendar(props: Props) {
   return <div className={`week-calendar view-${props.viewMode}`}>
-    <div className="mobile-day-strip" aria-label="Дні тижня">{props.dates.map((date) => <button type="button" key={date} className={`${date === props.selectedDate ? 'selected' : ''} ${date === props.today ? 'today' : ''}`} onClick={() => props.onSelectDate(date)}><span>{parseLocalDate(date).toLocaleDateString('uk-UA', { weekday: 'short' })}</span><strong>{parseLocalDate(date).getDate()}</strong></button>)}</div>
+    <CalendarDaySelector dates={props.dates} today={props.today} selectedDate={props.selectedDate} onSelect={props.onSelectDate} variant="strip" className="mobile-day-strip" />
     {props.viewMode === 'week' ? <WeekGrid {...props} /> : <div className="week-grid week-grid-day"><DayColumn date={props.selectedDate} selected {...props} /></div>}
   </div>
 }
 
 function WeekGrid({ dates, today, selectedDate, entries, recipes, onSelectDate, onAdd, onReplace, onRemove, onServingsChange, onOpen }: Props) {
   return <div className="week-grid week-grid-week" role="grid" aria-label="Тижневий план">
-    {dates.map((date) => <button type="button" role="columnheader" aria-selected={date === selectedDate} className={`week-grid-day-header ${date === today ? 'today' : ''} ${date === selectedDate ? 'selected' : ''}`} key={date} onClick={() => onSelectDate(date)}><span>{parseLocalDate(date).toLocaleDateString('uk-UA', { weekday: 'short' })}</span><strong>{parseLocalDate(date).getDate()}</strong></button>)}
+    <CalendarDaySelector dates={dates} today={today} selectedDate={selectedDate} onSelect={onSelectDate} variant="grid" className="week-grid-day-header" />
     {mealSlots.map(({ value, label }) => <div className="week-grid-slot" key={value}><span className="week-grid-slot-label">{label}</span>{dates.map((date) => {
       const entry = entries.find((item) => item.date === date && item.slot === value)
       const recipe = entry ? recipes.get(entry.recipeId) : undefined
@@ -43,7 +44,7 @@ function WeekGrid({ dates, today, selectedDate, entries, recipes, onSelectDate, 
 function DayColumn({ date, today, selected, entries, recipes, onSelectDate, onAdd, onReplace, onRemove, onServingsChange, onOpen }: Props & { date: string; selected: boolean }) {
   const readOnly = date < today
   return <section className={`week-day ${date === today ? 'today' : ''} ${selected ? 'selected' : ''}`} aria-label={parseLocalDate(date).toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long' })}>
-    <button type="button" className="week-day-header" onClick={() => onSelectDate(date)}><span>{parseLocalDate(date).toLocaleDateString('uk-UA', { weekday: 'short' })}</span><strong>{parseLocalDate(date).getDate()}</strong></button>
+    <CalendarDaySelector dates={[date]} today={today} selectedDate={selected ? date : undefined} onSelect={onSelectDate} variant="day" className="week-day-header" />
     <div className="week-day-slots">{mealSlots.map(({ value, label }) => {
       const entry = entries.find((item) => item.date === date && item.slot === value)
       const recipe = entry ? recipes.get(entry.recipeId) : undefined

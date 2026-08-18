@@ -62,13 +62,13 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 - Catalogue header with search and primary “Новий рецепт”. Category filter buttons wrap onto additional rows without horizontal scrolling when the available width is limited.
 - 3–4 column photo card grid; optional archived toggle is secondary.
 - Detail: editorial hero with large 4:3 image, title, taxonomy, metadata and management actions; nutrition, servings, ingredients and instructions use separate readable panels below, each with an inline edit action for manageable recipes.
-- Create: centered 760 px form; ingredient rows align product, quantity, unit, and remove action.
+- Create: centered 760 px form; ingredient rows align product, quantity, unit, and remove action through the shared `RecipeIngredientRow` component.
 
 ## 5. Mobile composition
 
 - Full-width search and one/two-column card grid based on minimum width.
 - Detail stacks image, title, metadata, nutrition cards, serving stepper, ingredients and instructions; plan-context actions stay visible in a mobile fixed action bar.
-- Inline block editors remain readable on mobile. Each ingredient is a labelled mini-card, not a compressed row.
+- Inline block editors remain readable on mobile. Each ingredient is a labelled mini-card, not a compressed row; create and detail editors reuse the same ingredient row and shared form-field semantics.
 - Photo editing opens in a modal sized for touch crop controls.
 - Image picker supports camera/photo library through browser file input without requiring native APIs.
 
@@ -129,7 +129,7 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 - Search has visible label or accessible name and clear button.
 - Recipe card link name is recipe title; decorative thumbnail avoids duplicate announcement.
 - Image input has instructions, accepted formats, preview alt, and error association.
-- Image editor exposes labelled zoom controls, keyboard-operable buttons, a 4:3 crop preview, and a cancel action that preserves the existing image.
+- Image editor exposes labelled zoom controls, keyboard-operable shared buttons, a 4:3 crop preview, and a cancel action that preserves the existing image. Recipe photo and archive flows use the shared dialog focus and Escape behavior.
 - Ingredient groups use fieldsets/legends or equivalent semantic grouping; remove names the product/row.
 - Serving stepper exposes labelled increment/decrement controls and announces the current value through the native input/live interaction.
 

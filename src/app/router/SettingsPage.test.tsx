@@ -27,9 +27,9 @@ describe('SettingsPage', () => {
     expect(signOut).toHaveBeenCalledOnce()
   })
 
-  it('links to informational onboarding without changing completion', () => {
+  it('does not expose the retired onboarding flow', () => {
     renderSettings({ reauthenticate: vi.fn(), signOut: vi.fn() })
-    expect(screen.getByRole('link', { name: 'Переглянути знайомство' })).toHaveAttribute('href', '/welcome?info=1')
+    expect(screen.queryByRole('link', { name: 'Переглянути знайомство' })).not.toBeInTheDocument()
   })
 })
 

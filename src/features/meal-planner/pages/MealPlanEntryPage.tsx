@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Check, Search } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { cacheTimes, queryKeys } from '../../../app/query/query-client'
 import { invalidateMealPlanData } from '../../../app/query/invalidation'
 import { useOptionalAuth } from '../../auth/useAuth'
@@ -12,6 +12,15 @@ import type { RecipeSummary } from '../../recipes/types'
 import { RecipeImage } from '../components/RecipeImage'
 import { mealSlots, parseLocalDate, type MealSlot } from '../domain/meal-plan'
 import { useMealPlanRepository } from '../repositories/useMealPlanRepository'
+import { BackLink } from '../../../shared/ui/BackLink'
+import { PageHeader } from '../../../shared/ui/PageHeader'
+import { LoadingState } from '../../../shared/ui/LoadingState'
+import { RetryBanner } from '../../../shared/ui/RetryBanner'
+import { EmptyState } from '../../../shared/ui/EmptyState'
+import { SearchField } from '../../../shared/ui/SearchField'
+import { ChipGroup } from '../../../shared/ui/ChipGroup'
+import { Alert } from '../../../shared/ui/Alert'
+import { Button } from '../../../shared/ui/Button'
 
 const localToday = () => new Intl.DateTimeFormat('sv-SE').format(new Date())
 
@@ -78,33 +87,24 @@ export function MealPlanEntryPage() {
   }
 
   return <section className="page meal-plan-entry-page">
-    <Link className="back-link" to={`/plan?date=${encodeURIComponent(date)}`}><ArrowLeft aria-hidden="true" /> До плану</Link>
-    <header className="page-header meal-plan-entry-header">
-      <div>
-        <p className="eyebrow">{slotLabel} · {parseLocalDate(date).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' })}</p>
-        <h1>{replacing ? 'Замінити страву' : 'Додати страву'}</h1>
-        <p className="page-intro">Оберіть рецепт і відфільтруйте категорію. Після вибору дія додавання з’явиться внизу екрана.</p>
-      </div>
-    </header>
+    <BackLink to={`/plan?date=${encodeURIComponent(date)}`}>До плану</BackLink>
+    <PageHeader className="meal-plan-entry-header" eyebrow={`${slotLabel} · ${parseLocalDate(date).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' })}`} title={replacing ? 'Замінити страву' : 'Додати страву'} description="Оберіть рецепт і відфільтруйте категорію. Після вибору дія додавання з’явиться внизу екрана." />
 
-    {recipesQuery.isPending && <div className="loading-panel" role="status">Завантажуємо рецепти…</div>}
-    {recipesQuery.isError && <div className="form-alert" role="alert"><span>Не вдалося завантажити рецепти.</span><button type="button" className="button button-secondary" onClick={() => void recipesQuery.refetch()}>Повторити</button></div>}
+    {recipesQuery.isPending && <LoadingState>Завантажуємо рецепти…</LoadingState>}
+    {recipesQuery.isError && <RetryBanner hasData={Boolean(recipesQuery.data?.length)} staleMessage="Показуємо останній завантажений каталог." errorMessage="Не вдалося завантажити рецепти." onRetry={() => void recipesQuery.refetch()} pending={recipesQuery.isFetching} />}
     {!recipesQuery.isPending && !recipesQuery.isError && <form className="meal-plan-entry-form" onSubmit={save}>
       <div className="meal-plan-entry-toolbar">
-        <label className="search-field meal-plan-entry-search"><Search aria-hidden="true" /><span className="sr-only">Пошук рецептів</span><input type="search" placeholder="Знайти рецепт…" value={search} onChange={(event) => setSearch(event.target.value)} /></label>
-        <div className="recipe-subcategory-filters meal-plan-category-chips" role="group" aria-label="Підкатегорії">
-          <button type="button" className={!subcategory ? 'active' : ''} aria-pressed={!subcategory} onClick={() => selectSubcategory('')}>Усі підкатегорії</button>
-          {categories.map((category) => <button type="button" key={category.subcategoryId} className={subcategory === category.subcategoryId ? 'active' : ''} aria-pressed={subcategory === category.subcategoryId} onClick={() => selectSubcategory(category.subcategoryId)}>{category.label}</button>)}
-        </div>
+        <SearchField className="meal-plan-entry-search" label="Пошук рецептів" placeholder="Знайти рецепт…" value={search} onChange={setSearch} />
+        <ChipGroup ariaLabel="Підкатегорії" value={subcategory} onChange={selectSubcategory} className="recipe-subcategory-filters meal-plan-category-chips" options={[{ value: '', label: 'Усі підкатегорії' }, ...categories.map((category) => ({ value: category.subcategoryId, label: category.label }))]} />
       </div>
-      {actionError && <p className="form-alert" role="alert">{actionError}</p>}
-      {!filtered.length && <div className="empty-state meal-plan-entry-empty"><h2>Рецептів не знайдено</h2><p>Змініть пошук або оберіть іншу категорію.</p></div>}
+      {actionError && <Alert variant="error">{actionError}</Alert>}
+      {!filtered.length && <EmptyState className="meal-plan-entry-empty" title="Рецептів не знайдено" description="Змініть пошук або оберіть іншу категорію." />}
       {!!filtered.length && <div className="meal-plan-entry-content">
         <div className="recipe-grid meal-plan-entry-recipes" aria-label="Рецепти">{filtered.map((recipe) => <RecipeOption key={recipe.id} recipe={recipe} slot={slot} selected={recipe.id === selectedId} onSelect={() => setSelectedId((current) => current === recipe.id ? '' : recipe.id)} />)}</div>
       </div>}
       {selectedRecipe && <div className="meal-plan-entry-actions">
         <div className="meal-plan-entry-action-copy" aria-live="polite"><span className="eyebrow">Вибрано</span><strong>{selectedRecipe.name}</strong></div>
-        <button type="submit" className="button button-primary meal-plan-entry-submit" disabled={pending}>{pending ? 'Зберігаємо…' : replacing ? 'Замінити в плані' : 'Додати до плану'} <Check aria-hidden="true" /></button>
+        <Button type="submit" className="meal-plan-entry-submit" disabled={pending}>{pending ? 'Зберігаємо…' : replacing ? 'Замінити в плані' : 'Додати до плану'} <Check aria-hidden="true" /></Button>
       </div>}
     </form>}
   </section>

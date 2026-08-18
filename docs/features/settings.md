@@ -12,7 +12,7 @@ Manage account credentials, session, app information, data portability, and acco
 
 ## Flows
 
-Change email/password, sign out, revisit onboarding in info mode, inspect PWA/connectivity/version, export personal data, or enter the separated dangerous zone.
+Change email/password, sign out, inspect PWA/connectivity/version, export personal data, or enter the separated dangerous zone.
 
 ## Desktop UI
 
@@ -24,7 +24,7 @@ Settings are reachable through “Ще” in at most two taps. Sections stack an
 
 ## Actions
 
-Update email/password, sign out, open onboarding info, create ZIP export, and delete account after reauthentication plus typed confirmation.
+Update email/password, sign out, create ZIP export, and delete account after reauthentication plus typed confirmation.
 
 ## State and storage
 

@@ -1,6 +1,9 @@
-import { cloneElement, useState, type FormEvent, type HTMLAttributes, type ReactElement } from 'react'
+import { useState, type FormEvent } from 'react'
 import { productCategories, validateProductInput, type BaseUnit, type ProductValidationErrors } from '../domain/product'
 import type { CreateProductInput, UpdateProductInput } from '../types'
+import { FormField } from '../../../shared/ui/FormField'
+import { Alert } from '../../../shared/ui/Alert'
+import { Button } from '../../../shared/ui/Button'
 
 export interface ProductFormValues {
   name: string
@@ -46,45 +49,24 @@ export function ProductForm(props: ProductFormProps) {
 
   return (
     <form className="product-form" noValidate onSubmit={submit}>
-      {props.submitError && <div className="form-alert" role="alert">{props.submitError}</div>}
-      <Field label="Назва продукту" error={errors.name}>
-        <input value={values.name} onChange={(event) => update('name', event.target.value)} autoComplete="off" />
-      </Field>
-      <Field label="Категорія" error={errors.category}>
-        <select value={values.category} onChange={(event) => update('category', event.target.value)}>
+      {props.submitError && <Alert variant="error">{props.submitError}</Alert>}
+      <FormField id="product-name" label="Назва продукту" error={errors.name} control={<input value={values.name} onChange={(event) => update('name', event.target.value)} autoComplete="off" />} />
+      <FormField id="product-category" label="Категорія" error={errors.category} control={<select value={values.category} onChange={(event) => update('category', event.target.value)}>
           <option value="">Оберіть категорію</option>
           {values.category && !productCategories.includes(values.category as typeof productCategories[number]) && <option value={values.category}>{values.category} (застаріла категорія — оберіть нову)</option>}
           {productCategories.map((category) => <option key={category}>{category}</option>)}
-        </select>
-      </Field>
-      <Field label="Базова одиниця">
-        <select value={values.baseUnit} disabled={props.isBaseUnitLocked} onChange={(event) => update('baseUnit', event.target.value as BaseUnit)}>
+        </select>} />
+      <FormField id="product-base-unit" label="Базова одиниця" control={<select value={values.baseUnit} disabled={props.isBaseUnitLocked} onChange={(event) => update('baseUnit', event.target.value as BaseUnit)}>
           <option value="g">Грами (g)</option>
           <option value="ml">Мілілітри (ml)</option>
           <option value="pcs">Штуки (шт)</option>
-        </select>
-      </Field>
+        </select>} />
       {props.isBaseUnitLocked && <p className="field-hint">Одиницю вже не можна змінити, оскільки продукт використовується в рецептах.</p>}
       <div className="form-actions">
-        <button className="button button-primary" disabled={pending} type="submit" aria-busy={pending}>
+        <Button disabled={pending} type="submit" aria-busy={pending}>
           {pending ? 'Зберігаємо…' : props.mode === 'create' ? 'Створити продукт' : 'Зберегти зміни'}
-        </button>
+        </Button>
       </div>
     </form>
   )
-}
-
-function Field({ label, error, children }: { label: string; error?: string; children: ReactElement }) {
-  const id = `field-${label.toLocaleLowerCase('uk-UA').replace(/[^a-zа-яіїєґ0-9]+/giu, '-')}`
-  return (
-    <div className={`field ${error ? 'field-error' : ''}`}>
-      <label htmlFor={id}>{label}</label>
-      {cloneWithId(children, id, error ? `${id}-error` : undefined)}
-      {error && <p id={`${id}-error`} className="field-error-text">{error}</p>}
-    </div>
-  )
-}
-
-function cloneWithId(element: ReactElement, id: string, describedBy?: string) {
-  return cloneElement(element, { id, 'aria-describedby': describedBy, 'aria-invalid': Boolean(describedBy) } as HTMLAttributes<HTMLElement>)
 }

@@ -34,7 +34,6 @@ Meal Planner is a server-backed meal planning PWA. This directory is the source 
 
 | Feature | Document |
 | --- | --- |
-| First-run experience | [Onboarding](features/onboarding.md) |
 | Today and near-term overview | [Dashboard](features/dashboard.md) |
 | Monthly meal planning | [Meal planner](features/meal-planner.md) |
 | Recipe management | [Recipes](features/recipes.md) |

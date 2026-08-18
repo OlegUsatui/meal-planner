@@ -2,6 +2,8 @@ import { Check, Move, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-react'
 import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { processRecipeImage, clamp, type RecipeImageCrop } from '../image/process-recipe-image'
 import type { RecipeImageInput } from '../types'
+import { Alert } from '../../../shared/ui/Alert'
+import { Button, IconButton } from '../../../shared/ui/Button'
 
 type Props = {
   file: File
@@ -44,11 +46,11 @@ export function RecipeImageEditor({ file, onApply, onCancel }: Props) {
   }
 
   return <section className="recipe-image-editor" aria-labelledby="recipe-image-editor-title">
-    <div className="recipe-image-editor-header"><div><p className="eyebrow">Кадрування фото</p><h3 id="recipe-image-editor-title">Налаштуйте кадр 4:3</h3></div><button type="button" className="icon-button" aria-label="Скасувати редагування фото" onClick={onCancel} disabled={pending}><X aria-hidden="true" /></button></div>
+    <div className="recipe-image-editor-header"><div><p className="eyebrow">Кадрування фото</p><h3 id="recipe-image-editor-title">Налаштуйте кадр 4:3</h3></div><IconButton aria-label="Скасувати редагування фото" onClick={onCancel} disabled={pending}><X aria-hidden="true" /></IconButton></div>
     <div className="recipe-image-crop-frame" onPointerDown={moveStart} onPointerMove={move} onPointerUp={moveEnd} onPointerCancel={moveEnd} role="img" aria-label="Попередній перегляд кадру фото"><img src={previewUrl} alt="" draggable="false" style={{ objectPosition: `${50 + crop.offsetX * 50}% ${50 + crop.offsetY * 50}%`, transform: `scale(${crop.zoom})` }} /><span className="recipe-image-crop-guide" aria-hidden="true" /></div>
     <p className="field-hint"><Move aria-hidden="true" /> Перетягніть фото, щоб змінити композицію. У фінальному варіанті буде кадр 4:3.</p>
-    <label className="recipe-image-zoom"><span>Масштаб</span><span className="recipe-image-zoom-controls"><button type="button" className="icon-button" aria-label="Зменшити фото" onClick={() => setCrop((current) => ({ ...current, zoom: clamp(current.zoom - 0.1, 1, 3) }))} disabled={pending || crop.zoom <= 1}><ZoomOut aria-hidden="true" /></button><input type="range" min="1" max="3" step="0.05" value={crop.zoom} aria-label="Масштаб фото" onChange={(event) => setCrop((current) => ({ ...current, zoom: Number(event.target.value) }))} disabled={pending} /><button type="button" className="icon-button" aria-label="Збільшити фото" onClick={() => setCrop((current) => ({ ...current, zoom: clamp(current.zoom + 0.1, 1, 3) }))} disabled={pending || crop.zoom >= 3}><ZoomIn aria-hidden="true" /></button></span></label>
-    {error && <p className="form-alert" role="alert">{error}</p>}
-    <div className="recipe-image-editor-actions"><button type="button" className="button button-secondary" onClick={reset} disabled={pending}><RotateCcw aria-hidden="true" /> Скинути</button><div><button type="button" className="button button-secondary" onClick={onCancel} disabled={pending}>Скасувати</button><button type="button" className="button button-primary" onClick={() => void apply()} disabled={pending || !previewUrl}><Check aria-hidden="true" /> {pending ? 'Обробляємо…' : 'Застосувати фото'}</button></div></div>
+    <label className="recipe-image-zoom"><span>Масштаб</span><span className="recipe-image-zoom-controls"><IconButton aria-label="Зменшити фото" onClick={() => setCrop((current) => ({ ...current, zoom: clamp(current.zoom - 0.1, 1, 3) }))} disabled={pending || crop.zoom <= 1}><ZoomOut aria-hidden="true" /></IconButton><input type="range" min="1" max="3" step="0.05" value={crop.zoom} aria-label="Масштаб фото" onChange={(event) => setCrop((current) => ({ ...current, zoom: Number(event.target.value) }))} disabled={pending} /><IconButton aria-label="Збільшити фото" onClick={() => setCrop((current) => ({ ...current, zoom: clamp(current.zoom + 0.1, 1, 3) }))} disabled={pending || crop.zoom >= 3}><ZoomIn aria-hidden="true" /></IconButton></span></label>
+    {error && <Alert variant="error">{error}</Alert>}
+    <div className="recipe-image-editor-actions"><Button variant="secondary" onClick={reset} disabled={pending}><RotateCcw aria-hidden="true" /> Скинути</Button><div><Button variant="secondary" onClick={onCancel} disabled={pending}>Скасувати</Button><Button onClick={() => void apply()} disabled={pending || !previewUrl}><Check aria-hidden="true" /> {pending ? 'Обробляємо…' : 'Застосувати фото'}</Button></div></div>
   </section>
 }

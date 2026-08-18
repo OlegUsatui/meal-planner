@@ -1,6 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from './useAuth'
+import { PasswordField } from '../../shared/ui/PasswordField'
+import { Alert } from '../../shared/ui/Alert'
+import { Button } from '../../shared/ui/Button'
 
 export function ResetPasswordPage() {
   const { session, updatePassword } = useAuth()
@@ -18,5 +21,5 @@ export function ResetPasswordPage() {
     catch { setError('Не вдалося оновити пароль. Запросіть нове посилання.') }
     finally { setBusy(false) }
   }
-  return <main className="auth-page"><section className="auth-card"><p className="eyebrow">Відновлення доступу</p><h1>Новий пароль</h1>{!session ? <div className="form-alert" role="alert">Посилання недійсне або завершилося. Запросіть новий лист на екрані входу.</div> : <form onSubmit={(event) => void submit(event)}>{error && <div className="form-alert" role="alert">{error}</div>}{message && <div className="success-alert" role="status">{message}</div>}<label className="field">Новий пароль<input type="password" autoComplete="new-password" minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} /></label><label className="field">Повторіть новий пароль<input type="password" autoComplete="new-password" minLength={8} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} /></label><button className="button button-primary" disabled={busy}>Зберегти новий пароль</button></form>}<Link className="text-button auth-back-link" to="/">До застосунку</Link></section></main>
+  return <main className="auth-page"><section className="auth-card"><p className="eyebrow">Відновлення доступу</p><h1>Новий пароль</h1>{!session ? <Alert variant="error">Посилання недійсне або завершилося. Запросіть новий лист на екрані входу.</Alert> : <form onSubmit={(event) => void submit(event)}>{error && <Alert variant="error">{error}</Alert>}{message && <Alert variant="success">{message}</Alert>}<PasswordField id="reset-password" label="Новий пароль" autoComplete="new-password" minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} /><PasswordField id="reset-password-confirmation" label="Повторіть новий пароль" autoComplete="new-password" minLength={8} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} /><Button type="submit" disabled={busy}>Зберегти новий пароль</Button></form>}<Link className="text-button auth-back-link" to="/">До застосунку</Link></section></main>
 }

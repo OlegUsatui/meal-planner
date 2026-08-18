@@ -1,9 +1,9 @@
 import { Pencil } from 'lucide-react'
+import { FormActions } from '../../../shared/ui/FormActions'
+import { IconButton } from '../../../shared/ui/Button'
 
-export function InlineEditorActions({ saveLabel, pending, onCancel }: { saveLabel: string; pending: boolean; onCancel: () => void }) {
-  return <div className="inline-editor-actions"><button type="button" className="button button-secondary" onClick={onCancel} disabled={pending}>Скасувати</button><button type="submit" className="button button-primary" disabled={pending}>{pending ? 'Зберігаємо…' : saveLabel}</button></div>
-}
+export function InlineEditorActions(props: { saveLabel: string; pending: boolean; onCancel: () => void }) { return <FormActions {...props} /> }
 
 export function InlineEditButton({ label, disabled = false, onClick }: { label: string; disabled?: boolean; onClick: () => void }) {
-  return <button type="button" className="icon-button inline-edit-button" aria-label={label} onClick={onClick} disabled={disabled}><Pencil aria-hidden="true" size={17} /></button>
+  return <IconButton className="inline-edit-button" aria-label={label} onClick={onClick} disabled={disabled}><Pencil aria-hidden="true" size={17} /></IconButton>
 }

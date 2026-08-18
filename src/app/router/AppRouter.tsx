@@ -2,12 +2,10 @@ import { lazy } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppShell } from '../shell/AppShell'
 import { PlaceholderPage } from './PlaceholderPage'
-import { RequireOnboarding } from './RequireOnboarding'
 
 const DashboardPage = lazy(() => import('../../features/dashboard/DashboardPage').then((module) => ({ default: module.DashboardPage })))
 const MealPlannerPage = lazy(() => import('../../features/meal-planner/pages/MealPlannerPage').then((module) => ({ default: module.MealPlannerPage })))
 const MealPlanEntryPage = lazy(() => import('../../features/meal-planner/pages/MealPlanEntryPage').then((module) => ({ default: module.MealPlanEntryPage })))
-const OnboardingPage = lazy(() => import('../../features/onboarding/OnboardingPage').then((module) => ({ default: module.OnboardingPage })))
 const ProductEditorPage = lazy(() => import('../../features/products/pages/ProductEditorPage').then((module) => ({ default: module.ProductEditorPage })))
 const ProductsPage = lazy(() => import('../../features/products/pages/ProductsPage').then((module) => ({ default: module.ProductsPage })))
 const RecipeDetailPage = lazy(() => import('../../features/recipes/pages/RecipeDetailPage').then((module) => ({ default: module.RecipeDetailPage })))
@@ -17,11 +15,11 @@ const ShoppingListPage = lazy(() => import('../../features/shopping-lists/pages/
 const SettingsPage = lazy(() => import('./SettingsPage').then((module) => ({ default: module.SettingsPage })))
 const MorePage = lazy(() => import('./MorePage').then((module) => ({ default: module.MorePage })))
 
-export const router = createBrowserRouter([
-  { path: '/welcome', element: <OnboardingPage /> },
+export const appRoutes = [
+  { path: '/welcome', element: <Navigate to="/" replace /> },
   {
     path: '/',
-    element: <RequireOnboarding><AppShell /></RequireOnboarding>,
+    element: <AppShell />,
     children: [
       { index: true, element: <DashboardPage /> },
       { path: 'products', element: <ProductsPage /> },
@@ -39,4 +37,6 @@ export const router = createBrowserRouter([
       { path: '*', element: <PlaceholderPage eyebrow="404" title="Сторінку не знайдено" description="Перевірте адресу або поверніться на головну." action={{ label: 'На головну', to: '/' }} /> },
     ],
   },
-])
+]
+
+export const router = createBrowserRouter(appRoutes)

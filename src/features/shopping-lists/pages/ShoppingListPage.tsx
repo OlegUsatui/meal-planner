@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useMemo, useRef, useState } from 'react'
 import { Download, Printer, Share2 } from 'lucide-react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { formatShoppingQuantity } from '../../../shared/formatting/format'
 import { mealSlots, shiftDate } from '../../meal-planner/domain/meal-plan'
 import type { ShoppingListItem } from '../domain/shopping-list'
@@ -10,6 +10,12 @@ import type { ShoppingListRange } from '../types'
 import { cacheTimes, queryKeys } from '../../../app/query/query-client'
 import { useOptionalAuth } from '../../auth/useAuth'
 import { readShoppingChecks, shoppingChecksStorageKey, writeShoppingChecks } from '../domain/shopping-checks'
+import { PageHeader } from '../../../shared/ui/PageHeader'
+import { RetryBanner } from '../../../shared/ui/RetryBanner'
+import { EmptyState } from '../../../shared/ui/EmptyState'
+import { Button } from '../../../shared/ui/Button'
+import { SegmentedControl } from '../../../shared/ui/SegmentedControl'
+import { ButtonLink } from '../../../shared/ui/ButtonLink'
 
 const localToday = () => new Intl.DateTimeFormat('sv-SE').format(new Date())
 const presets = [{ value: 'today', label: 'Сьогодні', days: 1 }, { value: '7', label: '7 днів', days: 7 }, { value: '14', label: '14 днів', days: 14 }, { value: 'all', label: 'Увесь план' }, { value: 'custom', label: 'Власний діапазон' }] as const
@@ -63,12 +69,12 @@ export function ShoppingListPage() {
   }
 
   return <section className="page shopping-page">
-    <header className="page-header"><div><p className="eyebrow">Автоматично з плану</p><h1>Покупки</h1><p>Позначайте придбане, друкуйте або діліться списком. Позначки зберігаються на цьому пристрої.</p></div><Link className="button button-secondary" to={`/plan?date=${range.from}`}>Відкрити план</Link></header>
-    <div className="shopping-toolbar"><div><div className="range-presets" aria-label="Період списку">{presets.map((item) => <button key={item.value} type="button" aria-pressed={preset === item.value} onClick={() => choosePreset(item.value)}>{item.label}</button>)}</div>{preset === 'custom' && <div className="custom-date-range"><label>Від<input type="date" value={range.from} max={range.to} onChange={(event) => changeCustomDate('from', event.target.value)} /></label><label>До<input type="date" value={range.to ?? range.from} min={range.from} onChange={(event) => changeCustomDate('to', event.target.value)} /></label></div>}</div><div className="shopping-actions"><button type="button" className="icon-action" onClick={() => window.print()}><Printer aria-hidden="true" /> Друк</button><button type="button" className="icon-action" onClick={() => void share()}><Share2 aria-hidden="true" /> Поділитися</button><button type="button" className="icon-action" onClick={exportCsv}><Download aria-hidden="true" /> CSV</button></div></div>
+    <PageHeader eyebrow="Автоматично з плану" title="Покупки" description="Позначайте придбане, друкуйте або діліться списком. Позначки зберігаються на цьому пристрої." actions={<ButtonLink variant="secondary" to={`/plan?date=${range.from}`}>Відкрити план</ButtonLink>} />
+    <div className="shopping-toolbar"><div><SegmentedControl value={preset as typeof presets[number]['value']} ariaLabel="Період списку" options={presets.map(({ value, label }) => ({ value, label }))} onChange={choosePreset} className="range-presets" />{preset === 'custom' && <div className="custom-date-range"><label>Від<input type="date" value={range.from} max={range.to} onChange={(event) => changeCustomDate('from', event.target.value)} /></label><label>До<input type="date" value={range.to ?? range.from} min={range.from} onChange={(event) => changeCustomDate('to', event.target.value)} /></label></div>}</div><div className="shopping-actions"><button type="button" className="icon-action" onClick={() => window.print()}><Printer aria-hidden="true" /> Друк</button><button type="button" className="icon-action" onClick={() => void share()}><Share2 aria-hidden="true" /> Поділитися</button><button type="button" className="icon-action" onClick={exportCsv}><Download aria-hidden="true" /> CSV</button></div></div>
     {notice && <p className="toast-inline" role="status">{notice}</p>}
     {itemsQuery.isPending && <div className="shopping-skeleton" role="status">Завантажуємо список на обраний період…</div>}
-    {itemsQuery.isError && <div className="form-alert stale-banner" role="alert"><span>{items.length ? 'Показуємо останній завантажений список.' : 'Не вдалося завантажити список.'}</span><button className="button button-secondary" type="button" onClick={() => void itemsQuery.refetch()}>Повторити</button></div>}
-    {!itemsQuery.isPending && !items.length && <div className="empty-state"><h2>На цей період покупок немає</h2><p>Додайте рецепт у конкретний слот плану — список перерахується автоматично.</p><Link className="button button-primary" to={`/plan?date=${range.from}`}>Запланувати страву</Link></div>}
+    {itemsQuery.isError && <RetryBanner hasData={items.length > 0} staleMessage="Показуємо останній завантажений список." errorMessage="Не вдалося завантажити список." onRetry={() => void itemsQuery.refetch()} pending={itemsQuery.isFetching} />}
+    {!itemsQuery.isPending && !items.length && <EmptyState title="На цей період покупок немає" description="Додайте рецепт у конкретний слот плану — список перерахується автоматично." action={<ButtonLink to={`/plan?date=${range.from}`}>Запланувати страву</ButtonLink>} />}
     {!!items.length && <ShoppingChecklist key={shoppingChecksStorageKey(userId, range)} groups={groups} storageKey={shoppingChecksStorageKey(userId, range)} />}
   </section>
 }
@@ -95,7 +101,7 @@ function ShoppingChecklist({ groups, storageKey }: { groups: Array<[string, Shop
   return <>
     <div className="shopping-progress-bar">
       <p className="shopping-progress" role="status" aria-label="Прогрес покупок">Куплено {visibleCheckedIds.size} з {items.length}</p>
-      <button type="button" className="button button-ghost" onClick={reset} disabled={visibleCheckedIds.size === 0}>Скинути позначки</button>
+      <Button type="button" variant="ghost" onClick={reset} disabled={visibleCheckedIds.size === 0}>Скинути позначки</Button>
     </div>
     <div className="shopping-groups">{groups.map(([category, categoryItems]) => <section className="shopping-group" key={category}><h2>{category}</h2><div>{categoryItems.map((item) => <ShoppingRow item={item} checked={visibleCheckedIds.has(item.productId)} onToggle={toggle} key={item.productId} />)}</div></section>)}</div>
   </>

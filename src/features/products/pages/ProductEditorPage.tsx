@@ -1,7 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { ProductForm, type ProductFormValues } from '../components/ProductForm'
 import { ArchiveProductDialog } from '../components/ArchiveProductDialog'
 import { ProductRepositoryError } from '../repositories/product-repository'
@@ -11,6 +10,11 @@ import { useOptionalAuth } from '../../auth/useAuth'
 import { PermanentDeleteDialog } from '../../../shared/ui/PermanentDeleteDialog'
 import { cacheTimes, queryKeys } from '../../../app/query/query-client'
 import { invalidateProductData } from '../../../app/query/invalidation'
+import { BackLink } from '../../../shared/ui/BackLink'
+import { PageHeader } from '../../../shared/ui/PageHeader'
+import { LoadingState } from '../../../shared/ui/LoadingState'
+import { Alert } from '../../../shared/ui/Alert'
+import { Button } from '../../../shared/ui/Button'
 
 export function ProductEditorPage() {
   const { productId } = useParams()
@@ -93,25 +97,18 @@ export function ProductEditorPage() {
   }
 
   if (!isCreate && productQuery.isPending) {
-    return <div className="loading-panel" aria-live="polite">Завантажуємо продукт…</div>
+    return <LoadingState>Завантажуємо продукт…</LoadingState>
   }
   if (!isCreate && productQuery.isError) {
-    return <div className="form-alert" role="alert">Не вдалося завантажити продукт.<button type="button" className="button button-secondary" onClick={() => void productQuery.refetch()}>Повторити</button></div>
+    return <Alert variant="error" actions={<Button variant="secondary" onClick={() => void productQuery.refetch()}>Повторити</Button>}>Не вдалося завантажити продукт.</Alert>
   }
 
   const product = !isCreate ? productQuery.data : undefined
-  if (product?.isSystem && !isAdmin) return <section className="page editor-page"><Link className="back-link" to="/products"><ArrowLeft aria-hidden="true" /> До продуктів</Link><header className="editor-header"><div><p className="eyebrow">Системний каталог</p><h1>{product.name}</h1><p className="page-intro">Цей продукт входить до вбудованого каталогу й доступний усім користувачам. Його може змінювати лише адміністратор.</p></div></header></section>
+  if (product?.isSystem && !isAdmin) return <section className="page editor-page"><BackLink to="/products">До продуктів</BackLink><PageHeader className="editor-page-header" eyebrow="Системний каталог" title={product.name} description="Цей продукт входить до вбудованого каталогу й доступний усім користувачам. Його може змінювати лише адміністратор." /></section>
   return (
     <section className="page editor-page">
-      <Link className="back-link" to="/products"><ArrowLeft aria-hidden="true" /> До продуктів</Link>
-      <header className="editor-header">
-        <div>
-          <p className="eyebrow">{isCreate ? 'Новий інгредієнт' : product?.category}</p>
-          <h1>{isCreate ? 'Створити продукт' : product?.name}</h1>
-          <p className="page-intro">Вкажіть назву, категорію та одиницю, щоб використовувати продукт у рецептах.</p>
-        </div>
-        {product && <div className="editor-actions">{product.archivedAt && repository.restore && <button className="button button-secondary" onClick={() => void restore()}>Відновити з архіву</button>}{!product.archivedAt && <button ref={archiveButtonRef} className="button button-danger-ghost" onClick={() => setShowArchive(true)}>Архівувати</button>}{isAdmin && <button className="button button-danger-ghost" onClick={() => setShowPermanentDelete(true)}>Видалити назавжди</button>}</div>}
-      </header>
+      <BackLink to="/products">До продуктів</BackLink>
+      <PageHeader className="editor-page-header" eyebrow={isCreate ? 'Новий інгредієнт' : product?.category} title={isCreate ? 'Створити продукт' : product?.name} description="Вкажіть назву, категорію та одиницю, щоб використовувати продукт у рецептах." actions={product && <div className="editor-actions">{product.archivedAt && repository.restore && <Button variant="secondary" onClick={() => void restore()}>Відновити з архіву</Button>}{!product.archivedAt && <Button ref={archiveButtonRef} variant="danger-ghost" onClick={() => setShowArchive(true)}>Архівувати</Button>}{isAdmin && <Button variant="danger-ghost" onClick={() => setShowPermanentDelete(true)}>Видалити назавжди</Button>}</div>} />
 
       <div className="form-card">
         {isCreate ? (

@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Carrot, Plus } from 'lucide-react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { ProductList } from '../components/ProductList'
 import { useProductRepository } from '../repositories/useProductRepository'
 import type { ProductPage } from '../repositories/product-repository'
@@ -9,6 +9,13 @@ import { Pagination } from '../../../shared/ui/Pagination'
 import { productCategories } from '../domain/product'
 import { cacheTimes, queryKeys } from '../../../app/query/query-client'
 import { useOptionalAuth } from '../../auth/useAuth'
+import { PageHeader } from '../../../shared/ui/PageHeader'
+import { LoadingState } from '../../../shared/ui/LoadingState'
+import { RetryBanner } from '../../../shared/ui/RetryBanner'
+import { EmptyState } from '../../../shared/ui/EmptyState'
+import { SearchField } from '../../../shared/ui/SearchField'
+import { Button } from '../../../shared/ui/Button'
+import { ButtonLink } from '../../../shared/ui/ButtonLink'
 
 const PAGE_SIZE = 24
 
@@ -65,28 +72,19 @@ export function ProductsPage() {
 
   return (
     <section className="page products-page">
-      <header className="page-header">
-        <div><p className="eyebrow">Каталог інгредієнтів</p><h1>Продукти</h1><p className="page-intro">Назви, категорії та одиниці для ваших рецептів і списку покупок.</p></div>
-        <Link className="button button-primary" to="/products/new"><Plus aria-hidden="true" /> Новий продукт</Link>
-      </header>
+      <PageHeader eyebrow="Каталог інгредієнтів" title="Продукти" description="Назви, категорії та одиниці для ваших рецептів і списку покупок." actions={<ButtonLink to="/products/new"><Plus aria-hidden="true" /> Новий продукт</ButtonLink>} />
 
       <div className="toolbar" role="search">
-        <label className="search-field"><span className="sr-only">Пошук продуктів</span><input type="search" placeholder="Пошук продуктів…" value={query} onChange={(event) => updateUrl({ query: event.target.value, page: 1 })} /></label>
+        <SearchField label="Пошук продуктів" placeholder="Пошук продуктів…" value={query} onChange={(value) => updateUrl({ query: value, page: 1 })} />
         <label className="category-filter"><span className="sr-only">Категорія продуктів</span><select value={category} onChange={(event) => updateUrl({ category: event.target.value, page: 1 })}><option value="">Усі категорії</option>{productCategories.map((item) => <option key={item}>{item}</option>)}</select></label>
         <label className="check-label"><input type="checkbox" checked={showArchived} onChange={(event) => updateUrl({ archived: event.target.checked, page: 1 })} /> Показати архів</label>
       </div>
 
-      {productsQuery.isPending && <div className="loading-panel" aria-live="polite">Завантажуємо продукти…</div>}
-      {productsQuery.isError && <div className="form-alert stale-banner" role="alert"><span>{pageInfo.items.length ? 'Показуємо останній завантажений каталог.' : 'Не вдалося завантажити продукти.'}</span><button type="button" className="button button-secondary" onClick={() => void productsQuery.refetch()}>Повторити</button></div>}
+      {productsQuery.isPending && <LoadingState>Завантажуємо продукти…</LoadingState>}
+      {productsQuery.isError && <RetryBanner hasData={pageInfo.items.length > 0} staleMessage="Показуємо останній завантажений каталог." errorMessage="Не вдалося завантажити продукти." onRetry={() => void productsQuery.refetch()} pending={productsQuery.isFetching} />}
       {!productsQuery.isPending && pageInfo.items.length > 0 && <ProductList products={pageInfo.items} />}
       {!productsQuery.isPending && !productsQuery.isError && pageInfo.items.length === 0 && (
-        <div className="empty-state">
-          <div className="empty-illustration" aria-hidden="true"><Carrot /></div>
-          <p className="eyebrow">Почнімо з основи</p>
-          <h2>{query ? 'Нічого не знайдено' : 'Створіть перший продукт'}</h2>
-          <p>{query ? 'Спробуйте іншу назву або очистіть пошук.' : 'Продукти потрібні, щоб складати рецепти й формувати список покупок.'}</p>
-          {query ? <button className="button button-secondary" onClick={() => updateUrl({ query: '', page: 1 })}>Очистити пошук</button> : <Link className="button button-primary" to="/products/new">Створити продукт</Link>}
-        </div>
+        <EmptyState illustration={<Carrot />} eyebrow="Почнімо з основи" title={query ? 'Нічого не знайдено' : 'Створіть перший продукт'} description={query ? 'Спробуйте іншу назву або очистіть пошук.' : 'Продукти потрібні, щоб складати рецепти й формувати список покупок.'} action={query ? <Button variant="secondary" onClick={() => updateUrl({ query: '', page: 1 })}>Очистити пошук</Button> : <ButtonLink to="/products/new">Створити продукт</ButtonLink>} />
       )}
       {!productsQuery.isPending && serverPaginated && <Pagination ariaLabel="Пагінація продуктів" page={pageInfo.page} pageSize={pageInfo.pageSize} total={pageInfo.total} hasNext={pageInfo.hasNext} onPageChange={(nextPage) => updateUrl({ page: nextPage }, false)} />}
     </section>

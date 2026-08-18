@@ -7,7 +7,6 @@ export interface AuthContextValue {
   roleLoading: boolean
   isAdmin: boolean
   profileLoading: boolean
-  onboardingCompleted: boolean
   configurationError?: string
   signIn(email: string, password: string): Promise<void>
   signUp(email: string, password: string): Promise<void>
@@ -16,7 +15,6 @@ export interface AuthContextValue {
   updatePassword(password: string): Promise<void>
   updateEmail(email: string): Promise<void>
   reauthenticate(password: string): Promise<string>
-  completeOnboarding(): Promise<void>
   signOut(): Promise<void>
 }
 

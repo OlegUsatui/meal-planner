@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { RefreshCw, X } from 'lucide-react'
+import { Button, IconButton } from '../../shared/ui/Button'
 
 export function ServiceWorkerUpdatePrompt() {
   const [available, setAvailable] = useState(false)
@@ -16,5 +17,5 @@ export function ServiceWorkerUpdatePrompt() {
   }, [])
 
   if (!available) return null
-  return <aside className="update-toast" role="status" aria-label="Доступне оновлення"><div><strong>Meal Planner оновлено</strong><p>Завантажте нову версію без втрати даних.</p></div><button type="button" className="button button-primary" onClick={() => void update?.()}><RefreshCw aria-hidden="true" size={18} />Оновити</button><button type="button" className="icon-button" aria-label="Відкласти оновлення" onClick={() => setAvailable(false)}><X aria-hidden="true" /></button></aside>
+  return <aside className="update-toast" role="status" aria-label="Доступне оновлення"><div><strong>Meal Planner оновлено</strong><p>Завантажте нову версію без втрати даних.</p></div><Button onClick={() => void update?.()}><RefreshCw aria-hidden="true" size={18} />Оновити</Button><IconButton aria-label="Відкласти оновлення" onClick={() => setAvailable(false)}><X aria-hidden="true" /></IconButton></aside>
 }

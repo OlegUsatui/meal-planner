@@ -1,6 +1,6 @@
 import { keepPreviousData, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog'
 import type { RecipeSummary } from '../../recipes/types'
@@ -12,6 +12,13 @@ import type { MealPlanEntry } from '../types'
 import { cacheTimes, queryKeys } from '../../../app/query/query-client'
 import { invalidateMealPlanData } from '../../../app/query/invalidation'
 import { useOptionalAuth } from '../../auth/useAuth'
+import { PageHeader } from '../../../shared/ui/PageHeader'
+import { LoadingState } from '../../../shared/ui/LoadingState'
+import { RetryBanner } from '../../../shared/ui/RetryBanner'
+import { Alert } from '../../../shared/ui/Alert'
+import { Button } from '../../../shared/ui/Button'
+import { SegmentedControl } from '../../../shared/ui/SegmentedControl'
+import { ButtonLink } from '../../../shared/ui/ButtonLink'
 
 const localToday = () => new Intl.DateTimeFormat('sv-SE').format(new Date())
 
@@ -93,11 +100,11 @@ export function MealPlannerPage() {
   }
 
   return <section className="page meal-planner-page">
-    <header className="page-header planner-page-header"><div><p className="eyebrow">Тижневий календар</p><h1>План харчування</h1><p className="page-intro">Плануйте сніданки, обіди, вечері та перекуси. Відкрийте порожній слот, щоб додати страву.</p></div><Link className="button button-secondary" to="/recipes/new"><Plus size={18} aria-hidden="true" /> Новий рецепт</Link></header>
-    <div className="week-toolbar"><div className="week-navigation"><button type="button" className="week-arrow" aria-label="Попередній тиждень" onClick={() => moveWeek(-7)}><ChevronLeft aria-hidden="true" /></button><button type="button" className="button button-secondary today-button" onClick={goToday}>Сьогодні</button><button type="button" className="week-arrow" aria-label="Наступний тиждень" onClick={() => moveWeek(7)}><ChevronRight aria-hidden="true" /></button></div><strong>{rangeLabel}</strong><div className="planner-view-toggle" role="group" aria-label="Режим календаря"><button type="button" className={viewMode === 'day' ? 'active' : ''} aria-pressed={viewMode === 'day'} onClick={() => selectViewMode('day')}>День</button><button type="button" className={viewMode === 'week' ? 'active' : ''} aria-pressed={viewMode === 'week'} onClick={() => selectViewMode('week')}>Тиждень</button></div></div>
-    {loading && <div className="loading-panel" role="status">Завантажуємо план…</div>}
-    {stale && <div className="form-alert stale-banner" role="alert"><span>{entries.length ? 'Показуємо останній завантажений план.' : 'Не вдалося завантажити план.'}</span><button type="button" className="button button-secondary" onClick={() => { void planQuery.refetch(); void catalogueQuery.refetch() }}>Повторити</button></div>}
-    {actionError && <div className="form-alert" role="alert">{actionError}</div>}
+    <PageHeader className="planner-page-header" eyebrow="Тижневий календар" title="План харчування" description="Плануйте сніданки, обіди, вечері та перекуси. Відкрийте порожній слот, щоб додати страву." actions={<ButtonLink variant="secondary" to="/recipes/new"><Plus size={18} aria-hidden="true" /> Новий рецепт</ButtonLink>} />
+    <div className="week-toolbar"><div className="week-navigation"><button type="button" className="week-arrow" aria-label="Попередній тиждень" onClick={() => moveWeek(-7)}><ChevronLeft aria-hidden="true" /></button><Button variant="secondary" type="button" className="today-button" onClick={goToday}>Сьогодні</Button><button type="button" className="week-arrow" aria-label="Наступний тиждень" onClick={() => moveWeek(7)}><ChevronRight aria-hidden="true" /></button></div><strong>{rangeLabel}</strong><SegmentedControl value={viewMode} ariaLabel="Режим календаря" options={[{ value: 'day', label: 'День' }, { value: 'week', label: 'Тиждень' }]} onChange={selectViewMode} className="planner-view-toggle" /></div>
+    {loading && <LoadingState>Завантажуємо план…</LoadingState>}
+    {stale && <RetryBanner hasData={entries.length > 0} staleMessage="Показуємо останній завантажений план." errorMessage="Не вдалося завантажити план." onRetry={() => { void planQuery.refetch(); void catalogueQuery.refetch() }} pending={planQuery.isFetching || catalogueQuery.isFetching} />}
+    {actionError && <Alert variant="error">{actionError}</Alert>}
     {!loading && <WeekCalendar dates={dates} today={today} selectedDate={selectedDate} entries={entries} recipes={recipes} onSelectDate={selectDate} onAdd={(date, slot) => navigate(`/plan/add?date=${encodeURIComponent(date)}&slot=${encodeURIComponent(slot)}`)} onReplace={(entry) => navigate(`/plan/add?date=${encodeURIComponent(entry.date)}&slot=${encodeURIComponent(entry.slot)}&entryId=${encodeURIComponent(entry.id)}&recipeId=${encodeURIComponent(entry.recipeId)}&servings=${entry.servings}`)} onRemove={setRemoving} onServingsChange={updateServings} onOpen={(entry, recipe) => openDetails(entry, recipe)} viewMode={viewMode} />}
     {removing && <ConfirmDialog title="Видалити страву з плану?" description="Слот стане порожнім. Рецепт залишиться у вашому каталозі." confirmLabel="Видалити з плану" pending={removePending} danger onCancel={() => setRemoving(undefined)} onConfirm={() => void confirmRemove()} />}
   </section>

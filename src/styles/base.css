@@ -11,17 +11,32 @@ p { color: var(--muted); line-height: 1.6; }
 .eyebrow { margin-bottom: 8px; color: var(--coral-dark); font-size: .74rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
 .page-intro { max-width: 650px; margin-bottom: 0; font-size: 1rem; }
 .page-header, .editor-header, .section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 32px; }
+.page-header-copy { min-width: 0; }
+.page-header h1 { margin-bottom: 16px; font-size: clamp(2.35rem, 5vw, 4.6rem); line-height: .98; letter-spacing: -0.045em; }
+.page-header-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
+.page-header-actions > .button { flex: 0 0 auto; }
+.search-field { position: relative; display: flex; align-items: center; min-width: 0; }
+.search-field > svg { position: absolute; left: 14px; z-index: 1; width: 18px; height: 18px; color: var(--muted); pointer-events: none; }
+.search-field input { flex: 1; padding-left: 42px; }
 .button { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 18px; border: 1px solid transparent; border-radius: var(--radius-sm); font-weight: 750; line-height: 1.2; text-decoration: none; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, background .18s ease; }
 .button:hover { transform: translateY(-1px); }
 .button:focus-visible, button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+/* Route headings receive programmatic focus for screen-reader context, not keyboard interaction. */
+main h1[tabindex="-1"]:focus { outline: none; }
 .button-primary { color: #fff; background: var(--primary); box-shadow: 0 8px 20px rgba(54, 88, 70, .2); }
 .button-primary:hover { background: var(--primary-hover); }
 .button-secondary { color: var(--ink); background: var(--surface); border-color: var(--border); }
 .button-ghost { color: var(--muted); background: transparent; border-color: var(--border); }
+.action-menu { position: relative; }
+.action-menu-list { position: absolute; z-index: 30; top: calc(100% + 4px); right: 0; min-width: 132px; padding: 5px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow); }
+.action-menu-list button { width: 100%; min-height: 40px; padding: 8px 10px; color: var(--ink); text-align: left; background: transparent; border: 0; border-radius: 7px; cursor: pointer; font: inherit; font-size: .82rem; }
+.action-menu-list button:hover, .action-menu-list button:focus-visible { background: var(--canvas); }
+.action-menu-list button.danger { color: var(--danger); }
+.segmented-control { display: inline-flex; align-items: center; gap: 3px; }
 .button-danger { color: #fff; background: var(--danger); }
 .button-danger-ghost { color: var(--danger); background: transparent; border-color: #e4bcbc; }
 .button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
-.form-alert { padding: 14px 16px; margin-bottom: 20px; border: 1px solid #e1aaaa; border-radius: var(--radius-sm); color: #812828; background: #fff0ef; }
+.alert { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding: 14px 16px; margin-bottom: 20px; border: 1px solid var(--border); border-radius: var(--radius-sm); }.alert > strong { flex: 0 0 100%; }.alert-actions { margin-left: auto; }.alert-error { color: #812828; background: #fff0ef; border-color: #e1aaaa; }.alert-success { color: var(--success); background: var(--primary-soft); border-color: color-mix(in srgb, var(--success) 28%, transparent); }.alert-warning { color: #73551e; background: #fff8df; border-color: #dec27f; }.alert-info { color: var(--ink); background: var(--canvas); }
 .loading-panel { min-height: 180px; display: grid; place-items: center; color: var(--muted); border: 1px dashed var(--border); border-radius: var(--radius); }
 .badge, .progress-pill { display: inline-flex; align-items: center; width: max-content; min-height: 28px; padding: 4px 10px; border-radius: 999px; color: var(--sage); background: var(--sage-soft); font-size: .78rem; font-weight: 750; }
 .back-link { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 28px; color: var(--muted); font-weight: 700; text-decoration: none; }

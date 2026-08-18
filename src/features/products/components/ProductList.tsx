@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { ButtonLink } from '../../../shared/ui/ButtonLink'
 import type { Product } from '../types'
 
 export function ProductList({ products }: { products: Product[] }) {
@@ -23,7 +24,7 @@ export function ProductList({ products }: { products: Product[] }) {
           <article className="product-card" key={product.id}>
             <div><p className="eyebrow">{product.category}</p><h2>{product.name}</h2></div>
             <dl><div><dt>Одиниця</dt><dd>{unitLabel(product.baseUnit)}</dd></div><div><dt>Рецептів</dt><dd>{product.recipeUsageCount}</dd></div></dl>
-            <Link className="button button-secondary" to={`/products/${product.id}`}>Відкрити</Link>
+            <ButtonLink variant="secondary" to={`/products/${product.id}`}>Відкрити</ButtonLink>
           </article>
         ))}
       </div>

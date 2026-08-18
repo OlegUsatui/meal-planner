@@ -12,7 +12,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roleLoading, setRoleLoading] = useState(false)
   const [profileLoading, setProfileLoading] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [onboardingCompleted, setOnboardingCompleted] = useState(false)
   const configurationError = supabase ? undefined : 'Додайте Supabase-змінні середовища перед запуском застосунку.'
 
   useEffect(() => {
@@ -35,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [queryClient])
 
   useEffect(() => {
-    if (!session) { setIsAdmin(false); setOnboardingCompleted(false); setRoleLoading(false); setProfileLoading(false); return }
+    if (!session) { setIsAdmin(false); setRoleLoading(false); setProfileLoading(false); return }
     let active = true
     setRoleLoading(true)
     setProfileLoading(true)
@@ -45,10 +44,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryFn: () => fetch('/api/me', { headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store' })
       .then(async (response) => {
         if (!response.ok) throw new Error('Не вдалося перевірити роль')
-        const payload = await response.json() as { data?: { isAdmin?: boolean; onboardingCompleted?: boolean } }
+        const payload = await response.json() as { data?: { isAdmin?: boolean } }
         return payload.data
       })
-    }).then((profile) => { if (active) { setIsAdmin(profile?.isAdmin === true); setOnboardingCompleted(profile?.onboardingCompleted === true) } })
+    }).then((profile) => { if (active) setIsAdmin(profile?.isAdmin === true) })
       .catch(() => { if (active) setIsAdmin(false) })
       .finally(() => { if (active) { setRoleLoading(false); setProfileLoading(false) } })
     return () => { active = false }
@@ -60,7 +59,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     roleLoading,
     profileLoading,
     isAdmin,
-    onboardingCompleted,
     configurationError,
     async signIn(email, password) {
       const { error } = await requireSupabase().auth.signInWithPassword({ email, password })
@@ -93,23 +91,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!data.session?.access_token) throw new Error('Не вдалося оновити сесію')
       return data.session.access_token
     },
-    async completeOnboarding() {
-      if (!session) throw new Error('Потрібна авторизація')
-      const response = await fetch('/api/me', { method: 'PATCH', headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ onboardingCompleted: true }) })
-      if (!response.ok) {
-        const payload = await response.json().catch(() => undefined) as { error?: { message?: string } } | undefined
-        throw new Error(payload?.error?.message ?? 'Не вдалося зберегти onboarding')
-      }
-      queryClient.setQueryData(queryKeys.me(session.user.id), (current: unknown) => ({ ...(typeof current === 'object' && current ? current : {}), onboardingCompleted: true }))
-      await queryClient.invalidateQueries({ queryKey: queryKeys.me(session.user.id) })
-      setOnboardingCompleted(true)
-    },
     async signOut() {
       clearSessionCache(queryClient)
       const { error } = await requireSupabase().auth.signOut()
       if (error) throw error
     },
-  }), [configurationError, isAdmin, loading, onboardingCompleted, profileLoading, queryClient, roleLoading, session])
+  }), [configurationError, isAdmin, loading, profileLoading, roleLoading, session])
 
   return <AuthContext value={value}>{children}</AuthContext>
 }

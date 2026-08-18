@@ -1,3 +1,6 @@
+import { ArrowLeft, ArrowRight } from 'lucide-react'
+import { Button } from './Button'
+
 export interface PaginationProps {
   page: number
   pageSize: number
@@ -22,15 +25,16 @@ export function Pagination({ page, pageSize, total, hasNext, onPageChange, ariaL
     <nav className="pagination" aria-label={ariaLabel}>
       <p className="pagination-summary" aria-live="polite">Показано {firstItem}–{lastItem} із {total}</p>
       <div className="pagination-controls">
-        <button
+        <Button
           type="button"
-          className="button button-secondary pagination-nav-button"
+          variant="secondary"
+          className="pagination-nav-button"
           disabled={currentPage <= 1}
           aria-label="Перейти на попередню сторінку"
           onClick={() => onPageChange(currentPage - 1)}
         >
           <ArrowLeft aria-hidden="true" /><span>Попередня</span>
-        </button>
+        </Button>
         <div className="pagination-pages" aria-label="Сторінки">
           {items.map((item) => item === 'ellipsis-start' || item === 'ellipsis-end'
             ? <span className="pagination-ellipsis" aria-hidden="true" key={item}>…</span>
@@ -45,15 +49,16 @@ export function Pagination({ page, pageSize, total, hasNext, onPageChange, ariaL
                 {item}
               </button>)}
         </div>
-        <button
+        <Button
           type="button"
-          className="button button-secondary pagination-nav-button"
+          variant="secondary"
+          className="pagination-nav-button"
           disabled={!hasNext || currentPage >= totalPages}
           aria-label="Перейти на наступну сторінку"
           onClick={() => onPageChange(currentPage + 1)}
         >
           <span>Наступна</span><ArrowRight aria-hidden="true" />
-        </button>
+        </Button>
       </div>
     </nav>
   )
@@ -65,4 +70,3 @@ function getPageItems(currentPage: number, totalPages: number): PageItem[] {
   if (currentPage >= totalPages - 2) return [1, 'ellipsis-start', totalPages - 3, totalPages - 2, totalPages - 1, totalPages]
   return [1, 'ellipsis-start', currentPage - 1, currentPage, currentPage + 1, 'ellipsis-end', totalPages]
 }
-import { ArrowLeft, ArrowRight } from 'lucide-react'
