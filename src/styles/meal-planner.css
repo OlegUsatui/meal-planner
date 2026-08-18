@@ -60,7 +60,7 @@
 .meal-card-servings select { width: 68px; min-height: 44px; padding: 4px 7px; color: var(--ink); background: var(--canvas); border: 1px solid var(--border); border-radius: 8px; font: inherit; font-weight: 750; }
 .meal-card-servings select:disabled { cursor: wait; opacity: .6; }
 .meal-card-servings.read-only { padding-right: 10px; }
-.meal-card-menu-wrap { position: absolute; z-index: 3; top: 8px; right: 8px; }
+.meal-card-menu-wrap { position: absolute; z-index: 40; top: 8px; right: 8px; }
 .meal-menu-trigger { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 10px; color: var(--muted); background: rgba(255,255,255,.9); font-weight: 900; }
 .meal-card-menu { position: absolute; top: 28px; right: 0; width: 118px; padding: 5px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); }
 .meal-card-menu button { width: 100%; padding: 8px; text-align: left; background: transparent; border: 0; border-radius: 7px; cursor: pointer; font-size: .76rem; }
