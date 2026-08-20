@@ -31,8 +31,16 @@ export class ApiRecipeRepository implements RecipeRepository {
   }
 
   async update(id: RecipeId, input: UpdateRecipeInput): Promise<Recipe> {
-    const upload = input.image?.blob ? await this.client.uploadRecipeImage(id, input.image, 'update') : undefined
-    return this.client.patch<Recipe>(`/api/recipes/${encodeURIComponent(id)}`, serializeInput(input, upload?.path))
+    const image = input.image
+    const upload = image?.blob ? await this.client.uploadRecipeImage(id, image, 'update') : undefined
+    // An existing image object is metadata from the recipe response, not a new upload.
+    // Omitting it lets the API preserve the current image and avoids treating a system
+    // seed path as an uploaded user-owned asset.
+    const imageForRequest = image === null || image?.blob ? image : undefined
+    return this.client.patch<Recipe>(
+      `/api/recipes/${encodeURIComponent(id)}`,
+      serializeInput({ ...input, image: imageForRequest }, upload?.path),
+    )
   }
 
   async archive(id: RecipeId): Promise<void> { await this.client.delete(`/api/recipes/${encodeURIComponent(id)}`) }

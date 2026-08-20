@@ -1,6 +1,12 @@
 # Design system
 
-Meal Planner uses a Nordic editorial visual language: Newsreader for display headings and Manrope for interface copy. Semantic colours are canvas `#F6F2EA`, surface `#FFFFFF`, ink `#202421`, muted `#5F665F`, forest primary `#365846`, terracotta accent `#9E443A`, soft accent `#F3DDD7`, and border `#D8D3C8`. Text and controls must meet WCAG 2.2 AA contrast.
+Meal Planner uses a Nordic editorial visual language: Newsreader for display headings and Manrope for interface copy. Semantic colours are defined in `src/styles/tokens.css` and are applied through the `data-theme="nordic"` contract on the root document. Text and controls must meet WCAG 2.2 AA contrast.
+
+## Theme tokens
+
+All visual colours belong in `tokens.css`. Components and feature styles must use semantic custom properties rather than hex, RGB, HSL, `color-mix`, or theme-specific fallback values. The token contract includes canvas and surfaces, text and muted text, borders, primary/accent and their states, danger/success/warning/focus, overlays, translucent surfaces, gradients, shadows, calendar states, illustration colours, and image-editor colours. A future palette is added as a new `[data-theme="theme-name"]` block without changing feature CSS or React components.
+
+Keep foreground/background pairs contrast-safe for WCAG 2.2 AA. Focus indicators, disabled states, selected states, and overlays must remain distinguishable without relying on colour alone.
 
 Spacing follows a 4/8 px rhythm. Standard radii are 12, 20, and 28 px. Touch targets are at least 44 by 44 px. Shadows are restrained and never the sole boundary. Lucide icons replace text glyphs and always have either a visible label or an accessible name.
 

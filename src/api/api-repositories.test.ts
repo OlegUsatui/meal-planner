@@ -94,4 +94,34 @@ describe('API repository contracts', () => {
     expect(client.uploadRecipeImage).not.toHaveBeenCalled()
     expect(client.post).toHaveBeenCalledWith('/api/recipes', expect.objectContaining({ id: '00000000-0000-4000-8000-000000000002', image: null }))
   })
+
+  it('does not resend an unchanged existing photo during recipe updates', async () => {
+    const client = fakeClient()
+    vi.mocked(client.patch).mockResolvedValue({ id: 'recipe-1' })
+
+    await new ApiRecipeRepository(client).update('recipe-1', {
+      name: 'Сніданок',
+      instructions: 'Приготувати',
+      ingredients: [],
+      classifications: [],
+      caloriesPerServing: null,
+      proteinGramsPerServing: null,
+      fatGramsPerServing: null,
+      carbsGramsPerServing: null,
+      preparationTimeMinMinutes: null,
+      preparationTimeMaxMinutes: null,
+      image: {
+        path: 'system/seed-breakfast-88.webp',
+        url: 'https://cdn.example/seed-breakfast-88.webp',
+        mimeType: 'image/webp',
+        width: 1200,
+        height: 1200,
+        byteSize: 1000,
+      },
+    })
+
+    expect(client.uploadRecipeImage).not.toHaveBeenCalled()
+    const patchPayload = vi.mocked(client.patch).mock.calls[0]?.[1] as Record<string, unknown> | undefined
+    expect(patchPayload?.image).toBeUndefined()
+  })
 })

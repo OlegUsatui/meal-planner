@@ -1,35 +1,133 @@
-:root {
+:root,
+[data-theme='nordic'] {
   font-family: 'Manrope Variable', Manrope, system-ui, sans-serif;
-  color: #202421;
-  background: #f6f2ea;
+  color: var(--ink);
+  background: var(--canvas);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --canvas: #f6f2ea;
-  --surface: #fff;
-  --surface-muted: #efebe3;
-  --surface-raised: #fffdf9;
-  --primary: #365846;
-  --primary-hover: #294739;
-  --primary-soft: #dfe9e1;
-  --accent: #9e443a;
-  --accent-hover: #85362f;
-  --accent-soft: #f3ddd7;
+
+  /* Theme palette: future themes override this block through data-theme. */
+  --color-ink: #202421;
+  --color-ink-soft: #554d46;
+  --color-muted: #5f665f;
+  --color-canvas: #f6f2ea;
+  --color-surface: #fff;
+  --color-surface-raised: #fffdf9;
+  --color-surface-muted: #efebe3;
+  --color-surface-warm: #fff8ef;
+  --color-primary: #365846;
+  --color-primary-hover: #294739;
+  --color-primary-soft: #dfe9e1;
+  --color-primary-tint: #e8eee8;
+  --color-accent: #9e443a;
+  --color-accent-hover: #85362f;
+  --color-accent-soft: #f3ddd7;
+  --color-danger: #a33131;
+  --color-danger-soft: #f8dddd;
+  --color-danger-border: #e4bcbc;
+  --color-success: #356744;
+  --color-warning: #8b5b17;
+  --color-focus: #2156a5;
+  --color-border: #d8d3c8;
+  --color-border-strong: #aaa79e;
+  --color-border-warm: #d9a2a0;
+  --color-border-error: #e1aaaa;
+  --color-border-warning: #dec27f;
+  --color-error-text: #812828;
+  --color-warning-text: #73551e;
+  --color-error-surface: #fff0ef;
+  --color-warning-surface: #fff8df;
+  --color-connection: #573e1d;
+  --color-white: #fff;
+  --color-black: #111;
+  --color-overlay-dark: rgb(32 30 27 / 58%);
+  --color-overlay-dialog: rgb(32 30 27 / 48%);
+  --color-overlay-editor: rgb(10 14 12 / 62%);
+  --color-overlay-white: rgb(255 255 255 / 88%);
+  --color-surface-glass: rgb(255 255 255 / 58%);
+  --color-surface-glass-strong: rgb(246 242 234 / 96%);
+  --color-surface-glass-soft: rgb(255 255 255 / 65%);
+
+  /* Composed theme values. */
+  --gradient-dashboard: linear-gradient(135deg, var(--color-accent-soft), var(--color-dashboard-warm));
+  --gradient-recipe-title: linear-gradient(90deg, var(--color-food-gradient-start), var(--color-food-gradient-end));
+  --gradient-time-badge: linear-gradient(135deg, var(--color-time-gradient-start), var(--color-time-gradient-end));
+  --gradient-food-bowl: radial-gradient(circle at 45% 45%, var(--color-food-yellow) 0 32%, var(--color-food-gold) 33% 48%, var(--color-food-brown) 49% 51%, var(--color-white) 52%);
+  --gradient-grain: repeating-linear-gradient(25deg, var(--color-food-grain-light) 0 5px, var(--color-food-grain-dark) 6px 9px);
+  --gradient-editor-grid: linear-gradient(to right, transparent 33.1%, rgb(255 255 255 / 52%) 33.2%, rgb(255 255 255 / 52%) 33.5%, transparent 33.6%, transparent 66.4%, rgb(255 255 255 / 52%) 66.5%, rgb(255 255 255 / 52%) 66.8%, transparent 66.9%), linear-gradient(to bottom, transparent 33.1%, rgb(255 255 255 / 52%) 33.2%, rgb(255 255 255 / 52%) 33.5%, transparent 33.6%, transparent 66.4%, rgb(255 255 255 / 52%) 66.5%, rgb(255 255 255 / 52%) 66.8%, transparent 66.9%);
+  --shadow-color: rgb(35 43 37 / 10%);
+  --shadow-color-soft: rgb(35 43 37 / 7%);
+  --shadow-color-card: rgb(72 48 30 / 6%);
+  --shadow-color-strong: rgb(0 0 0 / 22%);
+  --shadow-color-food: rgb(102 63 39 / 23%);
+  --shadow-color-tomato: rgb(140 49 49 / 16%);
+  --shadow-color-auth: rgb(80 45 30 / 12%);
+  --shadow-color-primary: rgb(54 88 70 / 20%);
+  --shadow-color-primary-soft: rgb(54 88 70 / 18%);
+  --shadow-color-table: rgb(67 47 31 / 5%);
+  --shadow-color-classification: rgb(54 88 70 / 16%);
+  --shadow-color-accent: rgb(158 68 58 / 20%);
+  --color-editor-outline: rgb(255 255 255 / 96%);
+  --color-editor-outline-soft: rgb(255 255 255 / 80%);
+  --shadow-color-nav: rgb(69 48 32 / 7%);
+  --shadow-color-warm: rgb(72 48 30 / 8%);
+  --color-sidebar: #eeeadf;
+  --color-calendar-cell: #fffdfb;
+  --color-calendar-today: #fff8ef;
+  --color-calendar-empty-border: #dfb6ae;
+  --color-menu-hover: #f8f1eb;
+  --color-card-hover: #fffaf6;
+  --color-input-hover-border: #b9b0a6;
+  --color-recipe-category: #49613e;
+  --color-ingredient-check: #b87854;
+  --color-editor-border: #111512;
+  --color-sand: #f7eee6;
+  --color-food-leaf: #77994f;
+  --color-food-yellow: #f7d882;
+  --color-food-gold: #dca953;
+  --color-food-brown: #a56d36;
+  --color-food-grain-light: #fff2b4;
+  --color-food-grain-dark: #d79e43;
+  --color-food-gradient-start: #a62f2d;
+  --color-food-gradient-end: #e47b24;
+  --color-time-gradient-start: #bd5542;
+  --color-time-gradient-end: #efa55a;
+  --color-dashboard-warm: #fff1d9;
+  --color-white-muted: rgb(255 255 255 / 76%);
+  --color-settings-surface: rgb(255 255 255 / 72%);
+  --color-surface-optional: color-mix(in srgb, var(--surface) 92%, var(--canvas));
+  --color-surface-sticky: color-mix(in srgb, var(--surface) 94%, transparent);
+  --color-surface-photo: color-mix(in srgb, var(--surface) 92%, transparent);
+  --color-surface-classification: color-mix(in srgb, var(--surface) 82%, var(--canvas));
+  --color-border-danger-zone: color-mix(in srgb, var(--danger) 34%, var(--border));
+  --color-success-border: color-mix(in srgb, var(--color-success) 28%, transparent);
+
+  --canvas: var(--color-canvas);
+  --surface: var(--color-surface);
+  --surface-muted: var(--color-surface-muted);
+  --surface-raised: var(--color-surface-raised);
+  --primary: var(--color-primary);
+  --primary-hover: var(--color-primary-hover);
+  --primary-soft: var(--color-primary-soft);
+  --accent: var(--color-accent);
+  --accent-hover: var(--color-accent-hover);
+  --accent-soft: var(--color-accent-soft);
   --coral: var(--accent);
   --coral-dark: var(--accent);
   --coral-soft: var(--accent-soft);
   --sage: var(--primary);
   --sage-soft: var(--primary-soft);
-  --ink: #202421;
-  --muted: #5f665f;
-  --border: #d8d3c8;
-  --border-strong: #aaa79e;
-  --danger: #a33131;
-  --danger-soft: #f8dddd;
-  --focus: #2156a5;
-  --success: #356744;
-  --warning: #8b5b17;
-  --shadow-sm: 0 6px 18px rgba(35, 43, 37, .07);
-  --shadow: 0 18px 50px rgba(35, 43, 37, .1);
+  --ink: var(--color-ink);
+  --muted: var(--color-muted);
+  --border: var(--color-border);
+  --border-strong: var(--color-border-strong);
+  --danger: var(--color-danger);
+  --danger-soft: var(--color-danger-soft);
+  --focus: var(--color-focus);
+  --success: var(--color-success);
+  --warning: var(--color-warning);
+  --shadow-sm: 0 6px 18px var(--shadow-color-soft);
+  --shadow: 0 18px 50px var(--shadow-color);
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -38,8 +136,13 @@
   --space-6: 32px;
   --space-7: 48px;
   --radius-sm: 12px;
+  --radius-md: 14px;
   --radius: 20px;
   --radius-lg: 28px;
+  --radius-xl: 28px;
+  --radius-2xl: 32px;
+  --radius-3xl: 36px;
+  --shadow-lg: 0 30px 90px var(--shadow-color-strong);
 }
 
 * { box-sizing: border-box; }
@@ -47,4 +150,4 @@ html { background: var(--canvas); }
 body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--canvas); }
 button, input, select, textarea { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
-::selection { background: var(--coral-soft); color: var(--ink); }
+::selection { background: var(--accent-soft); color: var(--ink); }
