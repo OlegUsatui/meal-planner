@@ -1,5 +1,5 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, Plus, Soup } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { getRecipeSubcategory, recipeMealTypes, recipeSubcategories, type RecipeMealType } from '../domain/recipe-taxonomy'
@@ -72,11 +72,8 @@ export function RecipesPage() {
       : repository.list(debouncedQuery, {}, signal).then((items) => ({ items, page: 1, pageSize: items.length || PAGE_SIZE, total: items.length, hasNext: false })),
     staleTime: cacheTimes.catalogueStale,
     refetchOnWindowFocus: false,
-    placeholderData: keepPreviousData,
   })
-  const lastPage = useRef<RecipeSummaryPage | undefined>(undefined)
-  if (recipesQuery.data !== undefined) lastPage.current = recipesQuery.data
-  const pageInfo = recipesQuery.data ?? lastPage.current ?? { items: [], page: 1, pageSize: PAGE_SIZE, total: 0, hasNext: false }
+  const pageInfo = recipesQuery.data ?? { items: [], page: 1, pageSize: PAGE_SIZE, total: 0, hasNext: false }
   const recipes = pageInfo.items
   useEffect(() => {
     if (!recipesQuery.isPending && pageInfo.total > 0) {

@@ -1,6 +1,6 @@
 import { Pencil, Soup } from 'lucide-react'
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
-import { formatPreparationTime, validateRecipeInput, type RecipeValidationErrors } from '../domain/recipe'
+import { validateRecipeInput, type RecipeValidationErrors } from '../domain/recipe'
 import { type RecipeClassification } from '../domain/recipe-taxonomy'
 import { RecipeClassificationField } from './RecipeClassificationField'
 import { RecipeImageDialog } from './RecipeImageDialog'
@@ -58,11 +58,9 @@ export function RecipeHeroBlock({ recipe, canManage, editing, blocked, onEdit, o
     <InlineEditorActions saveLabel="Зберегти основну інформацію" pending={pending} onCancel={onCancel} />
   </form>
   const [titleAccent, ...titleRemainder] = recipe.name.trim().split(/\s+/)
-  const preparationTimeLabel = formatPreparationTime(recipe.preparationTimeMinMinutes, recipe.preparationTimeMaxMinutes)
   const readView = <div className="recipe-detail-hero-copy">
     {heroActions}
     <h1 className="recipe-poster-title"><span className="recipe-title-accent">{titleAccent}</span>{titleRemainder.length > 0 && <> {' '}<span className="recipe-title-rest">{titleRemainder.join(' ')}</span></>}</h1>
-    {preparationTimeLabel && <div className="recipe-time-badge"><span>Час приготування</span><strong>{preparationTimeLabel}</strong></div>}
   </div>
 
   return <div className={`recipe-detail-hero${editing ? ' is-editing' : ''}`}>

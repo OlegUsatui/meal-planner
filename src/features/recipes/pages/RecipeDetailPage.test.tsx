@@ -33,6 +33,17 @@ describe('RecipeDetailPage', () => {
     expect(screen.getByRole('button', { name: 'Повторити' })).toBeInTheDocument()
   })
 
+  it('passes the query cancellation signal to the detail repository', async () => {
+    const recipe: Recipe = { id: 'recipe-1', name: 'Рецепт', normalizedName: 'рецепт', instructions: 'Подати.', classifications: [], caloriesPerServing: null, proteinGramsPerServing: null, fatGramsPerServing: null, carbsGramsPerServing: null, preparationTimeMinMinutes: null, preparationTimeMaxMinutes: null, archivedAt: null, createdAt: 'now', updatedAt: 'now', image: null, ingredients: [] }
+    const repository: RecipeRepository = { list: vi.fn(), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
+    const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn(), remove: vi.fn() }
+    render(<QueryTestProvider><MemoryRouter initialEntries={['/recipes/recipe-1']}><RecipeRepositoryProvider repository={repository}><ProductRepositoryProvider repository={products}><MealPlanRepositoryProvider repository={mealPlan}><Routes><Route path="/recipes/:recipeId" element={<RecipeDetailPage />} /></Routes></MealPlanRepositoryProvider></ProductRepositoryProvider></RecipeRepositoryProvider></MemoryRouter></QueryTestProvider>)
+
+    expect(await screen.findByRole('heading', { name: 'Рецепт' })).toBeInTheDocument()
+    const signal = vi.mocked(repository.get).mock.calls[0]?.[1]
+    expect(signal).toBeInstanceOf(AbortSignal)
+  })
+
   it('adds the recipe to the plan from plan-selection context', async () => {
     const user = userEvent.setup()
     const recipe: Recipe = { id: 'recipe-1', name: 'Рисова миска', normalizedName: 'рисова миска', instructions: 'Змішати.', classifications: [], caloriesPerServing: 400, proteinGramsPerServing: 20, fatGramsPerServing: 10, carbsGramsPerServing: 60, preparationTimeMinMinutes: 20, preparationTimeMaxMinutes: 20, archivedAt: null, createdAt: 'now', updatedAt: 'now', image: { blob: new Blob(['image'], { type: 'image/webp' }), mimeType: 'image/webp', width: 10, height: 10, byteSize: 5 }, ingredients: [] }

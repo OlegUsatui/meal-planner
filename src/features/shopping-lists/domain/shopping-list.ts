@@ -43,12 +43,13 @@ export function buildShoppingList(
   recipes: ShoppingRecipe[],
   products: ShoppingProduct[],
   today: string,
+  currentDateTime?: Date,
 ): ShoppingListItem[] {
   const recipesById = new Map(recipes.map((recipe) => [recipe.id, recipe]))
   const productsById = new Map(products.map((product) => [product.id, product]))
   const grouped = new Map<string, ShoppingListItem>()
 
-  for (const entry of entries.filter((item) => item.date >= today).sort((left, right) => left.date.localeCompare(right.date))) {
+  for (const entry of entries.filter((item) => isShoppingEntryRelevant(item.date, item.slot, today, currentDateTime)).sort((left, right) => left.date.localeCompare(right.date))) {
     const recipe = recipesById.get(entry.recipeId)
     if (!recipe) continue
     for (const ingredient of recipe.ingredients) {
@@ -70,4 +71,15 @@ export function buildShoppingList(
   }
 
   return [...grouped.values()].sort((left, right) => left.category.localeCompare(right.category, 'uk-UA') || left.productName.localeCompare(right.productName, 'uk-UA'))
+}
+
+/** Excludes meals that have already passed today; future dates remain fully included. */
+export function isShoppingEntryRelevant(date: string, slot: MealSlot, today: string, currentDateTime?: Date): boolean {
+  if (date < today) return false
+  if (date > today || !currentDateTime) return true
+  const localToday = new Intl.DateTimeFormat('sv-SE').format(currentDateTime)
+  if (date !== localToday) return true
+  const minutes = currentDateTime.getHours() * 60 + currentDateTime.getMinutes()
+  const cutoff = slot === 'breakfast' ? 9 * 60 : slot === 'lunch' ? 13 * 60 : slot === 'dinner' ? 18 * 60 : undefined
+  return cutoff === undefined || minutes < cutoff
 }

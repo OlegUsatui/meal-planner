@@ -228,7 +228,7 @@ input:hover, select:hover { border-color: #b9b0a6; }
   .recipe-detail-layout .recipe-servings-control { padding: 7px 0; }
   .recipe-detail-layout .ingredient-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; }
   .recipe-detail-layout .ingredient-list li { min-width: 0; padding: 6px 0; font-size: .82rem; }
-  .recipe-detail-layout .recipe-instructions { max-width: none; column-count: 2; column-gap: 28px; column-fill: balance; font-size: .86rem; line-height: 1.55; }
+  .recipe-detail-layout .recipe-instructions { max-width: none; column-count: 1; font-size: .86rem; line-height: 1.55; }
   .recipe-detail-layout .recipe-detail-hero-copy.inline-editor-card { grid-column: 1 / 8; padding: 20px; }
 }
 .product-table-wrap { overflow: hidden; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 8px 28px rgba(67,47,31,.05); }
@@ -305,7 +305,7 @@ input:hover, select:hover { border-color: #b9b0a6; }
 .recipe-poster-full-height { flex: 1 0 auto; align-content: start; }
 .recipe-poster:not(:has(.inline-editor-card)) {
   position: relative;
-  gap: 10px 28px;
+  gap: 30px 28px;
   padding: clamp(10px, 1.8vw, 24px);
   background: var(--surface);
   border-radius: var(--radius-lg);
@@ -335,6 +335,8 @@ input:hover, select:hover { border-color: #b9b0a6; }
 .recipe-poster-title {
   display: grid;
   gap: 3px;
+  min-width: 0;
+  max-width: 100%;
   padding-right: 84px;
   margin: 0;
   font-family: Manrope, sans-serif;
@@ -344,10 +346,13 @@ input:hover, select:hover { border-color: #b9b0a6; }
   letter-spacing: -.045em;
   text-transform: uppercase;
   text-wrap: balance;
+  overflow-wrap: anywhere;
 }
 .recipe-title-accent {
-  width: max-content;
+  width: auto;
   max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
   color: var(--coral-dark);
   background: linear-gradient(90deg, #a62f2d, #e47b24);
   background-clip: text;
@@ -358,8 +363,10 @@ input:hover, select:hover { border-color: #b9b0a6; }
 .recipe-time-badge {
   position: absolute;
   z-index: 3;
-  right: -112px;
-  bottom: -98px;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -50%);
+  right: auto;
   width: 96px;
   aspect-ratio: 1;
   display: grid;
@@ -372,8 +379,10 @@ input:hover, select:hover { border-color: #b9b0a6; }
   text-align: center;
   box-shadow: 0 8px 24px rgba(158, 68, 58, .2);
 }
+.recipe-detail-hero-media { position: relative; }
 .recipe-time-badge span { font-size: .63rem; line-height: 1.15; }
 .recipe-time-badge strong { font-size: 1.25rem; line-height: 1; white-space: nowrap; }
+.recipe-nutrition-panel .recipe-time-badge { top: 0; right: 0; left: auto; transform: translate(50%, -50%); }
 .recipe-poster:not(:has(.inline-editor-card)) .recipe-detail-hero-media { overflow: visible; }
 .recipe-poster:not(:has(.inline-editor-card)) .recipe-image-edit-trigger { overflow: hidden; border-radius: 0; }
 .recipe-poster:not(:has(.inline-editor-card)) .recipe-detail-hero-media .recipe-hero { object-fit: cover; object-position: center; background: transparent; }
@@ -441,9 +450,7 @@ input:hover, select:hover { border-color: #b9b0a6; }
   color: #111;
   font-size: clamp(.8rem, 1.05vw, .98rem);
   line-height: 1.46;
-  columns: 2;
-  column-gap: clamp(24px, 4vw, 54px);
-  column-fill: balance;
+  columns: 1;
 }
 
 @media (min-width: 768px) {
@@ -462,7 +469,7 @@ input:hover, select:hover { border-color: #b9b0a6; }
 @media (max-width: 767px) {
   .recipe-poster:not(:has(.inline-editor-card)) { grid-template-columns: minmax(0, 1fr); grid-template-areas: "intro" "media" "nutrition" "ingredients" "instructions"; gap: 18px; }
   .recipe-poster-title { padding-right: 72px; font-size: clamp(2.4rem, 9vw, 4.4rem); }
-  .recipe-time-badge { position: static; width: 88px; margin-top: 16px; }
+  .recipe-time-badge { top: 0; left: 0; width: 78px; padding: 10px; transform: translate(-50%, -50%); }
   .recipe-poster:not(:has(.inline-editor-card)) .recipe-detail-hero-media { border-radius: 0; }
   .recipe-poster:not(:has(.inline-editor-card)) .recipe-detail-hero-media .recipe-hero { max-height: 440px; }
 }

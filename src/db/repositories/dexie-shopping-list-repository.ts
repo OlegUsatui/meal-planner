@@ -25,6 +25,6 @@ export class DexieShoppingListRepository implements ShoppingListRepository {
         return product ? [{ productId: product.id, quantityBase: ingredient.quantityBase }] : []
       }),
     }))
-    return buildShoppingList(entries.filter((entry) => !range.to || entry.date <= range.to), recipeViews, products, range.from)
+    return buildShoppingList(entries.filter((entry) => !range.to || entry.date <= range.to), recipeViews, products, range.from, new Date())
   }
 }

@@ -1,7 +1,7 @@
-import { keepPreviousData, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useMemo, useState } from 'react'
+import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog'
 import type { RecipeSummary } from '../../recipes/types'
 import { useRecipeRepository } from '../../recipes/repositories/useRecipeRepository'
@@ -18,7 +18,6 @@ import { RetryBanner } from '../../../shared/ui/RetryBanner'
 import { Alert } from '../../../shared/ui/Alert'
 import { Button } from '../../../shared/ui/Button'
 import { SegmentedControl } from '../../../shared/ui/SegmentedControl'
-import { ButtonLink } from '../../../shared/ui/ButtonLink'
 
 const localToday = () => new Intl.DateTimeFormat('sv-SE').format(new Date())
 
@@ -30,7 +29,9 @@ export function MealPlannerPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const today = localToday()
-  const viewMode: CalendarViewMode = searchParams.get('view') === 'week' ? 'week' : 'day'
+  const urlView = searchParams.get('view')
+  const storedView = readStoredView(userId)
+  const viewMode: CalendarViewMode = urlView === 'week' || (urlView !== 'day' && storedView === 'week') ? 'week' : 'day'
   const initialDate = validDate(searchParams.get('date')) ?? today
   const [weekStart, setWeekStart] = useState(() => startOfWeek(initialDate))
   const [selectedDate, setSelectedDate] = useState(initialDate)
@@ -39,12 +40,15 @@ export function MealPlannerPage() {
   const [removing, setRemoving] = useState<MealPlanEntry>()
   const [removePending, setRemovePending] = useState(false)
 
+  useEffect(() => {
+    if (urlView === 'day' || urlView === 'week') writeStoredView(userId, urlView)
+  }, [urlView, userId])
+
   const planQuery = useQuery({
     queryKey: queryKeys.mealPlan(userId, dates[0], dates[6]),
     queryFn: ({ signal }) => plan.list({ from: dates[0], to: dates[6] }, signal),
     staleTime: cacheTimes.dynamicStale,
     refetchOnWindowFocus: true,
-    placeholderData: keepPreviousData,
   })
   const catalogueQuery = useQuery({
     queryKey: queryKeys.recipes(userId, {}),
@@ -54,7 +58,10 @@ export function MealPlannerPage() {
   })
   const entries = planQuery.data ?? []
   const catalogue = catalogueQuery.data ?? []
-  const recipeIdsToLoad = useMemo(() => [...new Set(entries.map((entry) => entry.recipeId).filter((id) => viewMode === 'day' || !catalogue.some((recipe) => recipe.id === id)))], [catalogue, entries, viewMode])
+  // Week cards use lightweight summaries. Loading full recipes there creates a
+  // transient request while the catalogue is still pending, which is then
+  // aborted as soon as the summaries arrive.
+  const recipeIdsToLoad = useMemo(() => viewMode === 'day' ? [...new Set(entries.map((entry) => entry.recipeId))] : [], [entries, viewMode])
   const detailQueries = useQueries({ queries: recipeIdsToLoad.map((recipeId) => ({ queryKey: queryKeys.recipe(userId, recipeId), queryFn: ({ signal }: { signal: AbortSignal }) => recipeRepository.get(recipeId, signal), staleTime: cacheTimes.catalogueStale, retry: false })) })
   const recipes = useMemo(() => {
     const map = new Map<string, RecipeSummary>(catalogue.map((recipe) => [recipe.id, recipe]))
@@ -69,6 +76,7 @@ export function MealPlannerPage() {
     const next = new URLSearchParams(searchParams); next.set('date', date); setSearchParams(next, { replace: true })
   }, [searchParams, setSearchParams])
   const selectViewMode = (next: CalendarViewMode) => {
+    writeStoredView(userId, next)
     const params = new URLSearchParams(searchParams)
     params.set('view', next)
     setSearchParams(params, { replace: true })
@@ -100,7 +108,7 @@ export function MealPlannerPage() {
   }
 
   return <section className="page meal-planner-page">
-    <PageHeader className="planner-page-header" eyebrow="Тижневий календар" title="План харчування" description="Плануйте сніданки, обіди, вечері та перекуси. Відкрийте порожній слот, щоб додати страву." actions={<ButtonLink variant="secondary" to="/recipes/new"><Plus size={18} aria-hidden="true" /> Новий рецепт</ButtonLink>} />
+    <PageHeader className="planner-page-header" eyebrow="Тижневий календар" title="План харчування" description="Плануйте сніданки, обіди, вечері та перекуси. Відкрийте порожній слот, щоб додати страву." />
     <div className="week-toolbar"><div className="week-navigation"><button type="button" className="week-arrow" aria-label="Попередній тиждень" onClick={() => moveWeek(-7)}><ChevronLeft aria-hidden="true" /></button><Button variant="secondary" type="button" className="today-button" onClick={goToday}>Сьогодні</Button><button type="button" className="week-arrow" aria-label="Наступний тиждень" onClick={() => moveWeek(7)}><ChevronRight aria-hidden="true" /></button></div><strong>{rangeLabel}</strong><SegmentedControl value={viewMode} ariaLabel="Режим календаря" options={[{ value: 'day', label: 'День' }, { value: 'week', label: 'Тиждень' }]} onChange={selectViewMode} className="planner-view-toggle" /></div>
     {loading && <LoadingState>Завантажуємо план…</LoadingState>}
     {stale && <RetryBanner hasData={entries.length > 0} staleMessage="Показуємо останній завантажений план." errorMessage="Не вдалося завантажити план." onRetry={() => { void planQuery.refetch(); void catalogueQuery.refetch() }} pending={planQuery.isFetching || catalogueQuery.isFetching} />}
@@ -112,4 +120,17 @@ export function MealPlannerPage() {
 
 function validDate(value: string | null): string | undefined {
   return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined
+}
+
+function viewStorageKey(userId: string): string { return `meal-planner:plan-view:${userId}` }
+
+function readStoredView(userId: string): CalendarViewMode | undefined {
+  try {
+    const value = window.localStorage.getItem(viewStorageKey(userId))
+    return value === 'day' || value === 'week' ? value : undefined
+  } catch { return undefined }
+}
+
+function writeStoredView(userId: string, view: CalendarViewMode): void {
+  try { window.localStorage.setItem(viewStorageKey(userId), view) } catch { /* Storage can be unavailable in private browsing. */ }
 }

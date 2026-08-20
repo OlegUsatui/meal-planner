@@ -27,6 +27,7 @@ Permanent deletion is rejected when a product is referenced by recipe ingredient
 2. Run `supabase/migrations/20260814000000_initial_schema.sql` in the Supabase SQL editor or through the Supabase CLI.
 3. Run `supabase/migrations/20260815000000_admin_roles.sql`.
 4. Run `supabase/migrations/20260815010000_ux_profiles_optional_images.sql`. The `/api/me` endpoint intentionally returns `schema-not-ready` until this migration adds `profiles.onboarding_completed_at`.
+5. Run `supabase/migrations/20260818000000_propagate_product_base_unit.sql` before enabling referenced product unit changes. This creates the atomic RPC used by `PATCH /api/products/:id`.
 5. Configure email/password sign-up and the site URL in Supabase Auth.
 6. Run the seed command with Supabase and R2 credentials. It uploads the stable system image keys directly to R2:
 

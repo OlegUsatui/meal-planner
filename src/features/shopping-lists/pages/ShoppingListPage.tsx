@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useMemo, useRef, useState } from 'react'
 import { Download, Printer, Share2 } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
@@ -32,11 +32,11 @@ export function ShoppingListPage() {
     queryFn: ({ signal }) => repository.list(range, signal),
     staleTime: cacheTimes.dynamicStale,
     refetchOnWindowFocus: true,
-    placeholderData: keepPreviousData,
+    refetchOnMount: 'always',
   })
   const lastItems = useRef<ShoppingListItem[]>([])
   if (itemsQuery.data !== undefined) lastItems.current = itemsQuery.data
-  const items = itemsQuery.data ?? lastItems.current
+  const items = itemsQuery.data ?? (itemsQuery.isError ? lastItems.current : [])
   const groups = useMemo(() => groupItems(items), [items])
   const choosePreset = (value: string) => {
     const next = new URLSearchParams(searchParams)

@@ -23,6 +23,7 @@ describe('MealPlannerPage', () => {
     const router = createMemoryRouter([{ path: '/plan', element: <MealPlannerPage /> }, { path: '/plan/add', element: <MealPlanEntryPage /> }, { path: '/recipes/:recipeId', element: <h1>Сторінка рецепту</h1> }], { initialEntries: ['/plan?date=2026-08-14'] })
     const { container } = render(<QueryTestProvider><RecipeRepositoryProvider repository={recipes}><MealPlanRepositoryProvider repository={plan}><RouterProvider router={router} /></MealPlanRepositoryProvider></RecipeRepositoryProvider></QueryTestProvider>)
     expect(await screen.findByRole('heading', { name: 'План харчування' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Новий рецепт' })).not.toBeInTheDocument()
     expect(container.querySelectorAll('.week-day')).toHaveLength(1)
     expect(container.querySelectorAll('.mobile-day-strip button')).toHaveLength(7)
     expect(plan.list).toHaveBeenCalledWith({ from: '2026-08-10', to: '2026-08-16' }, expect.any(AbortSignal))
@@ -31,6 +32,9 @@ describe('MealPlannerPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Тиждень' }))
     expect(container.querySelectorAll('.week-grid-day-header')).toHaveLength(7)
     expect(router.state.location.search).toContain('view=week')
+    router.navigate('/plan?date=2026-08-14')
+    expect(await screen.findByRole('button', { name: 'Тиждень' })).toHaveAttribute('aria-pressed', 'true')
+    expect(container.querySelectorAll('.week-grid-day-header')).toHaveLength(7)
     await userEvent.click(screen.getByRole('button', { name: 'День' }))
     expect(container.querySelectorAll('.week-day')).toHaveLength(1)
     expect(router.state.location.search).toContain('view=day')
@@ -50,7 +54,8 @@ describe('MealPlannerPage', () => {
     expect(router.state.location.pathname).toBe('/plan/add')
     expect(await screen.findByRole('heading', { name: 'Додати страву' })).toBeInTheDocument()
     expect(screen.queryByText('Обрана страва')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Рисова миска/ })).toHaveClass('recipe-card')
+    expect(screen.getByRole('button', { name: /Рисова миска/ }).closest('.recipe-card')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Відкрити рецепт' })).toHaveAttribute('href', expect.stringContaining('/recipes/recipe-1'))
     expect(screen.queryByLabelText('Підкатегорія')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Кількість порцій')).not.toBeInTheDocument()
     expect(screen.getByRole('group', { name: 'Підкатегорії' })).toBeInTheDocument()
@@ -69,6 +74,16 @@ describe('MealPlannerPage', () => {
     await userEvent.click(recipeCardAfterFilter)
     await userEvent.click(screen.getByRole('button', { name: 'Додати до плану' }))
     expect(plan.upsert).toHaveBeenCalledWith(expect.objectContaining({ recipeId: recipe.id, servings: 2 }))
+  })
+
+  it('does not request full recipe details in week mode', async () => {
+    const plan: MealPlanRepository = { list: vi.fn().mockResolvedValue([{ id: 'entry-1', date: '2026-08-14', slot: 'breakfast', recipeId: recipe.id, servings: 2, createdAt: 'now', updatedAt: 'now' }]), getByDateSlot: vi.fn(), upsert: vi.fn(), remove: vi.fn() }
+    const recipes: RecipeRepository = { list: vi.fn().mockResolvedValue([recipe]), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
+    const router = createMemoryRouter([{ path: '/plan', element: <MealPlannerPage /> }], { initialEntries: ['/plan?date=2026-08-14&view=week'] })
+    render(<QueryTestProvider><RecipeRepositoryProvider repository={recipes}><MealPlanRepositoryProvider repository={plan}><RouterProvider router={router} /></MealPlanRepositoryProvider></RecipeRepositoryProvider></QueryTestProvider>)
+
+    expect(await screen.findByRole('heading', { name: 'План харчування' })).toBeInTheDocument()
+    expect(recipes.get).not.toHaveBeenCalled()
   })
 
   it('replaces and removes a planned meal with explicit confirmations', async () => {

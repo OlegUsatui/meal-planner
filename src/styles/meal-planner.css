@@ -94,15 +94,18 @@
 .meal-plan-category-chips button:hover, .meal-plan-category-chips button.active { color: var(--forest, #365846); background: var(--sage-soft, #e8eee8); border-color: var(--forest, #365846); }
 .meal-plan-entry-content { display: grid; gap: 20px; }
 .meal-plan-entry-recipes { margin-top: 0; }
-.meal-plan-recipe-card { position: relative; width: 100%; padding: 0; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
+.meal-plan-recipe-card { position: relative; width: 100%; padding: 0; color: var(--ink); text-align: left; font: inherit; }
 .meal-plan-recipe-card:hover { border-color: var(--coral-dark); }
 .meal-plan-recipe-card.selected { box-shadow: 0 0 0 2px var(--coral-dark); }
+.meal-plan-recipe-select { position: relative; display: block; width: 100%; padding: 0; color: inherit; text-align: left; background: transparent; border: 0; cursor: pointer; font: inherit; }
 .meal-plan-recipe-card .meal-plan-recipe-card-image { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: var(--sage-pale); }
 .meal-plan-recipe-card .meal-plan-recipe-card-image.image-placeholder { display: grid; place-items: center; color: var(--muted); font-size: 2rem; }
-.meal-plan-recipe-card > div { padding: 14px; }
-.meal-plan-recipe-card h2 { margin: 2px 0 6px; font-size: 1.1rem; }
-.meal-plan-recipe-card p { margin: 0; color: var(--muted); }
-.meal-plan-recipe-card > svg { position: absolute; top: 12px; right: 12px; width: 24px; height: 24px; padding: 4px; color: var(--surface); background: var(--coral-dark); border-radius: 50%; }
+.meal-plan-recipe-copy { display: grid; gap: 4px; padding: 14px; }
+.meal-plan-recipe-copy strong { margin: 2px 0 2px; font-size: 1.1rem; }
+.meal-plan-recipe-copy > span:last-child { color: var(--muted); }
+.meal-plan-recipe-select > svg { position: absolute; top: 12px; right: 12px; width: 24px; height: 24px; padding: 4px; color: var(--surface); background: var(--coral-dark); border-radius: 50%; }
+.meal-plan-recipe-open { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 8px 14px 12px; color: var(--primary); border-top: 1px solid var(--border); font-size: .78rem; font-weight: 750; text-decoration: none; }
+.meal-plan-recipe-open svg { width: 17px; }
 .meal-plan-entry-actions { position: fixed; z-index: 30; left: 50%; bottom: 20px; width: min(calc(100vw - 48px), 900px); display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 14px 18px; background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); backdrop-filter: blur(16px); transform: translateX(-50%); }
 .meal-plan-entry-action-copy { min-width: 0; display: grid; gap: 3px; }
 .meal-plan-entry-action-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

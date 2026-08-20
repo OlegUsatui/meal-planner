@@ -28,7 +28,7 @@ Select Today/7/14/All/custom, check or uncheck a product, reset marks for the se
 
 ## State and storage
 
-The product list is recalculated from plan entries, recipe ingredients, products, and servings for the requested inclusive range. Each range is cached in session memory for 30 seconds; changing range cancels the obsolete request and preserves previous rows during transition/error. Purchase marks are the only persisted shopping state: the browser stores product IDs in local storage under the authenticated user and exact range, so marks survive reloads on that device but are not synchronized to another device or sent to the server. Marks remain visible after checking, and reset clears marks for the selected range.
+The product list is recalculated from plan entries, recipe ingredients, products, and servings for the requested inclusive range. For the current local date, breakfast is excluded from 09:00, lunch from 13:00, and dinner from 18:00; snacks remain eligible all day, while future dates include every slot. Each range is cached in session memory for 30 seconds; changing range cancels the obsolete request and shows a loading state instead of displaying another range's rows, while a failed refresh of the active range preserves stale rows. Purchase marks are the only persisted shopping state: the browser stores product IDs in local storage under the authenticated user and exact range, so marks survive reloads on that device but are not synchronized to another device or sent to the server. Marks remain visible after checking, and reset clears marks for the selected range.
 
 ## Validation
 
@@ -48,7 +48,7 @@ Demand is one-serving quantity × planned servings. Groups and names sort with U
 
 ## Acceptance criteria
 
-Default request covers today plus six days; All omits `to`; custom state survives reload/back; stale data remains visible after failure; product marks survive reload on the same device for the exact range; progress and reset are available; checked rows remain visible; the feature has no manual rows, prices, purchase history, or server-side purchase state.
+Default request covers today plus six days; All omits `to`; custom state survives reload/back; returning to the page always refreshes the selected range so a newly added plan entry appears without waiting for the cache TTL; stale data remains visible after failure; product marks survive reload on the same device for the exact range; progress and reset are available; checked rows remain visible; the feature has no manual rows, prices, purchase history, or server-side purchase state.
 
 ## Tests
 

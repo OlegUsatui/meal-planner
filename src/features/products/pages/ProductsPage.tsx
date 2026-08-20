@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Carrot, Plus } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
@@ -57,11 +57,10 @@ export function ProductsPage() {
       : repository.list(options, signal).then((products) => ({ items: products, page: 1, pageSize: products.length || PAGE_SIZE, total: products.length, hasNext: false })),
     staleTime: cacheTimes.catalogueStale,
     refetchOnWindowFocus: false,
-    placeholderData: keepPreviousData,
   })
   const lastPage = useRef<ProductPage | undefined>(undefined)
   if (productsQuery.data !== undefined) lastPage.current = productsQuery.data
-  const pageInfo = productsQuery.data ?? lastPage.current ?? { items: [], page: 1, pageSize: PAGE_SIZE, total: 0, hasNext: false }
+  const pageInfo = productsQuery.data ?? (productsQuery.isError ? lastPage.current : undefined) ?? { items: [], page: 1, pageSize: PAGE_SIZE, total: 0, hasNext: false }
 
   useEffect(() => {
     if (!productsQuery.isPending && pageInfo.total > 0) {

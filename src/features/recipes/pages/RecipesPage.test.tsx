@@ -33,6 +33,24 @@ describe('RecipesPage categories', () => {
     expect(screen.getByText('Старий рецепт')).toBeInTheDocument()
   })
 
+  it('does not keep the previous tab recipes while the next tab loads', async () => {
+    let resolveLunch: ((value: { items: Recipe[]; page: number; pageSize: number; total: number; hasNext: boolean }) => void) | undefined
+    const lunchPending = new Promise<{ items: Recipe[]; page: number; pageSize: number; total: number; hasNext: boolean }>((resolve) => { resolveLunch = resolve })
+    const repository: RecipeRepository = {
+      list: vi.fn(),
+      listPage: vi.fn()
+        .mockResolvedValueOnce({ items: [{ ...base, id: 'breakfast', name: 'Омлет', normalizedName: 'омлет', classifications: [{ mealType: 'breakfast', subcategoryId: 'breakfast-eggs' }] }], page: 1, pageSize: 24, total: 1, hasNext: false })
+        .mockReturnValueOnce(lunchPending),
+      get: vi.fn(), create: vi.fn(), update: vi.fn(), archive: vi.fn(),
+    }
+    render(<QueryTestProvider><MemoryRouter><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider></MemoryRouter></QueryTestProvider>)
+    expect(await screen.findByText('Омлет')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Обід' }))
+    expect(screen.queryByText('Омлет')).not.toBeInTheDocument()
+    expect(screen.getByText('Завантажуємо рецепти…')).toBeInTheDocument()
+    resolveLunch?.({ items: [], page: 1, pageSize: 24, total: 0, hasNext: false })
+  })
+
   it('shows a retryable error instead of an empty catalogue when loading fails', async () => {
     const repository: RecipeRepository = { list: vi.fn().mockRejectedValue(new Error('network')), get: vi.fn(), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
     render(<QueryTestProvider><MemoryRouter><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider></MemoryRouter></QueryTestProvider>)

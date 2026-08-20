@@ -35,4 +35,19 @@ describe('derived shopping list', () => {
   it('returns an empty list when no future meals exist', () => {
     expect(buildShoppingList([], [], [], '2026-08-14')).toEqual([])
   })
+
+  it('removes passed meals from today while keeping future meals and snacks', () => {
+    const entries = [
+      { id: 'breakfast', date: '2026-08-14', slot: 'breakfast' as const, recipeId: 'recipe-a', servings: 1 },
+      { id: 'lunch', date: '2026-08-14', slot: 'lunch' as const, recipeId: 'recipe-a', servings: 1 },
+      { id: 'dinner', date: '2026-08-14', slot: 'dinner' as const, recipeId: 'recipe-a', servings: 1 },
+      { id: 'snack', date: '2026-08-14', slot: 'snack' as const, recipeId: 'recipe-a', servings: 1 },
+      { id: 'tomorrow', date: '2026-08-15', slot: 'breakfast' as const, recipeId: 'recipe-a', servings: 1 },
+    ]
+    const recipes = [{ id: 'recipe-a', name: 'Страва', ingredients: [{ productId: 'pasta', quantityBase: 100 }] }]
+    const products = [{ id: 'pasta', name: 'Паста', category: 'Бакалія', baseUnit: 'g' as const }]
+
+    expect(buildShoppingList(entries, recipes, products, '2026-08-14', new Date('2026-08-14T13:00:00'))[0]?.quantityBase).toBe(300)
+    expect(buildShoppingList(entries, recipes, products, '2026-08-14', new Date('2026-08-14T18:00:00'))[0]?.quantityBase).toBe(200)
+  })
 })

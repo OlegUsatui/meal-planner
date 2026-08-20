@@ -52,7 +52,7 @@ export function RecipeDetailPage() {
 
   const recipeQuery = useQuery({
     queryKey: queryKeys.recipe(userId, recipeId ?? 'missing'),
-    queryFn: () => repository.get(recipeId!),
+    queryFn: ({ signal }) => repository.get(recipeId!, signal),
     staleTime: cacheTimes.catalogueStale,
     refetchOnWindowFocus: false,
     enabled: Boolean(recipeId),

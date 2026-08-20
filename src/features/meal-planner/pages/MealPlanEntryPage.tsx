@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check } from 'lucide-react'
+import { ArrowUpRight, Check } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { cacheTimes, queryKeys } from '../../../app/query/query-client'
 import { invalidateMealPlanData } from '../../../app/query/invalidation'
 import { useOptionalAuth } from '../../auth/useAuth'
@@ -26,6 +26,7 @@ const localToday = () => new Intl.DateTimeFormat('sv-SE').format(new Date())
 
 export function MealPlanEntryPage() {
   const [searchParams] = useSearchParams()
+  const location = useLocation()
   const navigate = useNavigate()
   const recipeRepository = useRecipeRepository()
   const plan = useMealPlanRepository()
@@ -100,7 +101,7 @@ export function MealPlanEntryPage() {
       {actionError && <Alert variant="error">{actionError}</Alert>}
       {!filtered.length && <EmptyState className="meal-plan-entry-empty" title="Рецептів не знайдено" description="Змініть пошук або оберіть іншу категорію." />}
       {!!filtered.length && <div className="meal-plan-entry-content">
-        <div className="recipe-grid meal-plan-entry-recipes" aria-label="Рецепти">{filtered.map((recipe) => <RecipeOption key={recipe.id} recipe={recipe} slot={slot} selected={recipe.id === selectedId} onSelect={() => setSelectedId((current) => current === recipe.id ? '' : recipe.id)} />)}</div>
+        <div className="recipe-grid meal-plan-entry-recipes" aria-label="Рецепти">{filtered.map((recipe) => <RecipeOption key={recipe.id} recipe={recipe} slot={slot} selected={recipe.id === selectedId} onSelect={() => setSelectedId((current) => current === recipe.id ? '' : recipe.id)} detailHref={`/recipes/${encodeURIComponent(recipe.id)}?${new URLSearchParams({ planDate: date, planSlot: slot, planServings: String(servings), planMode: replacing ? 'replace' : 'add', returnTo: `${location.pathname}${location.search}` }).toString()}`} />)}</div>
       </div>}
       {selectedRecipe && <div className="meal-plan-entry-actions">
         <div className="meal-plan-entry-action-copy" aria-live="polite"><span className="eyebrow">Вибрано</span><strong>{selectedRecipe.name}</strong></div>
@@ -110,8 +111,8 @@ export function MealPlanEntryPage() {
   </section>
 }
 
-function RecipeOption({ recipe, slot, selected, onSelect }: { recipe: RecipeSummary; slot: MealSlot; selected: boolean; onSelect: () => void }) {
-  return <button type="button" className={`recipe-card meal-plan-recipe-card ${selected ? 'selected' : ''}`} aria-pressed={selected} onClick={onSelect}><RecipeImage blob={recipe.image?.blob} url={recipe.image?.url} alt="" className="meal-plan-recipe-card-image" /><div><p className="eyebrow">{formatPreparationTime(recipe.preparationTimeMinMinutes, recipe.preparationTimeMaxMinutes) ?? 'Час не вказано'}</p><h2>{recipe.name}</h2><p>{getRecipeLabels(recipe, slot)}</p></div>{selected && <Check aria-hidden="true" />}</button>
+function RecipeOption({ recipe, slot, selected, onSelect, detailHref }: { recipe: RecipeSummary; slot: MealSlot; selected: boolean; onSelect: () => void; detailHref: string }) {
+  return <article className={`recipe-card meal-plan-recipe-card ${selected ? 'selected' : ''}`}><button type="button" className="meal-plan-recipe-select" aria-pressed={selected} onClick={onSelect}><RecipeImage blob={recipe.image?.blob} url={recipe.image?.url} alt="" className="meal-plan-recipe-card-image" /><span className="meal-plan-recipe-copy"><span className="eyebrow">{formatPreparationTime(recipe.preparationTimeMinMinutes, recipe.preparationTimeMaxMinutes) ?? 'Час не вказано'}</span><strong>{recipe.name}</strong><span>{getRecipeLabels(recipe, slot)}</span></span>{selected && <Check aria-hidden="true" />}</button><Link className="meal-plan-recipe-open" to={detailHref}><span>Відкрити рецепт</span><ArrowUpRight aria-hidden="true" /></Link></article>
 }
 
 function getRecipeLabels(recipe: RecipeSummary, slot: MealSlot): string {
