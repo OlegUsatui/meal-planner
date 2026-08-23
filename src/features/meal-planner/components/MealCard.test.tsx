@@ -22,13 +22,12 @@ describe('MealCard', () => {
     expect(onOpen).not.toHaveBeenCalled()
   })
 
-  it('keeps the recipe name in a hover tooltip instead of the card body', () => {
+  it('shows the recipe name in the compact card body', () => {
     render(<MealCard entry={entry} recipe={recipe} readOnly={false} onOpen={vi.fn()} onReplace={vi.fn()} onRemove={vi.fn()} onServingsChange={vi.fn()} />)
 
     const recipeButton = screen.getByRole('button', { name: 'Відкрити рецепт Рисова миска' })
-    expect(recipeButton).not.toHaveTextContent('Рисова миска')
-    expect(recipeButton).toHaveAttribute('title', 'Рисова миска')
-    expect(recipeButton).toHaveAttribute('data-tooltip', 'Рисова миска')
+    expect(recipeButton).toHaveTextContent('Рисова миска')
+    expect(recipeButton).not.toHaveAttribute('data-tooltip')
   })
 
   it('keeps the servings visible but read-only for past entries', () => {

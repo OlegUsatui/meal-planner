@@ -10,6 +10,7 @@ import { PageHeader } from '../../shared/ui/PageHeader'
 import { ButtonLink } from '../../shared/ui/ButtonLink'
 import { SectionHeading } from '../../shared/ui/SectionHeading'
 import { RetryBanner } from '../../shared/ui/RetryBanner'
+import { FoodIllustration, type FoodIllustrationVariant } from '../../shared/ui/FoodIllustration'
 
 const localToday = () => new Intl.DateTimeFormat('sv-SE').format(new Date())
 
@@ -31,9 +32,15 @@ export function DashboardPage() {
     {summaryQuery.isError && <RetryBanner hasData={Boolean(summary)} staleMessage="Показуємо останній огляд дня." errorMessage="Не вдалося завантажити огляд дня." onRetry={() => void summaryQuery.refetch()} pending={summaryQuery.isFetching} />}
     {summary && <>
       {!summary.hasPlanEntries && <section className="first-step-card"><p className="eyebrow">Перший крок</p><h2>Заплануйте одну страву</h2><p>Оберіть готовий системний рецепт — власні продукти та рецепти створювати не обов’язково.</p><ButtonLink to={`/plan?date=${today}`}>Запланувати страву</ButtonLink></section>}
-      <div className="today-grid"><section className="today-meals"><SectionHeading eyebrow="Розклад" title="Страви на сьогодні" /><div className="today-slots">{mealSlots.map((slot) => { const meal = summary.todayEntries.find((entry) => entry.slot === slot.value); return meal ? <Link className="today-slot filled" key={slot.value} to={`/recipes/${meal.recipeId}?planDate=${meal.date}&planSlot=${meal.slot}&planServings=${meal.servings}&returnTo=%2F`}><span>{slot.label}</span><strong>{meal.recipeName}</strong><small>{meal.servings} порц.</small><ArrowRight aria-hidden="true" /></Link> : <Link className="today-slot empty" key={slot.value} aria-label={`Запланувати: ${slot.label}`} to={`/plan?date=${today}`}><span>{slot.label}</span><strong>Порожній слот</strong><small>Запланувати</small><CalendarPlus aria-hidden="true" /></Link> })}</div></section>
+      <div className="today-grid"><section className="today-meals"><SectionHeading eyebrow="Розклад" title="Страви на сьогодні" /><div className="today-slots">{mealSlots.map((slot) => { const meal = summary.todayEntries.find((entry) => entry.slot === slot.value); const illustration = <FoodIllustration variant={illustrationForSlot(slot.value)} />; return meal ? <Link className="today-slot filled" key={slot.value} to={`/recipes/${meal.recipeId}?planDate=${meal.date}&planSlot=${meal.slot}&planServings=${meal.servings}&returnTo=%2F`}><span className="today-slot-label">{illustration}<span>{slot.label}</span></span><strong>{meal.recipeName}</strong><small>{meal.servings} порц.</small><ArrowRight aria-hidden="true" /></Link> : <Link className="today-slot empty" key={slot.value} aria-label={`Запланувати: ${slot.label}`} to={`/plan?date=${today}`}><span className="today-slot-label">{illustration}<span>{slot.label}</span></span><strong>Порожній слот</strong><small>Запланувати</small><CalendarPlus aria-hidden="true" /></Link> })}</div></section>
         <aside className="today-aside"><section className="next-meal-card"><p className="eyebrow">Найближча страва</p>{summary.nextEntry ? <><h2>{summary.nextEntry.recipeName}</h2><p>{summary.nextEntry.date === today ? 'Сьогодні' : new Date(`${summary.nextEntry.date}T12:00:00`).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' })} · {mealSlots.find((slot) => slot.value === summary.nextEntry?.slot)?.label}</p></> : <><h2>План вільний</h2><p>Додайте страву, коли будете готові.</p></>}</section><Link className="shopping-preview-card" to="/shopping?range=7"><ShoppingBasket aria-hidden="true" /><span><small>Покупки на 7 днів</small><strong>{summary.sevenDayShoppingCount} продуктів</strong></span><ArrowRight aria-hidden="true" /></Link></aside>
       </div>
     </>}
   </section>
+}
+
+function illustrationForSlot(slot: string): FoodIllustrationVariant {
+  if (slot === 'breakfast') return 'breakfast'
+  if (slot === 'snack') return 'produce'
+  return 'meal'
 }

@@ -7,3 +7,15 @@
 .dashboard-skeleton { min-height: 320px; display: grid; place-items: center; color: var(--muted); background: var(--surface); border-radius: var(--radius-2xl); }
 @media (max-width: 900px) { .today-grid { grid-template-columns: 1fr; }.today-aside { grid-template-columns: repeat(2, 1fr); }.next-meal-card { min-height: 180px; } }
 @media (max-width: 767px) { .today-aside { grid-template-columns: 1fr; }.today-slot { grid-template-columns: 1fr auto; }.today-slot > span { grid-column: 1 / -1; }.today-slot small { display: none; } }
+
+/* Scrapbook treatment for the daily overview. */
+.first-step-card { border: 1px dashed var(--color-border-warm); border-radius: 34px 24px 30px 20px; box-shadow: var(--shadow-paper-card); }
+.today-meals, .next-meal-card, .shopping-preview-card { border-radius: 30px 24px 28px 20px; box-shadow: var(--shadow-paper-card); }
+.today-slot { min-height: 98px; padding: 12px 18px; border-radius: 22px 16px 20px 14px; background: var(--surface-raised); }
+.today-slot.empty { background: var(--color-surface-warm); }
+.today-slot-label { display: inline-flex; align-items: center; gap: 9px; }
+.today-slot-label .food-illustration { width: 44px; flex: 0 0 44px; border-radius: 48% 52% 44% 56%; box-shadow: none; }
+.today-slot-label .food-illustration::before { inset: 5px; }
+.today-slot-label .food-illustration svg { width: 48%; height: 48%; }
+.next-meal-card { transform: rotate(1deg); }
+@media (max-width: 767px) { .today-slot-label { grid-column: 1 / -1; } }

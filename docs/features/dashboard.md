@@ -15,11 +15,11 @@ The user reviews four meal slots, opens a planned recipe with date/slot/servings
 
 ## Desktop UI
 
-The desktop composition uses the persistent sidebar, an editorial daily header, a meal grid, next-meal summary, and shopping preview.
+The desktop composition uses the persistent sidebar, an editorial daily header, a paper-toned meal grid with a small local food illustration for each slot, next-meal summary, and shopping preview. Filled slots retain their recipe-first action and empty slots retain the planner action.
 
 ## Mobile UI
 
-At 320 px the page is a single column with bottom navigation, 44 px targets, no horizontal overflow, and contextual actions adjacent to the relevant card.
+At 320 px the page is a single column with bottom navigation, 44 px targets, no horizontal overflow, and contextual actions adjacent to the relevant card. Slot illustrations shrink to compact decorative badges and remain hidden from assistive technology.
 
 ## Actions
 

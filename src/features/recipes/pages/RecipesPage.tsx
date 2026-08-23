@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, Plus, Soup } from 'lucide-react'
+import { ArrowLeft, Plus } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { getRecipeSubcategory, recipeMealTypes, recipeSubcategories, type RecipeMealType } from '../domain/recipe-taxonomy'
 import { useRecipeRepository } from '../repositories/useRecipeRepository'
@@ -17,6 +17,7 @@ import { ButtonLink } from '../../../shared/ui/ButtonLink'
 import { SearchField } from '../../../shared/ui/SearchField'
 import { ChipGroup } from '../../../shared/ui/ChipGroup'
 import { MediaPlaceholder } from '../../../shared/ui/MediaPlaceholder'
+import { FoodIllustration } from '../../../shared/ui/FoodIllustration'
 import { cacheTimes, queryKeys } from '../../../app/query/query-client'
 
 type CatalogueSection = 'all' | 'uncategorized' | RecipeMealType
@@ -95,7 +96,7 @@ export function RecipesPage() {
     {!!categories.length && <ChipGroup ariaLabel="Підкатегорії" value={subcategory} onChange={(value) => updateUrl({ subcategory: value, page: 1 })} className="recipe-subcategory-filters" options={[{ value: '', label: 'Усі підкатегорії' }, ...categories.map((item) => ({ value: item.subcategoryId, label: item.label }))]} />}
     {recipesQuery.isPending && <LoadingState>Завантажуємо рецепти…</LoadingState>}
     {recipesQuery.isError && <RetryBanner hasData={recipes.length > 0} staleMessage="Показуємо останній завантажений каталог." errorMessage="Не вдалося завантажити рецепти." onRetry={() => void recipesQuery.refetch()} pending={recipesQuery.isFetching} />}
-    {!recipesQuery.isPending && (visible.length ? <div className="recipe-grid">{visible.map((recipe) => <RecipeCard recipe={recipe} detailSearch={detailSearch} key={recipe.id} />)}</div> : !recipesQuery.isError && <EmptyState illustration={<Soup />} eyebrow="Ваша книга рецептів" title={query || catalogueSection !== 'all' ? 'Нічого не знайдено' : 'Створіть перший рецепт'} description={query || catalogueSection !== 'all' ? 'Змініть пошук або категорію.' : 'Додайте фото, категорії, інгредієнти та спосіб приготування.'} action={<ButtonLink to="/recipes/new">Створити рецепт</ButtonLink>} />)}
+    {!recipesQuery.isPending && (visible.length ? <div className="recipe-grid">{visible.map((recipe) => <RecipeCard recipe={recipe} detailSearch={detailSearch} key={recipe.id} />)}</div> : !recipesQuery.isError && <EmptyState illustration={<FoodIllustration variant="planner" />} eyebrow="Ваша книга рецептів" title={query || catalogueSection !== 'all' ? 'Нічого не знайдено' : 'Створіть перший рецепт'} description={query || catalogueSection !== 'all' ? 'Змініть пошук або категорію.' : 'Додайте фото, категорії, інгредієнти та спосіб приготування.'} action={<ButtonLink to="/recipes/new">Створити рецепт</ButtonLink>} />)}
     {!recipesQuery.isPending && serverPaginated && <Pagination ariaLabel="Пагінація рецептів" page={pageInfo.page} pageSize={pageInfo.pageSize} total={pageInfo.total} hasNext={pageInfo.hasNext} onPageChange={(nextPage) => updateUrl({ page: nextPage }, false)} />}
   </section>
 }
@@ -125,5 +126,5 @@ function RecipeCard({ recipe, detailSearch = '' }: { recipe: RecipeSummary; deta
   const [url, setUrl] = useState('')
   useEffect(() => { const next = recipe.image?.url ?? (recipe.image?.blob ? URL.createObjectURL(recipe.image.blob) : ''); setUrl(next); return () => { if (next.startsWith('blob:')) URL.revokeObjectURL(next) } }, [recipe.image?.blob, recipe.image?.url])
   const labels = recipe.classifications.map((item) => getRecipeSubcategory(item.subcategoryId)?.label).filter(Boolean)
-  return <Link className="recipe-card" to={`/recipes/${recipe.id}${detailSearch}`}><MediaPlaceholder src={url} alt="" fallback={<Soup aria-hidden="true" />} fallbackLabel="Фото недоступне" loading="lazy" decoding="async" className="recipe-image-placeholder recipe-media-4x3" /><div><p className="eyebrow">{formatPreparationTime(recipe.preparationTimeMinMinutes, recipe.preparationTimeMaxMinutes) ?? 'Час не вказано'}</p><h2>{recipe.name}</h2><p>{labels.length ? labels.slice(0, 2).join(' · ') : 'Без категорії'}</p></div></Link>
+  return <Link className="recipe-card" to={`/recipes/${recipe.id}${detailSearch}`}><MediaPlaceholder src={url} alt="" fallback={<FoodIllustration variant="meal" />} fallbackLabel="Фото недоступне" loading="lazy" decoding="async" className="recipe-image-placeholder recipe-media-4x3" /><div><p className="eyebrow">{formatPreparationTime(recipe.preparationTimeMinMinutes, recipe.preparationTimeMaxMinutes) ?? 'Час не вказано'}</p><h2>{recipe.name}</h2><p>{labels.length ? labels.slice(0, 2).join(' · ') : 'Без категорії'}</p></div></Link>
 }

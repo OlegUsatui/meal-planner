@@ -1,4 +1,4 @@
-body { color: var(--ink); }
+body { color: var(--ink); background-image: var(--gradient-paper); }
 a { color: inherit; }
 h1, h2, h3, p { margin-top: 0; }
 h1, h2 { font-family: 'Newsreader Variable', Newsreader, Georgia, serif; font-weight: 570; }
@@ -18,7 +18,7 @@ p { color: var(--muted); line-height: 1.6; }
 .search-field { position: relative; display: flex; align-items: center; min-width: 0; }
 .search-field > svg { position: absolute; left: 14px; z-index: 1; width: 18px; height: 18px; color: var(--muted); pointer-events: none; }
 .search-field input { flex: 1; padding-left: 42px; }
-.button { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 18px; border: 1px solid transparent; border-radius: var(--radius-sm); font-weight: 750; line-height: 1.2; text-decoration: none; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, background .18s ease; }
+.button { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 18px; border: 1px solid transparent; border-radius: 999px; font-weight: 750; line-height: 1.2; text-decoration: none; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, background .18s ease; }
 .button:hover { transform: translateY(-1px); }
 .button:focus-visible, button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 /* Route headings receive programmatic focus for screen-reader context, not keyboard interaction. */
@@ -35,6 +35,16 @@ main h1[tabindex="-1"]:focus { outline: none; }
 .segmented-control { display: inline-flex; align-items: center; gap: 3px; }
 .recipe-media-4x3 { aspect-ratio: 4 / 3; object-fit: cover; object-position: center; }
 .recipe-media-4x3.image-placeholder { display: grid; place-items: center; }
+.food-illustration { position: relative; width: 76px; aspect-ratio: 1; display: grid; place-items: center; color: var(--color-illustration-ink); background: var(--color-illustration-paper); border: 1px solid var(--color-border-warm); border-radius: 48% 52% 46% 54%; box-shadow: var(--shadow-paper-card); transform: rotate(-4deg); }
+.food-illustration::before { position: absolute; inset: 9px; border: 1px dashed var(--color-illustration-line); border-radius: 52% 48% 55% 45%; content: ''; }
+.food-illustration svg { position: relative; z-index: 1; width: 48%; height: 48%; color: var(--color-illustration-green); }
+.food-illustration-orbit { position: absolute; z-index: 1; display: block; width: 7px; height: 7px; border-radius: 50%; background: var(--color-illustration-peach); }
+.food-illustration-orbit-one { top: 13%; right: 12%; }
+.food-illustration-orbit-two { bottom: 18%; left: 13%; width: 5px; height: 5px; background: var(--color-illustration-yellow); }
+.food-illustration-produce { background: var(--color-illustration-produce); transform: rotate(5deg); }
+.food-illustration-planner { background: var(--color-illustration-planner); transform: rotate(-2deg); }
+.food-illustration-shopping { background: var(--color-illustration-shopping); transform: rotate(4deg); }
+.recipe-media-4x3 .food-illustration { width: min(28%, 96px); min-width: 64px; }
 .button-danger { color: var(--color-white); background: var(--danger); }
 .button-danger-ghost { color: var(--danger); background: transparent; border-color: var(--color-danger-border); }
 .button:disabled { opacity: .55; cursor: not-allowed; transform: none; }

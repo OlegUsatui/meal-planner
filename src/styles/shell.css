@@ -1,14 +1,14 @@
 .app-shell { min-height: 100vh; display: grid; grid-template-columns: 252px minmax(0, 1fr); }
-.sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; padding: 28px 18px 20px; background: var(--color-sidebar); border-right: 1px solid var(--border); }
+.sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; padding: 28px 18px 20px; background: var(--color-sidebar); border-right: 1px dashed var(--border); }
 .brand { display: flex; align-items: center; gap: 12px; padding: 4px 10px; margin-bottom: 42px; text-decoration: none; }
-.brand-mark { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 15px; color: var(--color-white); background: var(--primary); transform: rotate(-5deg); }
+.brand-mark { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 48% 52% 44% 56%; color: var(--color-white); background: var(--primary); box-shadow: var(--shadow-paper-card); transform: rotate(-5deg); }
 .brand-copy { display: grid; font-size: 1.05rem; line-height: 1.03; }
 .brand-copy strong { font-size: 1.28rem; }
 .brand-copy span { color: var(--muted); }
 .side-navigation { display: grid; gap: 8px; }
 .nav-link, .settings-link { min-height: 48px; display: flex; align-items: center; gap: 12px; padding: 10px 14px; color: var(--muted); border-radius: var(--radius-sm); font-size: .94rem; font-weight: 700; text-decoration: none; }
 .nav-link:hover, .settings-link:hover { color: var(--ink); background: var(--color-surface-glass-soft); }
-.nav-link.active { color: var(--ink); background: var(--surface); box-shadow: 0 5px 18px var(--shadow-color-nav); }
+.nav-link.active { color: var(--ink); background: var(--surface-warm); border: 1px dashed var(--color-border-warm); box-shadow: var(--shadow-paper-card); }
 .nav-icon { flex: 0 0 auto; color: var(--primary); }
 .settings-link { margin-top: auto; }
 .local-note { display: flex; align-items: center; gap: 8px; padding: 16px 10px 0; color: var(--muted); font-size: .7rem; }

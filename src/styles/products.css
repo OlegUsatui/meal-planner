@@ -36,6 +36,16 @@
 @media (prefers-reduced-motion: reduce) { .skeleton-block { animation: none; } }
 @media (max-width: 600px) { .ingredient-row { grid-template-columns: 1fr; }.recipe-grid { grid-template-columns: repeat(auto-fill, minmax(156px, 1fr)); }.ingredient-row .button { width: 100%; }.classification-subgroup > div { grid-template-columns: 1fr; }.sticky-save { bottom: calc(78px + env(safe-area-inset-bottom)); flex-direction: column; align-items: stretch; }.sticky-save .button { width: 100%; }.recipe-image-editor-actions { align-items: stretch; flex-direction: column; }.recipe-image-editor-actions > div { flex-direction: column-reverse; }.recipe-image-editor-actions .button { width: 100%; } }
 @media (max-width: 600px) { .pagination-controls { gap: 6px; justify-content: space-between; }.pagination-nav-button { min-width: 44px; padding-inline: 10px; }.pagination-nav-button span:not([aria-hidden]) { display: none; }.pagination-pages { gap: 2px; }.pagination-page { min-width: 36px; min-height: 36px; padding-inline: 6px; }.pagination-ellipsis { min-width: 18px; } }
+
+/* Recipe catalogue and editor surfaces use the same paper language as the planner. */
+.toolbar, .recipe-card, .recipe-form, .form-section, .recipe-detail-hero, .recipe-detail-panel { box-shadow: var(--shadow-paper-card); }
+.toolbar, .recipe-form, .form-section { border-style: dashed; }
+.recipe-card { border-radius: 22px 16px 20px 14px; }
+.recipe-card > div { background: var(--surface-raised); }
+.recipe-card:hover { border-color: var(--color-border-warm); transform: translateY(-2px) rotate(-.3deg); }
+.recipe-image-placeholder { background: var(--color-illustration-paper); }
+.recipe-form, .form-section { border-radius: 28px 20px 24px 18px; }
+.recipe-detail-hero, .recipe-detail-panel { border-radius: 30px 22px 28px 18px; }
 .toolbar { display: flex; align-items: center; gap: 16px; padding: 14px; margin-bottom: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
 
 .recipe-image-edit-trigger { position: relative; width: 100%; height: 100%; }.recipe-photo-edit-button { position: absolute; right: 14px; bottom: 14px; background: var(--color-surface-photo); backdrop-filter: blur(10px); }.recipe-detail-hero-copy > .inline-edit-button { align-self: flex-start; margin-top: 22px; }.inline-edit-button { color: var(--primary); background: var(--primary-soft); border-color: transparent; font-size: 1.15rem; }.inline-edit-button:hover { background: var(--primary-soft); }.section-heading-actions { display: flex; align-items: center; gap: 10px; }.inline-editor-card { display: grid; gap: 16px; padding: 18px; background: var(--canvas); border-radius: var(--radius-sm); }.inline-editor-heading h1 { margin-bottom: 0; font-size: clamp(2rem, 4vw, 3.4rem); }.inline-editor-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 4px; }.recipe-detail-hero-copy.inline-editor-card { justify-content: flex-start; }.recipe-detail-hero-copy.inline-editor-card .recipe-classification-field { margin-top: 2px; }
@@ -497,3 +507,5 @@ input:hover, select:hover { border-color: var(--color-input-hover-border); }
   .recipe-detail-wide { min-height: calc(100dvh - 82px - env(safe-area-inset-bottom)); }
   .recipe-poster:not(:has(.inline-editor-card)) .nutrition-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+.toolbar { border-style: dashed; border-radius: 24px 18px 22px 16px; box-shadow: var(--shadow-paper-card); }
