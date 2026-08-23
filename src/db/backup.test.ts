@@ -24,4 +24,16 @@ describe('local backup', () => {
     databases.push(db)
     await expect(importBackup(db, '{"version":99}')).rejects.toThrow('Некоректна резервна копія')
   })
+
+  it('drops legacy meal-plan servings when importing an old backup record', async () => {
+    const source = new MealPlannerDatabase(`backup-legacy-source-${crypto.randomUUID()}`)
+    const target = new MealPlannerDatabase(`backup-legacy-target-${crypto.randomUUID()}`)
+    databases.push(source, target)
+    await source.mealPlanEntries.add({ id: 'entry', date: '2026-08-30', slot: 'dinner', dateSlot: '2026-08-30:dinner', recipeId: 'recipe', createdAt: 'now', updatedAt: 'now' })
+    const parsed = JSON.parse(await exportBackup(source)) as { mealPlanEntries: Array<Record<string, unknown>> }
+    parsed.mealPlanEntries[0]!.servings = 4
+
+    await importBackup(target, JSON.stringify(parsed))
+    expect(await target.mealPlanEntries.get('entry')).not.toHaveProperty('servings')
+  })
 })

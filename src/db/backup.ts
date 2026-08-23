@@ -35,7 +35,11 @@ export async function importBackup(database: MealPlannerDatabase, input: string 
     await database.products.bulkAdd(backup.products)
     await database.recipes.bulkAdd(backup.recipes)
     await database.recipeIngredients.bulkAdd(backup.recipeIngredients)
-    await database.mealPlanEntries.bulkAdd(backup.mealPlanEntries)
+    await database.mealPlanEntries.bulkAdd(backup.mealPlanEntries.map((entry) => {
+      const clean = { ...entry } as MealPlanEntryRecord & { servings?: number }
+      delete clean.servings
+      return clean
+    }))
     await database.imageAssets.bulkAdd(images)
     await database.appSettings.bulkAdd(backup.appSettings)
   })

@@ -13,14 +13,18 @@ describe('ShoppingListPage', () => {
   afterEach(() => { localStorage.clear(); vi.useRealTimers() })
 
   it('loads the next seven days, groups products and explains each source', async () => {
-    const repository: ShoppingListRepository = { list: vi.fn().mockResolvedValue([{ productId: 'rice', productName: 'Рис', category: 'Крупи та макарони', baseUnit: 'g', quantityBase: 2500, sources: [{ date: '2026-08-15', slot: 'dinner', recipeId: 'r1', recipeName: 'Рисова миска', servings: 2, quantityBase: 2500 }] }]) }
+    const repository: ShoppingListRepository = { list: vi.fn().mockResolvedValue([{ productId: 'rice', productName: 'Рис', category: 'Крупи та макарони', baseUnit: 'g', quantityBase: 2500, sources: [{ date: '2026-08-15', slot: 'dinner', recipeId: 'r1', recipeName: 'Рисова миска', servings: 1, quantityBase: 2500 }] }]) }
     render(<QueryTestProvider><MemoryRouter><ShoppingListRepositoryProvider repository={repository}><ShoppingListPage /></ShoppingListRepositoryProvider></MemoryRouter></QueryTestProvider>)
 
     expect(await screen.findByRole('heading', { name: 'Крупи та макарони' })).toBeInTheDocument()
     expect(repository.list).toHaveBeenCalledWith({ from: '2026-08-14', to: '2026-08-20' }, expect.any(AbortSignal))
     expect(screen.getByText('2,5 кг')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /Рис/ }))
-    expect(screen.getByText(/Вечеря · Рисова миска · 2 порц/)).toBeInTheDocument()
+    expect(screen.getByText(/Вечеря · Рисова миска/)).toBeInTheDocument()
+    expect(screen.getByText('1 порц.')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Збільшити порції для Рисова миска' }))
+    expect(screen.getByText('2 порц.')).toBeInTheDocument()
+    expect(screen.getAllByText('5 кг')).toHaveLength(2)
   })
 
   it('reloads for a selected preset and keeps stale data on failure', async () => {

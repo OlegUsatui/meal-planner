@@ -16,13 +16,15 @@ The idempotent `npm run seed:supabase` command reads the verified bundled JSON a
 
 The legacy Dexie schema below remains for isolated tests and compatibility with old local backups; production repositories use Supabase.
 
-Dexie schema version 6 stores `products`, `recipes`, `recipeIngredients`, `mealPlanEntries`, `imageAssets`, and `appSettings`.
+Dexie schema version 7 stores `products`, `recipes`, `recipeIngredients`, `mealPlanEntries`, `imageAssets`, and `appSettings`.
 
-`products` stores only identity/category/unit and archive/timestamps. `mealPlanEntries` stores `id`, `date`, `slot`, unique `dateSlot`, `recipeId`, `servings`, and timestamps. There are no inventory or shopping tables.
+`products` stores only identity/category/unit and archive/timestamps. `mealPlanEntries` stores `id`, `date`, `slot`, unique `dateSlot`, `recipeId`, and timestamps. There are no inventory or shopping tables.
 
 Migration v2 intentionally deletes `inventoryTransactions`, `shoppingLists`, `shoppingListItems`, and `planMutations`; removes obsolete product package/price fields; strips cooked/revision fields from meal plans; and keeps valid products, recipes, images, ingredients, and plan references. Migration v3 removes `baseServings` from recipes and adds nullable per-serving nutrition and preparation-time fields. Migration v4 adds recipe classifications and assigns an empty classification array to legacy recipes. The live shopping list is never written to IndexedDB.
 
 Migration v5 replaces `preparationTimeMinutes` with nullable `preparationTimeMinMinutes` and `preparationTimeMaxMinutes`. Existing exact durations are copied into both bounds. Migration v6 makes `imageAssetId` nullable while preserving every existing image reference.
+
+Migration v7 removes legacy meal-plan `servings`; existing local entries remain assigned to their date, slot, and recipe, while shopping calculations use one serving as their base.
 
 `appSettings.lunchPdfImportVersion` guards the approved one-time PDF catalogue reset. Before any write, the importer validates all 137 recipe records and loads all 137 images. Its transaction clears recipes, recipe ingredients, recipe-owned images, and meal-plan entries, while preserving the product catalogue and unrelated image assets. This data reset does not change table keys or indexes and therefore does not require a Dexie schema-version bump.
 

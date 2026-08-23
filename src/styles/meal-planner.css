@@ -36,8 +36,6 @@
 .week-grid-week .meal-card-meta { display: flex; flex-wrap: wrap; gap: 3px 7px; color: var(--muted); font-size: .6rem; line-height: 1.2; }
 .week-grid-week .meal-card-meta span { display: inline-flex; align-items: center; gap: 3px; min-width: 0; }
 .week-grid-week .meal-card-meta svg { width: 11px; height: 11px; color: var(--accent); }
-.week-grid-week .meal-card-servings { min-height: 40px; padding: 0 52px 7px 8px; font-size: .64rem; }
-.week-grid-week .meal-card-servings select { width: 54px; min-height: 40px; }
 .week-grid-week .meal-card-menu-wrap { top: auto; right: 6px; bottom: 6px; }
 .week-grid-week .meal-card-menu-wrap .meal-card-menu { top: auto; bottom: 38px; }
 .week-day { min-width: 0; background: var(--color-calendar-cell); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
@@ -62,11 +60,6 @@
 .meal-card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 9px; color: var(--muted); font-size: .72rem; }
 .meal-card-meta span { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
 .meal-card-meta svg { width: 13px; height: 13px; color: var(--accent); }
-.meal-card-servings { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 0 12px 12px; color: var(--muted); font-size: .78rem; }
-.meal-card-servings strong { color: var(--ink); font-size: .86rem; }
-.meal-card-servings select { width: 68px; min-height: 44px; padding: 4px 7px; color: var(--ink); background: var(--canvas); border: 1px solid var(--border); border-radius: 8px; font: inherit; font-weight: 750; }
-.meal-card-servings select:disabled { cursor: wait; opacity: .6; }
-.meal-card-servings.read-only { padding-right: 10px; }
 .meal-card-menu-wrap { position: absolute; z-index: 40; top: 8px; right: 8px; }
 .meal-menu-trigger { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 10px; color: var(--muted); background: var(--color-overlay-white); font-weight: 900; }
 .meal-card-menu { position: absolute; top: 28px; right: 0; width: 118px; padding: 5px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); }
@@ -84,9 +77,6 @@
 .day-meal-card-nutrition { display: flex; flex-wrap: wrap; gap: 6px; }
 .day-meal-card-nutrition span { padding: 4px 7px; color: var(--primary); background: var(--color-primary-tint); border-radius: 999px; font-size: .7rem; font-weight: 750; }
 .day-meal-card-footer { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 10px 14px 14px; color: var(--muted); border-top: 1px solid var(--border); font-size: .78rem; }
-.day-meal-card-footer strong { color: var(--ink); font-size: .86rem; }
-.day-meal-card-footer select { width: 68px; min-height: 44px; padding: 4px 7px; color: var(--ink); background: var(--canvas); border: 1px solid var(--border); border-radius: 8px; font: inherit; font-weight: 750; }
-.day-meal-card-footer select:disabled { cursor: wait; opacity: .6; }
 .day-meal-card-menu-wrap { position: absolute; z-index: 3; top: 10px; right: 10px; }
 .missing-recipe { min-height: 80px; display: grid; place-items: center; color: var(--muted); border: 1px dashed var(--border); border-radius: 12px; font-size: .72rem; text-align: center; }
 .meal-plan-entry-page { max-width: 1440px; padding-bottom: 150px; }
@@ -130,7 +120,7 @@
   .week-grid { display: block; background: transparent; border: 0; }.week-day { display: none; border: 1px solid var(--border); border-radius: var(--radius) !important; }.week-day.selected { display: block; }.week-day-header { min-height: 64px; display: flex; justify-content: space-between; padding: 14px 18px; }.week-day-header span { font-size: .82rem; }.week-day.today .week-day-header strong { width: 32px; height: 32px; }
   .week-calendar.view-week { overflow-x: auto; padding-bottom: 8px; }.week-calendar.view-week .week-grid { width: max-content; min-width: 980px; grid-template-columns: repeat(7, minmax(130px, 1fr)); grid-template-rows: 64px repeat(4, 24px minmax(132px, auto)); border-radius: var(--radius); }.week-calendar.view-week .week-grid-day-header { min-height: 64px; padding: 8px; }.week-calendar.view-week .week-grid-cell { min-height: 132px; padding: 8px 7px; }.week-calendar.view-week .week-grid-cell > .meal-card, .week-calendar.view-week .week-grid-cell > .empty-meal-slot { min-height: 116px; }.week-calendar.view-week .week-grid-slot-label { padding: 5px 8px; }
   .calendar-meal-slot { min-height: 0; padding: 14px; }.calendar-slot-label { margin-bottom: 8px; font-size: .7rem; }.empty-meal-slot { min-height: 72px; font-size: .86rem; }
-  .meal-card-main { min-height: 0; padding: 0; }.meal-card-image { width: 100%; aspect-ratio: 4 / 3; }.meal-card-copy { padding: 7px 8px 5px; }.meal-card-copy strong { font-size: .72rem; }.meal-card-meta { font-size: .58rem; }.meal-card-servings { padding-inline: 8px 52px; padding-bottom: 7px; font-size: .64rem; }.meal-card-servings select { width: 54px; }
+  .meal-card-main { min-height: 0; padding: 0; }.meal-card-image { width: 100%; aspect-ratio: 4 / 3; }.meal-card-copy { padding: 7px 8px 5px; }.meal-card-copy strong { font-size: .72rem; }.meal-card-meta { font-size: .58rem; }
   .day-meal-card-main { grid-template-columns: 84px minmax(0, 1fr); gap: 12px; min-height: 112px; padding: 12px 48px 12px 12px; }.day-meal-card-image { width: 84px; aspect-ratio: 4 / 3; }.day-meal-card-content { gap: 6px; }.day-meal-card-content > strong { font-size: 1rem; }.day-meal-card-meta { font-size: .72rem; }.day-meal-card-nutrition span { font-size: .66rem; }.day-meal-card-footer { padding: 8px 12px 12px; }
   .meal-plan-entry-page { padding-inline: 12px; padding-bottom: 190px; }.meal-plan-entry-toolbar { padding: 14px; }.meal-plan-entry-actions { left: 12px; right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); width: auto; flex-direction: column; align-items: stretch; gap: 10px; padding: 12px 14px; transform: none; }.meal-plan-entry-submit { width: 100%; min-width: 0; }.meal-plan-category-chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }.meal-plan-category-chips button { flex: 0 0 auto; }
   .recipe-dialog-layout { display: block; }.recipe-dialog-image { height: 34vh; min-height: 240px; border-radius: 0; }.recipe-dialog-content { padding: 28px 20px calc(40px + env(safe-area-inset-bottom)); }.nutrition-comparison { grid-template-columns: 1fr; }
@@ -145,23 +135,5 @@
 .week-grid-week .week-grid-slot-label { color: var(--accent-hover); font-weight: 850; }
 .empty-meal-slot { background: var(--color-surface-warm); border-color: var(--color-calendar-empty-border); }
 .meal-card, .day-meal-card { border-radius: 18px 14px 17px 12px; }
-.meal-card-servings select, .day-meal-card-footer select { border-radius: 999px; background: var(--color-surface-warm); }
 .meal-plan-entry-toolbar, .meal-plan-recipe-card, .recipe-dialog-content { box-shadow: var(--shadow-paper-card); }
 .meal-plan-entry-toolbar { border-style: dashed; }
-
-/* Day view is an editorial sheet, not a narrow column floating in the grid. */
-@media (min-width: 768px) {
-  .week-calendar.view-day { padding-inline: 0; }
-  .week-calendar.view-day .week-grid-day { width: 100%; max-width: 1320px; }
-  .week-calendar.view-day .week-day { border-radius: 28px 22px 26px 18px; }
-  .week-calendar.view-day .week-day-header { min-height: 92px; padding-inline: 30px; }
-  .week-calendar.view-day .calendar-meal-slot { padding: 22px 30px; }
-  .week-calendar.view-day .calendar-slot-label { margin-bottom: 10px; font-size: .72rem; letter-spacing: .08em; }
-  .week-calendar.view-day .day-meal-card-main { grid-template-columns: 184px minmax(0, 1fr); gap: 24px; min-height: 174px; padding: 18px 64px 18px 18px; }
-  .week-calendar.view-day .day-meal-card-image { width: 184px; border-radius: 18px 14px 16px 12px; }
-  .week-calendar.view-day .day-meal-card-content { gap: 10px; }
-  .week-calendar.view-day .day-meal-card-content > strong { font-size: clamp(1.2rem, 1.7vw, 1.55rem); line-height: 1.16; white-space: normal; }
-  .week-calendar.view-day .day-meal-card-meta { font-size: .84rem; }
-  .week-calendar.view-day .day-meal-card-nutrition span { padding: 6px 9px; font-size: .74rem; }
-  .week-calendar.view-day .day-meal-card-footer { min-height: 62px; padding: 10px 18px 12px; }
-}

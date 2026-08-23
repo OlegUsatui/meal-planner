@@ -2,11 +2,10 @@ import { Clock3 } from 'lucide-react'
 import { formatPreparationTime } from '../../recipes/domain/recipe'
 import { getRecipeSubcategory } from '../../recipes/domain/recipe-taxonomy'
 import type { RecipeSummary } from '../../recipes/types'
-import type { MealPlanEntry } from '../types'
 import { RecipeImage } from './RecipeImage'
 import { MealCardControls } from './MealCardControls'
 
-export function WeekMealCard({ entry, recipe, readOnly, onOpen, onReplace, onRemove, onServingsChange }: { entry: MealPlanEntry; recipe: RecipeSummary; readOnly: boolean; onOpen: (trigger: HTMLElement) => void; onReplace: () => void; onRemove: () => void; onServingsChange: (servings: number) => Promise<void> | void }) {
+export function WeekMealCard({ recipe, readOnly = false, onOpen, onReplace, onRemove }: { recipe: RecipeSummary; readOnly?: boolean; onOpen: (trigger: HTMLElement) => void; onReplace: () => void; onRemove: () => void }) {
   const preparationTime = formatPreparationTime(recipe.preparationTimeMinMinutes, recipe.preparationTimeMaxMinutes)
   const category = recipe.classifications.map((item) => getRecipeSubcategory(item.subcategoryId)?.label).find(Boolean)
   return <article className="meal-card">
@@ -17,6 +16,6 @@ export function WeekMealCard({ entry, recipe, readOnly, onOpen, onReplace, onRem
         {(preparationTime || category) && <span className="meal-card-meta">{preparationTime && <span><Clock3 aria-hidden="true" /> {preparationTime}</span>}{category && <span>{category}</span>}</span>}
       </span>
     </button>
-    <MealCardControls recipeName={recipe.name} servings={entry.servings} readOnly={readOnly} variant="week" onServingsChange={onServingsChange} onReplace={onReplace} onRemove={onRemove} />
+    <MealCardControls recipeName={recipe.name} readOnly={readOnly} onReplace={onReplace} onRemove={onRemove} />
   </article>
 }

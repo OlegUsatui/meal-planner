@@ -49,7 +49,7 @@ describe('RecipeDetailPage', () => {
     const recipe: Recipe = { id: 'recipe-1', name: 'Рисова миска', normalizedName: 'рисова миска', instructions: 'Змішати.', classifications: [], caloriesPerServing: 400, proteinGramsPerServing: 20, fatGramsPerServing: 10, carbsGramsPerServing: 60, preparationTimeMinMinutes: 20, preparationTimeMaxMinutes: 20, archivedAt: null, createdAt: 'now', updatedAt: 'now', image: { blob: new Blob(['image'], { type: 'image/webp' }), mimeType: 'image/webp', width: 10, height: 10, byteSize: 5 }, ingredients: [] }
     const repository: RecipeRepository = { list: vi.fn(), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
     const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn().mockResolvedValue({}), remove: vi.fn() }
-    const router = createMemoryRouter([{ path: '/recipes/:recipeId', element: <RecipeDetailPage /> }, { path: '/plan', element: <h1>План</h1> }], { initialEntries: ['/recipes/recipe-1?planDate=2026-08-15&planSlot=dinner&planServings=3&planMode=add'] })
+    const router = createMemoryRouter([{ path: '/recipes/:recipeId', element: <RecipeDetailPage /> }, { path: '/plan', element: <h1>План</h1> }], { initialEntries: ['/recipes/recipe-1?planDate=2026-08-15&planSlot=dinner&planMode=add'] })
     render(<QueryTestProvider><RecipeRepositoryProvider repository={repository}><ProductRepositoryProvider repository={products}><MealPlanRepositoryProvider repository={mealPlan}><RouterProvider router={router} /></MealPlanRepositoryProvider></ProductRepositoryProvider></RecipeRepositoryProvider></QueryTestProvider>)
 
     expect(await screen.findByRole('button', { name: 'Додати до плану' })).toBeInTheDocument()
@@ -63,9 +63,26 @@ describe('RecipeDetailPage', () => {
     await user.click(screen.getByRole('button', { name: 'Скасувати' }))
     expect(screen.getByRole('button', { name: 'Додати до плану' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Додати до плану' }))
-    expect(mealPlan.upsert).toHaveBeenCalledWith({ date: '2026-08-15', slot: 'dinner', recipeId: 'recipe-1', servings: 3 })
+    expect(mealPlan.upsert).toHaveBeenCalledWith({ date: '2026-08-15', slot: 'dinner', recipeId: 'recipe-1' })
     expect(router.state.location.pathname).toBe('/plan')
     expect(router.state.location.search).toBe('?date=2026-08-15')
+  })
+
+  it('scales cooking ingredients locally without plan servings', async () => {
+    const user = userEvent.setup()
+    const recipe: Recipe = { id: 'recipe-1', name: 'Рисова миска', normalizedName: 'рисова миска', instructions: 'Змішати.', classifications: [], caloriesPerServing: 400, proteinGramsPerServing: 20, fatGramsPerServing: 10, carbsGramsPerServing: 60, preparationTimeMinMinutes: 20, preparationTimeMaxMinutes: 20, archivedAt: null, createdAt: 'now', updatedAt: 'now', image: null, ingredients: [{ id: 'ingredient-1', productId: 'rice', productName: 'Рис', enteredQuantity: 100, enteredUnit: 'g', quantityBase: 100, productBaseUnit: 'g' }] }
+    const repository: RecipeRepository = { list: vi.fn(), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
+    const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn().mockResolvedValue({}), remove: vi.fn() }
+    const router = createMemoryRouter([{ path: '/recipes/:recipeId', element: <RecipeDetailPage /> }, { path: '/plan', element: <h1>План</h1> }], { initialEntries: ['/recipes/recipe-1?planDate=2026-08-15&planSlot=dinner&planMode=add'] })
+    render(<QueryTestProvider><RecipeRepositoryProvider repository={repository}><ProductRepositoryProvider repository={products}><MealPlanRepositoryProvider repository={mealPlan}><RouterProvider router={router} /></MealPlanRepositoryProvider></ProductRepositoryProvider></RecipeRepositoryProvider></QueryTestProvider>)
+
+    expect(await screen.findByLabelText('Порції для готування')).toHaveValue(1)
+    expect(screen.getByText(/100 g/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Збільшити порції для готування' }))
+    expect(screen.getByLabelText('Порції для готування')).toHaveValue(2)
+    expect(screen.getByText(/200 g/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Додати до плану' }))
+    expect(mealPlan.upsert).toHaveBeenCalledWith({ date: '2026-08-15', slot: 'dinner', recipeId: 'recipe-1' })
   })
 
   it('offers one full-page editor for the complete recipe', async () => {

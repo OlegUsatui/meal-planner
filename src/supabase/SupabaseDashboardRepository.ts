@@ -26,7 +26,7 @@ export class SupabaseDashboardRepository implements DashboardRepository {
     if (recipeResult.error || productResult.error || planCountResult.error) throw new Error('Не вдалося завантажити огляд дня.')
     const recipes = recipeResult.data as unknown as RecipeRow[]
     const names = new Map(recipes.map((recipe) => [recipe.id, recipe.name]))
-    const meals = entries.map((entry): DashboardMeal => ({ id: entry.id, date: entry.date, slot: entry.slot, recipeId: entry.recipeId, recipeName: names.get(entry.recipeId) ?? 'Рецепт недоступний', servings: entry.servings }))
+    const meals = entries.map((entry): DashboardMeal => ({ id: entry.id, date: entry.date, slot: entry.slot, recipeId: entry.recipeId, recipeName: names.get(entry.recipeId) ?? 'Рецепт недоступний' }))
     const slotOrder = new Map(mealSlots.map((slot, index) => [slot.value, index]))
     meals.sort((a, b) => a.date.localeCompare(b.date) || (slotOrder.get(a.slot) ?? 0) - (slotOrder.get(b.slot) ?? 0))
     return { today, todayEntries: meals.filter((entry) => entry.date === today), nextEntry: meals[0] ?? null, sevenDayShoppingCount: shoppingItems.length, hasPersonalRecipes: recipes.some((recipe) => recipe.owner_id === ownerId), hasPersonalProducts: (productResult.count ?? 0) > 0, hasPlanEntries: (planCountResult.count ?? 0) > 0 }

@@ -6,7 +6,6 @@ export interface DashboardMeal {
   slot: MealSlot
   recipeId: string
   recipeName: string
-  servings: number
 }
 
 export interface DashboardSummary {

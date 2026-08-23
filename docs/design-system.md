@@ -16,4 +16,4 @@ Recipe photography has one canonical 4:3 composition. The crop editor produces t
 
 Missing recipe photos use a local illustrated fallback rather than a remote asset or broken-image icon. Illustrations are decorative by default, receive an accessible label only when they represent media state, and never replace the recipe name or action label.
 
-Planner and shopping views prioritize date, recipe, servings, product, quantity, and unit. Avoid language implying stock, cooking completion, or purchases because shopping remains a read-only demand projection.
+Planner and shopping views prioritize date, recipe, local servings, product, quantity, and unit. Avoid language implying stock, cooking completion, or purchases because shopping remains a read-only demand projection.

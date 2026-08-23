@@ -1,6 +1,6 @@
 import type { BaseUnit } from '../../products/domain/product.js'
 import type { MealPlanEntry } from '../../meal-planner/types.js'
-import { scaleRecipeQuantity, type MealSlot } from '../../meal-planner/domain/meal-plan.js'
+import { type MealSlot } from '../../meal-planner/domain/meal-plan.js'
 
 export interface ShoppingRecipeIngredient {
   productId: string
@@ -38,8 +38,25 @@ export interface ShoppingListItem {
   sources: ShoppingSource[]
 }
 
+export type ShoppingServingOverrides = Record<string, number>
+
+export function shoppingSourceKey(source: Pick<ShoppingSource, 'date' | 'slot' | 'recipeId'>): string {
+  return `${source.date}:${source.slot}:${source.recipeId}`
+}
+
+export function applyShoppingServingOverrides(items: ShoppingListItem[], overrides: ShoppingServingOverrides): ShoppingListItem[] {
+  return items.map((item) => {
+    const sources = item.sources.map((source) => {
+      const servings = overrides[shoppingSourceKey(source)] ?? source.servings
+      const quantityBase = Math.round((source.quantityBase / source.servings * servings) * 1000) / 1000
+      return { ...source, servings, quantityBase }
+    })
+    return { ...item, quantityBase: Math.round(sources.reduce((total, source) => total + source.quantityBase, 0) * 1000) / 1000, sources }
+  })
+}
+
 export function buildShoppingList(
-  entries: Pick<MealPlanEntry, 'id' | 'date' | 'slot' | 'recipeId' | 'servings'>[],
+  entries: Pick<MealPlanEntry, 'id' | 'date' | 'slot' | 'recipeId'>[],
   recipes: ShoppingRecipe[],
   products: ShoppingProduct[],
   today: string,
@@ -55,7 +72,7 @@ export function buildShoppingList(
     for (const ingredient of recipe.ingredients) {
       const product = productsById.get(ingredient.productId)
       if (!product) continue
-      const quantityBase = scaleRecipeQuantity(ingredient.quantityBase, entry.servings)
+      const quantityBase = ingredient.quantityBase
       const current = grouped.get(product.id) ?? {
         productId: product.id,
         productName: product.name,
@@ -65,7 +82,7 @@ export function buildShoppingList(
         sources: [],
       }
       current.quantityBase = Math.round((current.quantityBase + quantityBase) * 1000) / 1000
-      current.sources.push({ date: entry.date, slot: entry.slot, recipeId: recipe.id, recipeName: recipe.name, servings: entry.servings, quantityBase })
+      current.sources.push({ date: entry.date, slot: entry.slot, recipeId: recipe.id, recipeName: recipe.name, servings: 1, quantityBase })
       grouped.set(product.id, current)
     }
   }

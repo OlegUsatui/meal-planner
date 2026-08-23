@@ -40,10 +40,10 @@ Generated breakfast and dinner records retain exact previous OCR titles only as 
 1. Search active recipes by case-insensitive name; search and category filters are sent to the API.
 2. Browse 24 recipes per server-paginated page with numbered pagination, previous/next controls, and a visible result range. Search, category filters, and the current page are preserved in the URL.
 3. Open a food-first card.
-4. When the recipe was opened from the planner, view ingredient quantities scaled to the `planServings` context.
+4. View ingredient quantities scaled to the local “Порції для готування” control; this is independent of planned servings.
 5. Add to plan from the top bar or edit an individual content area.
 
-When opened from the planner with `planDate`, `planSlot`, `planServings`, and `planMode` URL parameters, the catalogue becomes a plan-selection flow. The recipe detail page preserves that context and exposes an add/replace action that returns to the selected plan date after saving.
+When opened from the planner with `planDate`, `planSlot`, and `planMode` URL parameters, the catalogue becomes a plan-selection flow. The recipe detail page preserves that context and exposes an add/replace action that returns to the selected plan date after saving.
 
 ### Edit and replace image
 
@@ -81,7 +81,7 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 | Add ingredient | Append empty product/quantity/unit group |
 | Select product | Restrict unit options to the product dimension |
 | Edit recipe | Replace the poster with one prefilled aggregate form; a single save commits all changed recipe fields and returns to the poster |
-| Add to plan | Open date/slot/servings planner flow |
+| Add to plan | Open date/slot planner flow |
 | Archive | Confirm references, set archive timestamp |
 
 ## 7. State, models, and storage
@@ -89,8 +89,8 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 - Owns `Recipe`, `RecipeIngredient`, and recipe `ImageAsset` lifecycle.
 - Reads active `Product` records for ingredient selection.
 - Reads plan entries when calculating archive impact.
-- The aggregate edit draft, photo modal state, and object URLs are UI-only until the complete form is saved. In planner context, ingredient display and the plan mutation use the immutable `planServings` URL value; the recipe detail does not expose a separate serving control.
-- Search query, meal section, subcategory, current page, and planner selection context live in URL parameters. Planner context uses `planDate`, `planSlot`, `planServings`, and `planMode` for recoverable navigation and direct links.
+- The aggregate edit draft, photo modal state, cooking-serving control, and object URLs are UI-only until the complete form is saved. Planner context does not alter the local cooking-serving control or persist a serving count.
+- Search query, meal section, subcategory, current page, and planner selection context live in URL parameters. Planner context uses `planDate`, `planSlot`, and `planMode` for recoverable navigation and direct links.
 
 ## 8. Validation and business rules
 
@@ -147,7 +147,7 @@ When opened from the planner with `planDate`, `planSlot`, `planServings`, and `p
 
 - A valid personal recipe with ingredients persists atomically with or without a photo; a missing photo renders the branded placeholder.
 - Invalid or incompatible ingredient rows identify the exact field and block save.
-- Planner-context ingredient quantities are scaled from `planServings` without editing stored recipe values.
+- Ingredient quantities are scaled from local cooking servings without editing stored recipe values; adding or replacing a plan entry stores only the selected recipe in its date/slot.
 - Recipe edits affect the live future shopping projection without creating or rewriting snapshots.
 - A manageable recipe exposes exactly one edit button. It opens a prefilled aggregate form without changing the route; one save persists all changes and cancel restores the read-only poster.
 - Photo changes use a separate accessible modal inside the aggregate editor and do not persist until the complete form is saved.

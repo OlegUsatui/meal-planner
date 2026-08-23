@@ -110,7 +110,7 @@ describe('RecipesPage categories', () => {
       ], page: 1, pageSize: 24, total: 3, hasNext: false }),
       get: vi.fn(), create: vi.fn(), update: vi.fn(), archive: vi.fn(),
     }
-    render(<QueryTestProvider><MemoryRouter initialEntries={['/recipes?planDate=2026-08-15&planSlot=breakfast&planServings=1&planMode=add&section=lunch']}><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider></MemoryRouter></QueryTestProvider>)
+    render(<QueryTestProvider><MemoryRouter initialEntries={['/recipes?planDate=2026-08-15&planSlot=breakfast&planMode=add&section=lunch']}><RecipeRepositoryProvider repository={repository}><RecipesPage /></RecipeRepositoryProvider></MemoryRouter></QueryTestProvider>)
 
     expect(await screen.findByText('Сніданковий рецепт')).toBeInTheDocument()
     expect(screen.queryByText('Обідній рецепт')).not.toBeInTheDocument()

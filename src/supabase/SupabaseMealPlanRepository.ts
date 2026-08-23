@@ -3,7 +3,7 @@ import { isPastMealPlanDate, validateMealPlanInput, type MealPlanInput, type Mea
 import { MealPlanRepositoryError, type MealPlanEntry, type MealPlanRange, type MealPlanRepository } from '../features/meal-planner/types.js'
 import { currentUserId } from './common.js'
 
-interface PlanRow { id: string; date: string; slot: MealSlot; date_slot: string; recipe_id: string; servings: number; created_at: string; updated_at: string }
+interface PlanRow { id: string; date: string; slot: MealSlot; date_slot: string; recipe_id: string; created_at: string; updated_at: string }
 
 export class SupabaseMealPlanRepository implements MealPlanRepository {
   private readonly client: SupabaseClient
@@ -33,7 +33,7 @@ export class SupabaseMealPlanRepository implements MealPlanRepository {
     if (Object.keys(errors).length) throw new MealPlanRepositoryError('invalid-plan', 'Некоректний запис плану')
     if (isPastMealPlanDate(input.date, this.today())) throw new MealPlanRepositoryError('past-date', 'Не можна планувати страви на минулу дату')
     const ownerId = await currentUserId(this.client); const now = new Date().toISOString(); const id = crypto.randomUUID()
-    const { data, error } = await this.client.from('meal_plan_entries').upsert({ id, owner_id: ownerId, date: input.date, slot: input.slot, date_slot: `${input.date}:${input.slot}`, recipe_id: input.recipeId, servings: input.servings, created_at: now, updated_at: now }, { onConflict: 'owner_id,date_slot' }).select().single()
+    const { data, error } = await this.client.from('meal_plan_entries').upsert({ id, owner_id: ownerId, date: input.date, slot: input.slot, date_slot: `${input.date}:${input.slot}`, recipe_id: input.recipeId, created_at: now, updated_at: now }, { onConflict: 'owner_id,date_slot' }).select().single()
     if (error || !data) throw new MealPlanRepositoryError('duplicate-slot', `Не вдалося зберегти план. ${error?.message ?? ''}`)
     return toEntry(data as unknown as PlanRow)
   }
@@ -48,4 +48,4 @@ export class SupabaseMealPlanRepository implements MealPlanRepository {
   }
 }
 
-function toEntry(row: PlanRow): MealPlanEntry { return { id: row.id, date: row.date, slot: row.slot, recipeId: row.recipe_id, servings: row.servings, createdAt: row.created_at, updatedAt: row.updated_at } }
+function toEntry(row: PlanRow): MealPlanEntry { return { id: row.id, date: row.date, slot: row.slot, recipeId: row.recipe_id, createdAt: row.created_at, updatedAt: row.updated_at } }

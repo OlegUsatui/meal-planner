@@ -16,7 +16,7 @@ describe('breakfast and dinner PDF import', () => {
     database = new MealPlannerDatabase(`meal-pdf-import-${crypto.randomUUID()}`)
     await database.imageAssets.add({ id: 'old-image', blob: new Blob(['old']), mimeType: 'image/webp', width: 10, height: 10, byteSize: 3, createdAt: now })
     await database.recipes.add({ id: 'lunch', name: 'Обід', normalizedName: 'обід', imageAssetId: 'old-image', instructions: 'Готувати', caloriesPerServing: null, proteinGramsPerServing: null, fatGramsPerServing: null, carbsGramsPerServing: null, preparationTimeMinMinutes: null, preparationTimeMaxMinutes: null, classifications: [{ mealType: 'lunch', subcategoryId: 'lunch-wok' }], archivedAt: null, createdAt: now, updatedAt: now })
-    await database.mealPlanEntries.add({ id: 'plan', date: '2026-08-15', slot: 'lunch', dateSlot: '2026-08-15:lunch', recipeId: 'lunch', servings: 1, createdAt: now, updatedAt: now })
+    await database.mealPlanEntries.add({ id: 'plan', date: '2026-08-15', slot: 'lunch', dateSlot: '2026-08-15:lunch', recipeId: 'lunch', createdAt: now, updatedAt: now })
     const fetcher = createFetcher(source('breakfast', 13, 'Сніданок'), source('dinner', 17, 'Вечеря'))
 
     await expect(importBreakfastDinnerPdfRecipes(database, fetcher, { expectedBreakfastCount: 1, expectedDinnerCount: 1, now: () => now, id: sequentialIds() })).resolves.toEqual({ imported: 2, productsCreated: 1 })

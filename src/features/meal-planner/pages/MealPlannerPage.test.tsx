@@ -18,29 +18,22 @@ describe('MealPlannerPage', () => {
   afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
 
   it('loads only the visible week and adds a recipe without leaving the calendar', async () => {
-    const plan: MealPlanRepository = { list: vi.fn().mockResolvedValue([{ id: 'entry-1', date: '2026-08-14', slot: 'breakfast', recipeId: recipe.id, servings: 2, createdAt: 'now', updatedAt: 'now' }]), getByDateSlot: vi.fn(), upsert: vi.fn(), remove: vi.fn().mockResolvedValue(undefined) }
+    const plan: MealPlanRepository = { list: vi.fn().mockResolvedValue([{ id: 'entry-1', date: '2026-08-14', slot: 'breakfast', recipeId: recipe.id, createdAt: 'now', updatedAt: 'now' }]), getByDateSlot: vi.fn(), upsert: vi.fn(), remove: vi.fn().mockResolvedValue(undefined) }
     const recipes: RecipeRepository = { list: vi.fn().mockResolvedValue([recipe]), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
     const router = createMemoryRouter([{ path: '/plan', element: <MealPlannerPage /> }, { path: '/plan/add', element: <MealPlanEntryPage /> }, { path: '/recipes/:recipeId', element: <h1>Сторінка рецепту</h1> }], { initialEntries: ['/plan?date=2026-08-14'] })
     const { container } = render(<QueryTestProvider><RecipeRepositoryProvider repository={recipes}><MealPlanRepositoryProvider repository={plan}><RouterProvider router={router} /></MealPlanRepositoryProvider></RecipeRepositoryProvider></QueryTestProvider>)
     expect(await screen.findByRole('heading', { name: 'План харчування' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Новий рецепт' })).not.toBeInTheDocument()
-    expect(container.querySelectorAll('.week-day')).toHaveLength(1)
+    expect(container.querySelectorAll('.week-day')).toHaveLength(0)
     expect(container.querySelectorAll('.mobile-day-strip button')).toHaveLength(7)
     expect(plan.list).toHaveBeenCalledWith({ from: '2026-08-10', to: '2026-08-16' }, expect.any(AbortSignal))
-
-    expect(screen.getByRole('button', { name: 'День' })).toHaveAttribute('aria-pressed', 'true')
-    await userEvent.click(screen.getByRole('button', { name: 'Тиждень' }))
     expect(container.querySelectorAll('.week-grid-day-header')).toHaveLength(7)
-    expect(router.state.location.search).toContain('view=week')
     router.navigate('/plan?date=2026-08-14')
-    expect(await screen.findByRole('button', { name: 'Тиждень' })).toHaveAttribute('aria-pressed', 'true')
+    expect(await screen.findByRole('heading', { name: 'План харчування' })).toBeInTheDocument()
     expect(container.querySelectorAll('.week-grid-day-header')).toHaveLength(7)
-    await userEvent.click(screen.getByRole('button', { name: 'День' }))
-    expect(container.querySelectorAll('.week-day')).toHaveLength(1)
-    expect(router.state.location.search).toContain('view=day')
 
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Кількість порцій для Рисова миска' }), '3')
-    expect(plan.upsert).toHaveBeenCalledWith({ date: '2026-08-14', slot: 'breakfast', recipeId: recipe.id, servings: 3 })
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(screen.queryByText('Порції')).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Відкрити рецепт Рисова миска' }))
     expect(router.state.location.pathname).toBe('/recipes/recipe-1')
@@ -63,7 +56,7 @@ describe('MealPlannerPage', () => {
     const recipeCard = screen.getByRole('button', { name: /Рисова миска/ })
     await userEvent.click(recipeCard)
     expect(screen.getByRole('button', { name: 'Додати до плану' })).toHaveClass('meal-plan-entry-submit')
-    await userEvent.click(screen.getByRole('button', { name: 'Салати-боули' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Сніданки з яєць' }))
     expect(screen.queryByRole('button', { name: 'Додати до плану' })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Усі підкатегорії' }))
     const recipeCardAfterFilter = screen.getByRole('button', { name: /Рисова миска/ })
@@ -73,21 +66,24 @@ describe('MealPlannerPage', () => {
     expect(screen.queryByRole('button', { name: 'Додати до плану' })).not.toBeInTheDocument()
     await userEvent.click(recipeCardAfterFilter)
     await userEvent.click(screen.getByRole('button', { name: 'Додати до плану' }))
-    expect(plan.upsert).toHaveBeenCalledWith(expect.objectContaining({ recipeId: recipe.id, servings: 2 }))
+    expect(plan.upsert).toHaveBeenCalledWith(expect.objectContaining({ recipeId: recipe.id }))
   })
 
   it('does not request full recipe details in week mode', async () => {
-    const plan: MealPlanRepository = { list: vi.fn().mockResolvedValue([{ id: 'entry-1', date: '2026-08-14', slot: 'breakfast', recipeId: recipe.id, servings: 2, createdAt: 'now', updatedAt: 'now' }]), getByDateSlot: vi.fn(), upsert: vi.fn(), remove: vi.fn() }
+    const plan: MealPlanRepository = { list: vi.fn().mockResolvedValue([{ id: 'entry-1', date: '2026-08-14', slot: 'breakfast', recipeId: recipe.id, createdAt: 'now', updatedAt: 'now' }]), getByDateSlot: vi.fn(), upsert: vi.fn(), remove: vi.fn() }
     const recipes: RecipeRepository = { list: vi.fn().mockResolvedValue([recipe]), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
-    const router = createMemoryRouter([{ path: '/plan', element: <MealPlannerPage /> }], { initialEntries: ['/plan?date=2026-08-14&view=week'] })
+    const router = createMemoryRouter([{ path: '/plan', element: <MealPlannerPage /> }], { initialEntries: ['/plan?date=2026-08-14&view=day'] })
     render(<QueryTestProvider><RecipeRepositoryProvider repository={recipes}><MealPlanRepositoryProvider repository={plan}><RouterProvider router={router} /></MealPlanRepositoryProvider></RecipeRepositoryProvider></QueryTestProvider>)
 
     expect(await screen.findByRole('heading', { name: 'План харчування' })).toBeInTheDocument()
     expect(recipes.get).not.toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: 'День' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Тиждень' })).not.toBeInTheDocument()
+    expect(screen.getByRole('grid', { name: 'Тижневий план' })).toBeInTheDocument()
   })
 
   it('replaces and removes a planned meal with explicit confirmations', async () => {
-    const plan: MealPlanRepository = { list: vi.fn().mockResolvedValue([{ id: 'entry-1', date: '2026-08-14', slot: 'breakfast', recipeId: recipe.id, servings: 2, createdAt: 'now', updatedAt: 'now' }]), getByDateSlot: vi.fn(), upsert: vi.fn().mockResolvedValue({}), remove: vi.fn().mockResolvedValue(undefined) }
+    const plan: MealPlanRepository = { list: vi.fn().mockResolvedValue([{ id: 'entry-1', date: '2026-08-14', slot: 'breakfast', recipeId: recipe.id, createdAt: 'now', updatedAt: 'now' }]), getByDateSlot: vi.fn(), upsert: vi.fn().mockResolvedValue({}), remove: vi.fn().mockResolvedValue(undefined) }
     const recipes: RecipeRepository = { list: vi.fn().mockResolvedValue([recipe]), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
     const router = createMemoryRouter([{ path: '/plan', element: <MealPlannerPage /> }, { path: '/plan/add', element: <MealPlanEntryPage /> }], { initialEntries: ['/plan?date=2026-08-14'] })
     render(<QueryTestProvider><RecipeRepositoryProvider repository={recipes}><MealPlanRepositoryProvider repository={plan}><RouterProvider router={router} /></MealPlanRepositoryProvider></RecipeRepositoryProvider></QueryTestProvider>)
@@ -97,7 +93,7 @@ describe('MealPlannerPage', () => {
     expect(await screen.findByRole('heading', { name: 'Замінити страву' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Замінити в плані' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Замінити в плані' }))
-    expect(plan.upsert).toHaveBeenCalledWith(expect.objectContaining({ recipeId: recipe.id, servings: 2 }))
+    expect(plan.upsert).toHaveBeenCalledWith(expect.objectContaining({ recipeId: recipe.id }))
     router.navigate('/plan')
     await screen.findByRole('heading', { name: 'План харчування' })
 

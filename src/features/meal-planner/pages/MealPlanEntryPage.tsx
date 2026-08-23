@@ -36,7 +36,6 @@ export function MealPlanEntryPage() {
   const slot = validSlot(searchParams.get('slot')) ?? 'breakfast'
   const replacing = Boolean(searchParams.get('entryId'))
   const initialRecipeId = searchParams.get('recipeId') ?? ''
-  const servings = parseServings(searchParams.get('servings')) ?? 2
   const [selectedId, setSelectedId] = useState(initialRecipeId)
   const [search, setSearch] = useState('')
   const [subcategory, setSubcategory] = useState('')
@@ -77,7 +76,7 @@ export function MealPlanEntryPage() {
     setPending(true)
     setActionError('')
     try {
-      await plan.upsert({ date, slot, recipeId: selectedId, servings })
+      await plan.upsert({ date, slot, recipeId: selectedId })
       await invalidateMealPlanData(queryClient, userId)
       navigate(`/plan?date=${encodeURIComponent(date)}`, { replace: true })
     } catch (error: unknown) {
@@ -101,7 +100,7 @@ export function MealPlanEntryPage() {
       {actionError && <Alert variant="error">{actionError}</Alert>}
       {!filtered.length && <EmptyState className="meal-plan-entry-empty" title="Рецептів не знайдено" description="Змініть пошук або оберіть іншу категорію." />}
       {!!filtered.length && <div className="meal-plan-entry-content">
-        <div className="recipe-grid meal-plan-entry-recipes" aria-label="Рецепти">{filtered.map((recipe) => <RecipeOption key={recipe.id} recipe={recipe} slot={slot} selected={recipe.id === selectedId} onSelect={() => setSelectedId((current) => current === recipe.id ? '' : recipe.id)} detailHref={`/recipes/${encodeURIComponent(recipe.id)}?${new URLSearchParams({ planDate: date, planSlot: slot, planServings: String(servings), planMode: replacing ? 'replace' : 'add', returnTo: `${location.pathname}${location.search}` }).toString()}`} />)}</div>
+      <div className="recipe-grid meal-plan-entry-recipes" aria-label="Рецепти">{filtered.map((recipe) => <RecipeOption key={recipe.id} recipe={recipe} slot={slot} selected={recipe.id === selectedId} onSelect={() => setSelectedId((current) => current === recipe.id ? '' : recipe.id)} detailHref={`/recipes/${encodeURIComponent(recipe.id)}?${new URLSearchParams({ planDate: date, planSlot: slot, planMode: replacing ? 'replace' : 'add', returnTo: `${location.pathname}${location.search}` }).toString()}`} />)}</div>
       </div>}
       {selectedRecipe && <div className="meal-plan-entry-actions">
         <div className="meal-plan-entry-action-copy" aria-live="polite"><span className="eyebrow">Вибрано</span><strong>{selectedRecipe.name}</strong></div>
@@ -122,4 +121,3 @@ function getRecipeLabels(recipe: RecipeSummary, slot: MealSlot): string {
 
 function validDate(value: string | null): string | undefined { return value && /^\d{4}-\d{2}-\d{2}$/u.test(value) ? value : undefined }
 function validSlot(value: string | null): MealSlot | undefined { return value && ['breakfast', 'lunch', 'dinner', 'snack'].includes(value) ? value as MealSlot : undefined }
-function parseServings(value: string | null): number | undefined { const servings = Number(value); return Number.isInteger(servings) && servings >= 1 && servings <= 99 ? servings : undefined }

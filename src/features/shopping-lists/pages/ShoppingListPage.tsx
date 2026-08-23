@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Download, Printer, Share2 } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { formatShoppingQuantity } from '../../../shared/formatting/format'
 import { mealSlots, shiftDate } from '../../meal-planner/domain/meal-plan'
-import type { ShoppingListItem } from '../domain/shopping-list'
+import { applyShoppingServingOverrides, shoppingSourceKey, type ShoppingListItem, type ShoppingServingOverrides } from '../domain/shopping-list'
 import { useShoppingListRepository } from '../repositories/useShoppingListRepository'
 import type { ShoppingListRange } from '../types'
 import { cacheTimes, queryKeys } from '../../../app/query/query-client'
@@ -27,6 +27,7 @@ export function ShoppingListPage() {
   const preset = presets.some((item) => item.value === searchParams.get('range')) ? searchParams.get('range')! : '7'
   const range = useMemo(() => rangeFor(preset, searchParams), [preset, searchParams])
   const [notice, setNotice] = useState('')
+  const [servingOverrides, setServingOverrides] = useState<ShoppingServingOverrides>({})
   const itemsQuery = useQuery({
     queryKey: queryKeys.shoppingList(userId, range.from, range.to),
     queryFn: ({ signal }) => repository.list(range, signal),
@@ -37,7 +38,9 @@ export function ShoppingListPage() {
   const lastItems = useRef<ShoppingListItem[]>([])
   if (itemsQuery.data !== undefined) lastItems.current = itemsQuery.data
   const items = itemsQuery.data ?? (itemsQuery.isError ? lastItems.current : [])
-  const groups = useMemo(() => groupItems(items), [items])
+  const adjustedItems = useMemo(() => applyShoppingServingOverrides(items, servingOverrides), [items, servingOverrides])
+  const groups = useMemo(() => groupItems(adjustedItems), [adjustedItems])
+  useEffect(() => setServingOverrides({}), [range.from, range.to])
   const choosePreset = (value: string) => {
     const next = new URLSearchParams(searchParams)
     next.set('range', value)
@@ -54,7 +57,7 @@ export function ShoppingListPage() {
     next.set(key, value)
     setSearchParams(next)
   }
-  const text = useMemo(() => shoppingText(items, range), [items, range])
+  const text = useMemo(() => shoppingText(adjustedItems, range), [adjustedItems, range])
 
   async function share() {
     try {
@@ -63,7 +66,7 @@ export function ShoppingListPage() {
     } catch { setNotice('Не вдалося поділитися списком') }
   }
   function exportCsv() {
-    const csv = ['Категорія,Продукт,Кількість', ...items.map((item) => [item.category, item.productName, formatShoppingQuantity(item.quantityBase, item.baseUnit)].map(csvCell).join(','))].join('\n')
+    const csv = ['Категорія,Продукт,Кількість', ...adjustedItems.map((item) => [item.category, item.productName, formatShoppingQuantity(item.quantityBase, item.baseUnit)].map(csvCell).join(','))].join('\n')
     const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' })); const link = document.createElement('a')
     link.href = url; link.download = `shopping-${range.from}${range.to ? `-${range.to}` : ''}.csv`; link.click(); URL.revokeObjectURL(url)
   }
@@ -75,11 +78,11 @@ export function ShoppingListPage() {
     {itemsQuery.isPending && <div className="shopping-skeleton" role="status">Завантажуємо список на обраний період…</div>}
     {itemsQuery.isError && <RetryBanner hasData={items.length > 0} staleMessage="Показуємо останній завантажений список." errorMessage="Не вдалося завантажити список." onRetry={() => void itemsQuery.refetch()} pending={itemsQuery.isFetching} />}
     {!itemsQuery.isPending && !items.length && <EmptyState title="На цей період покупок немає" description="Додайте рецепт у конкретний слот плану — список перерахується автоматично." action={<ButtonLink to={`/plan?date=${range.from}`}>Запланувати страву</ButtonLink>} />}
-    {!!items.length && <ShoppingChecklist key={shoppingChecksStorageKey(userId, range)} groups={groups} storageKey={shoppingChecksStorageKey(userId, range)} />}
+    {!!adjustedItems.length && <ShoppingChecklist key={shoppingChecksStorageKey(userId, range)} groups={groups} storageKey={shoppingChecksStorageKey(userId, range)} onServingsChange={(source, servings) => setServingOverrides((current) => ({ ...current, [shoppingSourceKey(source)]: servings }))} />}
   </section>
 }
 
-function ShoppingChecklist({ groups, storageKey }: { groups: Array<[string, ShoppingListItem[]]>; storageKey: string }) {
+function ShoppingChecklist({ groups, storageKey, onServingsChange }: { groups: Array<[string, ShoppingListItem[]]>; storageKey: string; onServingsChange: (source: Pick<ShoppingListItem['sources'][number], 'date' | 'slot' | 'recipeId'>, servings: number) => void }) {
   const [checkedIds, setCheckedIds] = useState<Set<string>>(() => readShoppingChecks(storageKey))
   const items = groups.flatMap(([, categoryItems]) => categoryItems)
   const itemIds = new Set(items.map((item) => item.productId))
@@ -103,13 +106,13 @@ function ShoppingChecklist({ groups, storageKey }: { groups: Array<[string, Shop
       <p className="shopping-progress" role="status" aria-label="Прогрес покупок">Куплено {visibleCheckedIds.size} з {items.length}</p>
       <Button type="button" variant="ghost" onClick={reset} disabled={visibleCheckedIds.size === 0}>Скинути позначки</Button>
     </div>
-    <div className="shopping-groups">{groups.map(([category, categoryItems]) => <section className="shopping-group" key={category}><h2>{category}</h2><div>{categoryItems.map((item) => <ShoppingRow item={item} checked={visibleCheckedIds.has(item.productId)} onToggle={toggle} key={item.productId} />)}</div></section>)}</div>
+    <div className="shopping-groups">{groups.map(([category, categoryItems]) => <section className="shopping-group" key={category}><h2>{category}</h2><div>{categoryItems.map((item) => <ShoppingRow item={item} checked={visibleCheckedIds.has(item.productId)} onToggle={toggle} onServingsChange={onServingsChange} key={item.productId} />)}</div></section>)}</div>
   </>
 }
 
-function ShoppingRow({ item, checked, onToggle }: { item: ShoppingListItem; checked: boolean; onToggle: (productId: string, checked: boolean) => void }) {
+function ShoppingRow({ item, checked, onToggle, onServingsChange }: { item: ShoppingListItem; checked: boolean; onToggle: (productId: string, checked: boolean) => void; onServingsChange: (source: Pick<ShoppingListItem['sources'][number], 'date' | 'slot' | 'recipeId'>, servings: number) => void }) {
   const [open, setOpen] = useState(false)
-  return <article className={`shopping-item ${checked ? 'is-checked' : ''}`}><div className="shopping-item-main"><label className="shopping-check"><input type="checkbox" aria-label={`Куплено: ${item.productName}`} checked={checked} onChange={(event) => onToggle(item.productId, event.target.checked)} /><span aria-hidden="true" /></label><button type="button" className="shopping-item-summary" aria-expanded={open} onClick={() => setOpen((value) => !value)}><span>{item.productName}<small>{item.sources.length} {item.sources.length === 1 ? 'джерело' : 'джерела'}</small></span><strong>{formatShoppingQuantity(item.quantityBase, item.baseUnit)}</strong></button></div>{open && <ul className="shopping-sources">{item.sources.map((source, index) => <li key={`${source.date}:${source.slot}:${source.recipeId}:${index}`}><span>{new Date(`${source.date}T12:00:00`).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })} · {mealSlots.find((slot) => slot.value === source.slot)?.label} · {source.recipeName} · {source.servings} порц.</span><strong>{formatShoppingQuantity(source.quantityBase, item.baseUnit)}</strong></li>)}</ul>}</article>
+  return <article className={`shopping-item ${checked ? 'is-checked' : ''}`}><div className="shopping-item-main"><label className="shopping-check"><input type="checkbox" aria-label={`Куплено: ${item.productName}`} checked={checked} onChange={(event) => onToggle(item.productId, event.target.checked)} /><span aria-hidden="true" /></label><button type="button" className="shopping-item-summary" aria-expanded={open} onClick={() => setOpen((value) => !value)}><span>{item.productName}<small>{item.sources.length} {item.sources.length === 1 ? 'джерело' : 'джерела'}</small></span><strong>{formatShoppingQuantity(item.quantityBase, item.baseUnit)}</strong></button></div>{open && <ul className="shopping-sources">{item.sources.map((source, index) => <li key={`${source.date}:${source.slot}:${source.recipeId}:${index}`}><div><span>{new Date(`${source.date}T12:00:00`).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })} · {mealSlots.find((slot) => slot.value === source.slot)?.label} · {source.recipeName}</span><div className="shopping-source-servings"><button type="button" aria-label={`Зменшити порції для ${source.recipeName}`} disabled={source.servings <= 1} onClick={() => onServingsChange(source, source.servings - 1)}>−</button><span>{source.servings} порц.</span><button type="button" aria-label={`Збільшити порції для ${source.recipeName}`} disabled={source.servings >= 99} onClick={() => onServingsChange(source, source.servings + 1)}>+</button></div></div><strong>{formatShoppingQuantity(source.quantityBase, item.baseUnit)}</strong></li>)}</ul>}</article>
 }
 
 function rangeFor(preset: string, params: URLSearchParams): ShoppingListRange {

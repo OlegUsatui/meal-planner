@@ -42,7 +42,7 @@ describe('PDF lunch recipe import', () => {
     await database.imageAssets.add({ id: 'old-image', blob: new Blob(['old']), mimeType: 'image/jpeg', width: 10, height: 10, byteSize: 3, createdAt: now })
     await database.recipes.add({ id: 'old-recipe', name: 'Тест', normalizedName: 'тест', imageAssetId: 'old-image', instructions: 'Тест', caloriesPerServing: null, proteinGramsPerServing: null, fatGramsPerServing: null, carbsGramsPerServing: null, preparationTimeMinMinutes: null, preparationTimeMaxMinutes: null, classifications: [], archivedAt: null, createdAt: now, updatedAt: now })
     await database.recipeIngredients.add({ id: 'old-ingredient', recipeId: 'old-recipe', productId: 'chicken', quantityBase: 1, enteredQuantity: 1, enteredUnit: 'g' })
-    await database.mealPlanEntries.add({ id: 'old-plan', date: '2026-08-15', slot: 'lunch', dateSlot: '2026-08-15:lunch', recipeId: 'old-recipe', servings: 1, createdAt: now, updatedAt: now })
+    await database.mealPlanEntries.add({ id: 'old-plan', date: '2026-08-15', slot: 'lunch', dateSlot: '2026-08-15:lunch', recipeId: 'old-recipe', createdAt: now, updatedAt: now })
 
     const fetcher = async (input: RequestInfo | URL) => String(input).endsWith('.json')
       ? new Response(JSON.stringify(recipePayload()), { status: 200, headers: { 'Content-Type': 'application/json' } })

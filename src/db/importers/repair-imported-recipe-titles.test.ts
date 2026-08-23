@@ -15,7 +15,7 @@ describe('imported recipe title repair', () => {
       recipe('broken', 'Боул з гречкою, яйцем авокадо a'),
       recipe('manual', 'Мій власний сніданок'),
     ])
-    await database.mealPlanEntries.add({ id: 'plan', date: '2026-08-15', slot: 'breakfast', dateSlot: '2026-08-15:breakfast', recipeId: 'broken', servings: 2, createdAt: now, updatedAt: now })
+    await database.mealPlanEntries.add({ id: 'plan', date: '2026-08-15', slot: 'breakfast', dateSlot: '2026-08-15:breakfast', recipeId: 'broken', createdAt: now, updatedAt: now })
 
     await expect(repairImportedRecipeTitles(database, fetcher([
       source('Боул з гречкою, яйцем і авокадо', ['Боул з гречкою, яйцем авокадо a']),

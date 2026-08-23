@@ -38,12 +38,11 @@ export function RecipeDetailPage() {
   const planDate = validDate(searchParams.get('planDate'))
   const planSlot = validMealSlot(searchParams.get('planSlot'))
   const planMode = searchParams.get('planMode') === 'replace' ? 'replace' : searchParams.get('planMode') === 'add' ? 'add' : undefined
-  const planServings = parseServings(searchParams.get('planServings'))
   const planContext = planDate && planSlot && planMode ? { date: planDate, slot: planSlot, mode: planMode } : undefined
   const plannedView = planDate && planSlot ? { date: planDate, slot: planSlot } : undefined
   const returnTo = safeReturnTo(searchParams.get('returnTo'))
   const successMessage = searchParams.get('created') === '1' ? 'Рецепт створено.' : searchParams.get('saved') === '1' ? 'Зміни збережено.' : undefined
-  const [servings] = useState(planServings ?? 1)
+  const [cookingServings, setCookingServings] = useState(1)
   const [actionError, setActionError] = useState('')
   const [savingToPlan, setSavingToPlan] = useState(false)
   const [showPermanentDelete, setShowPermanentDelete] = useState(false)
@@ -88,7 +87,7 @@ export function RecipeDetailPage() {
     setSavingToPlan(true)
     setActionError('')
     try {
-      await mealPlan.upsert({ date: planContext.date, slot: planContext.slot, recipeId: recipe.id, servings })
+      await mealPlan.upsert({ date: planContext.date, slot: planContext.slot, recipeId: recipe.id })
       await invalidateMealPlanData(queryClient, userId)
       navigate(`/plan?date=${encodeURIComponent(planContext.date)}`)
     } catch (error: unknown) {
@@ -99,12 +98,12 @@ export function RecipeDetailPage() {
 
   return (
     <section className={`page recipe-detail recipe-detail-wide${planContext ? ' has-plan-context' : ''}`}>
-      <div className="recipe-detail-topbar"><BackLink to={backHref}>{plannedView ? 'Назад до плану' : 'До рецептів'}</BackLink>{!editing && <div className="recipe-detail-topbar-actions">{planContext && <Button className="recipe-topbar-plan-action" disabled={savingToPlan || !Number.isInteger(servings) || servings < 1 || servings > 99} onClick={() => void addToPlan()}>{savingToPlan ? 'Зберігаємо…' : planContext.mode === 'replace' ? 'Замінити в плані' : 'Додати до плану'} <Plus aria-hidden="true" /></Button>}{canManage && <Button variant="secondary" onClick={() => setEditing(true)}><Pencil aria-hidden="true" /> Редагувати рецепт</Button>}{canManage && <ActionMenu label="Інші дії" className="recipe-detail-more" items={[...(!recipe.archivedAt ? [{ label: 'Архівувати', icon: <Archive aria-hidden="true" />, onSelect: () => setShowArchive(true) }] : []), ...(isAdmin ? [{ label: 'Видалити назавжди', icon: <Trash2 aria-hidden="true" />, danger: true, onSelect: () => setShowPermanentDelete(true) }] : [])]} />}</div>}</div>
+      <div className="recipe-detail-topbar"><BackLink to={backHref}>{plannedView ? 'Назад до плану' : 'До рецептів'}</BackLink>{!editing && <div className="recipe-detail-topbar-actions">{planContext && <Button className="recipe-topbar-plan-action" disabled={savingToPlan} onClick={() => void addToPlan()}>{savingToPlan ? 'Зберігаємо…' : planContext.mode === 'replace' ? 'Замінити в плані' : 'Додати до плану'} <Plus aria-hidden="true" /></Button>}{canManage && <Button variant="secondary" onClick={() => setEditing(true)}><Pencil aria-hidden="true" /> Редагувати рецепт</Button>}{canManage && <ActionMenu label="Інші дії" className="recipe-detail-more" items={[...(!recipe.archivedAt ? [{ label: 'Архівувати', icon: <Archive aria-hidden="true" />, onSelect: () => setShowArchive(true) }] : []), ...(isAdmin ? [{ label: 'Видалити назавжди', icon: <Trash2 aria-hidden="true" />, danger: true, onSelect: () => setShowPermanentDelete(true) }] : [])]} />}</div>}</div>
       {successMessage && <p className="toast-inline" role="status">{successMessage}</p>}
       {actionError && <Alert variant="error">{actionError}</Alert>}
       {editing ? <div className="recipe-detail-full-editor"><PageHeader eyebrow="Редагування" title="Редагування рецепта" />{productsQuery.isPending ? <p role="status">Завантажуємо продукти…</p> : <RecipeForm products={productsQuery.data ?? []} initialValue={recipe} onSubmit={saveRecipe} onCancel={() => setEditing(false)} error={productsQuery.isError ? 'Не вдалося завантажити продукти' : undefined} />}</div> : <div className="recipe-detail-layout recipe-poster recipe-poster-full-height">
         <RecipeHeroBlock recipe={recipe} canManage={false} editing={false} blocked={false} onEdit={() => undefined} onCancel={() => undefined} onSave={async () => undefined} />
-        <div className="recipe-detail-body"><RecipeNutritionBlock recipe={recipe} canManage={false} editing={false} blocked={false} onEdit={() => undefined} onCancel={() => undefined} onSave={async () => undefined} /><RecipeIngredientsBlock recipe={recipe} products={[]} productsLoading={false} canManage={false} editing={false} blocked={false} onEdit={() => undefined} onCancel={() => undefined} onSave={async () => undefined} servings={servings} /><RecipeInstructionsBlock recipe={recipe} canManage={false} editing={false} blocked={false} onEdit={() => undefined} onCancel={() => undefined} onSave={async () => undefined} /></div>
+        <div className="recipe-detail-body"><RecipeNutritionBlock recipe={recipe} canManage={false} editing={false} blocked={false} onEdit={() => undefined} onCancel={() => undefined} onSave={async () => undefined} /><RecipeIngredientsBlock recipe={recipe} products={[]} productsLoading={false} canManage={false} editing={false} blocked={false} onEdit={() => undefined} onCancel={() => undefined} onSave={async () => undefined} servings={cookingServings} onServingsChange={setCookingServings} /><RecipeInstructionsBlock recipe={recipe} canManage={false} editing={false} blocked={false} onEdit={() => undefined} onCancel={() => undefined} onSave={async () => undefined} /></div>
       </div>}
       {showArchive && <ConfirmDialog title={`Архівувати «${recipe.name}»?`} description="Рецепт зникне з вибору нових страв, але залишиться читабельним у попередніх планах." confirmLabel="Архівувати рецепт" danger onCancel={() => setShowArchive(false)} onConfirm={() => void archive()} />}
       {showPermanentDelete && <PermanentDeleteDialog name={recipe.name} entityLabel="рецепт" onCancel={() => setShowPermanentDelete(false)} onConfirm={() => void removePermanently()} />}
@@ -114,6 +113,5 @@ export function RecipeDetailPage() {
 
 function validDate(value: string | null): string | undefined { return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined }
 function validMealSlot(value: string | null): MealSlot | undefined { return value && ['breakfast', 'lunch', 'dinner', 'snack'].includes(value) ? value as MealSlot : undefined }
-function parseServings(value: string | null): number | undefined { const servings = Number(value); return Number.isInteger(servings) && servings >= 1 && servings <= 99 ? servings : undefined }
 function safeReturnTo(value: string | null): string | undefined { return value?.startsWith('/') && !value.startsWith('//') ? value : undefined }
 function errorMessage(error: unknown): string { return error instanceof Error ? error.message : 'Не вдалося виконати дію. Спробуйте ще раз.' }

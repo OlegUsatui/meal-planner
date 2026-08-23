@@ -18,7 +18,7 @@ Supabase is the production source of truth. Personal records belong to one authe
 
 ## MealPlanEntry
 
-Local date (`YYYY-MM-DD`), slot, recipe ID, servings 1–99, and timestamps. `(owner,date,slot)` is unique. Past dates are read-only and archived recipe references remain readable.
+Local date (`YYYY-MM-DD`), slot, recipe ID, and timestamps. `(owner,date,slot)` is unique. Past dates are read-only and archived recipe references remain readable.
 
 ## DashboardSummary
 
@@ -26,7 +26,7 @@ Today entries, next entry, seven-day distinct shopping count, personal-content f
 
 ## Shopping projection
 
-For each entry in inclusive `{from,to?}`, demand equals one-serving ingredient quantity times planned servings. Rows aggregate by product and retain date, slot, recipe, servings, and contribution sources. No shopping state is persisted.
+For each entry in inclusive `{from,to?}`, demand equals one-serving ingredient quantity. Rows aggregate by product and retain date, slot, recipe, a local serving adjustment, and contribution sources. No plan serving or shopping adjustment is persisted.
 
 ## AccountExportManifestV1
 

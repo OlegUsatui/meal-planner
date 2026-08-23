@@ -2,7 +2,6 @@ import { Clock3 } from 'lucide-react'
 import { formatPreparationTime } from '../../recipes/domain/recipe'
 import { getRecipeSubcategory } from '../../recipes/domain/recipe-taxonomy'
 import type { RecipeSummary } from '../../recipes/types'
-import type { MealPlanEntry } from '../types'
 import { RecipeImage } from './RecipeImage'
 import { MealCardControls } from './MealCardControls'
 
@@ -13,7 +12,7 @@ type DayRecipe = RecipeSummary & {
   carbsGramsPerServing?: number | null
 }
 
-export function DayMealCard({ entry, recipe, readOnly, onOpen, onReplace, onRemove, onServingsChange }: { entry: MealPlanEntry; recipe: DayRecipe; readOnly: boolean; onOpen: (trigger: HTMLElement) => void; onReplace: () => void; onRemove: () => void; onServingsChange: (servings: number) => Promise<void> | void }) {
+export function DayMealCard({ recipe, readOnly = false, onOpen, onReplace, onRemove }: { recipe: DayRecipe; readOnly?: boolean; onOpen: (trigger: HTMLElement) => void; onReplace?: () => void; onRemove?: () => void }) {
   const preparationTime = formatPreparationTime(recipe.preparationTimeMinMinutes, recipe.preparationTimeMaxMinutes)
   const categories = recipe.classifications.map((item) => getRecipeSubcategory(item.subcategoryId)?.label).filter((label): label is string => Boolean(label))
   const nutrition = [
@@ -27,6 +26,6 @@ export function DayMealCard({ entry, recipe, readOnly, onOpen, onReplace, onRemo
       <RecipeImage blob={recipe.image?.blob} url={recipe.image?.url} alt="" className="day-meal-card-image" />
       <span className="day-meal-card-content"><strong>{recipe.name}</strong><span className="day-meal-card-meta">{preparationTime && <span><Clock3 aria-hidden="true" /> {preparationTime}</span>}<span>{categories.length ? categories.join(' · ') : 'Без категорії'}</span></span>{nutrition.length > 0 && <span className="day-meal-card-nutrition" aria-label="Харчова цінність">{nutrition.map((value) => <span key={value}>{value}</span>)}</span>}</span>
     </button>
-    <MealCardControls recipeName={recipe.name} servings={entry.servings} readOnly={readOnly} variant="day" onServingsChange={onServingsChange} onReplace={onReplace} onRemove={onRemove} />
+    {onReplace && onRemove && <MealCardControls recipeName={recipe.name} readOnly={readOnly} onReplace={onReplace} onRemove={onRemove} />}
   </article>
 }

@@ -101,6 +101,16 @@ export class MealPlannerDatabase extends Dexie {
     }).upgrade((transaction) => transaction.table('recipes').toCollection().modify((record) => {
       record.imageAssetId ??= null
     }))
+    this.version(7).stores({
+      products: '&id, normalizedName, category, archivedAt, updatedAt',
+      recipes: '&id, normalizedName, archivedAt, updatedAt, imageAssetId',
+      recipeIngredients: '&id, recipeId, productId, &[recipeId+productId]',
+      mealPlanEntries: '&id, &dateSlot, date, recipeId',
+      imageAssets: '&id, createdAt',
+      appSettings: '&id',
+    }).upgrade((transaction) => transaction.table('mealPlanEntries').toCollection().modify((record) => {
+      delete record.servings
+    }))
   }
 }
 

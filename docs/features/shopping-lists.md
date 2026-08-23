@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Present an explainable shopping projection derived from planned recipe demand and let the shopper mark products as purchased on the current device.
+Present an explainable shopping projection derived from planned recipe demand, allow a temporary serving adjustment for preparation convenience, and let the shopper mark products as purchased on the current device.
 
 ## Routes
 
@@ -12,7 +12,7 @@ Present an explainable shopping projection derived from planned recipe demand an
 
 ## Flows
 
-Choose a preset or valid custom range, mark products as purchased, reset purchase marks, review category groups, disclose source contributions, print, share/copy, export CSV, or open the corresponding plan date.
+Choose a preset or valid custom range, adjust servings for an individual source, mark products as purchased, reset purchase marks, review category groups, disclose source contributions, print, share/copy, export CSV, or open the corresponding plan date.
 
 ## Desktop UI
 
@@ -28,7 +28,7 @@ Select Today/7/14/All/custom, check or uncheck a product, reset marks for the se
 
 ## State and storage
 
-The product list is recalculated from plan entries, recipe ingredients, products, and servings for the requested inclusive range. For the current local date, breakfast is excluded from 09:00, lunch from 13:00, and dinner from 18:00; snacks remain eligible all day, while future dates include every slot. Each range is cached in session memory for 30 seconds; changing range cancels the obsolete request and shows a loading state instead of displaying another range's rows, while a failed refresh of the active range preserves stale rows. Purchase marks are the only persisted shopping state: the browser stores product IDs in local storage under the authenticated user and exact range, so marks survive reloads on that device but are not synchronized to another device or sent to the server. Marks remain visible after checking, and reset clears marks for the selected range.
+The product list is recalculated from plan entries, one-serving recipe ingredients, and products for the requested inclusive range. For the current local date, breakfast is excluded from 09:00, lunch from 13:00, and dinner from 18:00; snacks remain eligible all day, while future dates include every slot. Each range is cached in session memory for 30 seconds; changing range cancels the obsolete request and shows a loading state instead of displaying another range's rows, while a failed refresh of the active range preserves stale rows. Source serving adjustments are UI-only, recalculate aggregate quantities and exports in memory, do not update the meal plan, and reset when the range changes or the page reloads. Purchase marks are the only persisted shopping state: the browser stores product IDs in local storage under the authenticated user and exact range, so marks survive reloads on that device but are not synchronized to another device or sent to the server. Marks remain visible after checking, and reset clears marks for the selected range.
 
 ## Validation
 
@@ -44,11 +44,11 @@ Range controls are real buttons with `aria-pressed`; date inputs are labelled; p
 
 ## Tricky cases
 
-Demand is one-serving quantity × planned servings. Groups and names sort with Ukrainian locale. Display promotes `2500 g` to `2,5 кг` and `1500 ml` to `1,5 л`. Every source names date, meal slot, recipe, servings, and its contribution.
+Demand starts from one-serving quantity. A source stepper can temporarily change the servings used for the visible shopping calculation. Groups and names sort with Ukrainian locale. Display promotes `2500 g` to `2,5 кг` and `1500 ml` to `1,5 л`. Every source names date, meal slot, recipe, local servings, and its contribution.
 
 ## Acceptance criteria
 
-Default request covers today plus six days; All omits `to`; custom state survives reload/back; returning to the page always refreshes the selected range so a newly added plan entry appears without waiting for the cache TTL; stale data remains visible after failure; product marks survive reload on the same device for the exact range; progress and reset are available; checked rows remain visible; the feature has no manual rows, prices, purchase history, or server-side purchase state.
+Default request covers today plus six days; All omits `to`; custom state survives reload/back; returning to the page always refreshes the selected range so a newly added plan entry appears without waiting for the cache TTL; stale data remains visible after failure; product marks survive reload on the same device for the exact range; source serving adjustments update visible totals without changing the plan; progress and reset are available; checked rows remain visible; the feature has no manual rows, prices, purchase history, or server-side purchase state.
 
 ## Tests
 

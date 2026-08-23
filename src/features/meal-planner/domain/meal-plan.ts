@@ -6,14 +6,12 @@ export interface MealPlanInput {
   date: string
   slot: MealSlot
   recipeId: string
-  servings: number
 }
 
 export interface MealPlanValidationErrors {
   date?: string
   slot?: string
   recipeId?: string
-  servings?: string
 }
 
 export function validateMealPlanInput(input: MealPlanInput): MealPlanValidationErrors {
@@ -21,20 +19,11 @@ export function validateMealPlanInput(input: MealPlanInput): MealPlanValidationE
   if (!/^\d{4}-\d{2}-\d{2}$/u.test(input.date)) errors.date = 'Оберіть майбутню дату'
   if (!['breakfast', 'lunch', 'dinner', 'snack'].includes(input.slot)) errors.slot = 'Оберіть коректний прийом їжі'
   if (!input.recipeId.trim()) errors.recipeId = 'Оберіть рецепт'
-  if (!Number.isInteger(input.servings) || input.servings < 1 || input.servings > 99) errors.servings = 'Кількість порцій має бути від 1 до 99'
   return errors
 }
 
 export function isPastMealPlanDate(date: string, today: string): boolean {
   return date < today
-}
-
-export function scaleRecipeQuantity(quantityBase: number, plannedServings: number): number {
-  return Math.round(quantityBase * plannedServings * 1000) / 1000
-}
-
-export function scaleNutrition(value: number | null, servings: number): number | null {
-  return value === null ? null : Math.round(value * servings * 10) / 10
 }
 
 export function shiftDate(date: string, days: number): string {

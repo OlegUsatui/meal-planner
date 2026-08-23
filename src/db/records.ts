@@ -45,7 +45,6 @@ export interface MealPlanEntryRecord {
   slot: 'breakfast' | 'lunch' | 'dinner' | 'snack'
   dateSlot: string
   recipeId: string
-  servings: number
   createdAt: string
   updatedAt: string
 }

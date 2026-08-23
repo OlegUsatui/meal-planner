@@ -50,7 +50,6 @@ export class DexieMealPlanRepository implements MealPlanRepository {
       slot: input.slot,
       dateSlot: id,
       recipeId: input.recipeId,
-      servings: input.servings,
       createdAt: current?.createdAt ?? now,
       updatedAt: now,
     }
@@ -70,9 +69,8 @@ function toEntry(record: {
   date: string
   slot: MealSlot
   recipeId: string
-  servings: number
   createdAt: string
   updatedAt: string
 }): MealPlanEntry {
-  return { id: record.id, date: record.date, slot: record.slot, recipeId: record.recipeId, servings: record.servings, createdAt: record.createdAt, updatedAt: record.updatedAt }
+  return { id: record.id, date: record.date, slot: record.slot, recipeId: record.recipeId, createdAt: record.createdAt, updatedAt: record.updatedAt }
 }
