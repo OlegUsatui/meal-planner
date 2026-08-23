@@ -119,8 +119,9 @@
 .meal-plan-entry-submit { min-width: 220px; flex: 0 0 auto; }
 .meal-plan-entry-empty { padding: 48px 20px; }
 @media (min-width: 1200px) { .meal-plan-entry-actions { left: calc(252px + (100vw - 252px) / 2); } }
-@media (max-width: 1180px) and (min-width: 761px) { .week-calendar.view-week { overflow-x: auto; padding-bottom: 8px; }.week-calendar.view-week .week-grid { min-width: 1050px; } }
-@media (max-width: 760px) {
+@media (min-width: 1440px) { .meal-plan-entry-page { max-width: 1600px; } }
+@media (max-width: 1180px) and (min-width: 768px) { .week-calendar.view-week { overflow-x: auto; padding-bottom: 8px; }.week-calendar.view-week .week-grid { min-width: 1050px; } }
+@media (max-width: 767px) {
   .meal-planner-page { padding-inline: 12px; }.planner-page-header { margin-bottom: 22px; }.planner-page-header .button { display: none; }
   .week-toolbar { align-items: flex-start; flex-direction: column; padding: 10px 12px; }.week-toolbar > strong { font-size: .82rem; }.today-button { min-height: 44px; padding-inline: 12px; }.week-arrow { width: 44px; height: 44px; }
   .mobile-day-strip { display: grid; grid-template-columns: repeat(7, minmax(54px, 1fr)); gap: 6px; overflow-x: auto; margin-bottom: 12px; }
@@ -149,7 +150,7 @@
 .meal-plan-entry-toolbar { border-style: dashed; }
 
 /* Day view is an editorial sheet, not a narrow column floating in the grid. */
-@media (min-width: 761px) {
+@media (min-width: 768px) {
   .week-calendar.view-day { padding-inline: 0; }
   .week-calendar.view-day .week-grid-day { width: 100%; max-width: 1320px; }
   .week-calendar.view-day .week-day { border-radius: 28px 22px 26px 18px; }
