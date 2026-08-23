@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildShoppingList, applyShoppingServingOverrides } from './shopping-list'
+import { applyShoppingServings, buildShoppingList } from './shopping-list'
 
 describe('derived shopping list', () => {
   it('aggregates future planned recipe demand and ignores past dates', () => {
@@ -51,7 +51,7 @@ describe('derived shopping list', () => {
     expect(buildShoppingList(entries, recipes, products, '2026-08-14', new Date('2026-08-14T18:00:00'))[0]?.quantityBase).toBe(200)
   })
 
-  it('recalculates shopping quantities locally without changing the original sources', () => {
+  it('recalculates all shopping quantities with one local servings value without changing the original list', () => {
     const list = buildShoppingList(
       [{ id: 'entry-a', date: '2026-08-14', slot: 'dinner', recipeId: 'recipe-a' }],
       [{ id: 'recipe-a', name: 'Суп', ingredients: [{ productId: 'pasta', quantityBase: 100 }] }],
@@ -59,7 +59,7 @@ describe('derived shopping list', () => {
       '2026-08-14',
     )
 
-    const adjusted = applyShoppingServingOverrides(list, { '2026-08-14:dinner:recipe-a': 4 })
+    const adjusted = applyShoppingServings(list, 4)
     expect(adjusted[0]?.quantityBase).toBe(400)
     expect(adjusted[0]?.sources[0]).toEqual(expect.objectContaining({ quantityBase: 400 }))
     expect(list[0]?.quantityBase).toBe(100)

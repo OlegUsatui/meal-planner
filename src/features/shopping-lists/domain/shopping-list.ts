@@ -38,19 +38,13 @@ export interface ShoppingListItem {
   sources: ShoppingSource[]
 }
 
-export type ShoppingServingOverrides = Record<string, number>
-
-export function shoppingSourceKey(source: Pick<ShoppingSource, 'date' | 'slot' | 'recipeId'>): string {
-  return `${source.date}:${source.slot}:${source.recipeId}`
-}
-
-export function applyShoppingServingOverrides(items: ShoppingListItem[], overrides: ShoppingServingOverrides): ShoppingListItem[] {
+export function applyShoppingServings(items: ShoppingListItem[], servings: number): ShoppingListItem[] {
   return items.map((item) => {
-    const sources = item.sources.map((source) => {
-      const servings = overrides[shoppingSourceKey(source)] ?? source.servings
-      const quantityBase = Math.round((source.quantityBase / source.servings * servings) * 1000) / 1000
-      return { ...source, servings, quantityBase }
-    })
+    const sources = item.sources.map((source) => ({
+      ...source,
+      servings: source.servings * servings,
+      quantityBase: Math.round(source.quantityBase * servings * 1000) / 1000,
+    }))
     return { ...item, quantityBase: Math.round(sources.reduce((total, source) => total + source.quantityBase, 0) * 1000) / 1000, sources }
   })
 }

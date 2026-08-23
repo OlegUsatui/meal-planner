@@ -12,7 +12,7 @@ Present an explainable shopping projection derived from planned recipe demand, a
 
 ## Flows
 
-Choose a preset or valid custom range, adjust servings for an individual source, mark products as purchased, reset purchase marks, review category groups, disclose source contributions, print, share/copy, export CSV, or open the corresponding plan date.
+Choose a preset or valid custom range, adjust one total servings value for the whole list, mark products as purchased, reset purchase marks, review category groups, disclose source contributions, print, share/copy, export CSV, or open the corresponding plan date.
 
 ## Desktop UI
 
@@ -44,11 +44,11 @@ Range controls are real buttons with `aria-pressed`; date inputs are labelled; p
 
 ## Tricky cases
 
-Demand starts from one-serving quantity. A source stepper can temporarily change the servings used for the visible shopping calculation. Groups and names sort with Ukrainian locale. Display promotes `2500 g` to `2,5 кг` and `1500 ml` to `1,5 л`. Every source names date, meal slot, recipe, local servings, and its contribution.
+Demand starts from one-serving quantity. One page-level servings stepper can temporarily scale the entire visible shopping calculation. Groups and names sort with Ukrainian locale. Display promotes `2500 g` to `2,5 кг` and `1500 ml` to `1,5 л`. Every source names date, meal slot, recipe, and its contribution.
 
 ## Acceptance criteria
 
-Default request covers today plus six days; All omits `to`; custom state survives reload/back; returning to the page always refreshes the selected range so a newly added plan entry appears without waiting for the cache TTL; stale data remains visible after failure; product marks survive reload on the same device for the exact range; source serving adjustments update visible totals without changing the plan; progress and reset are available; checked rows remain visible; the feature has no manual rows, prices, purchase history, or server-side purchase state.
+Default request covers today plus six days; All omits `to`; custom state survives reload/back; returning to the page always refreshes the selected range so a newly added plan entry appears without waiting for the cache TTL; stale data remains visible after failure; product marks survive reload on the same device for the exact range; the total servings adjustment updates visible totals without changing the plan and resets after range changes or reload; progress and reset are available; checked rows remain visible; the feature has no manual rows, prices, purchase history, or server-side purchase state.
 
 ## Tests
 

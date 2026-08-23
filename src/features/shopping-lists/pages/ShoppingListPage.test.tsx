@@ -21,10 +21,10 @@ describe('ShoppingListPage', () => {
     expect(screen.getByText('2,5 кг')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /Рис/ }))
     expect(screen.getByText(/Вечеря · Рисова миска/)).toBeInTheDocument()
-    expect(screen.getByText('1 порц.')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Збільшити порції для Рисова миска' }))
-    expect(screen.getByText('2 порц.')).toBeInTheDocument()
+    expect(screen.getByRole('spinbutton', { name: 'Загальна кількість порцій' })).toHaveValue(1)
+    await userEvent.click(screen.getByRole('button', { name: 'Збільшити загальну кількість порцій' }))
     expect(screen.getAllByText('5 кг')).toHaveLength(2)
+    expect(screen.queryByRole('button', { name: 'Збільшити порції для Рисова миска' })).not.toBeInTheDocument()
   })
 
   it('reloads for a selected preset and keeps stale data on failure', async () => {
