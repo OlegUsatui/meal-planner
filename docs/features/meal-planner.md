@@ -16,11 +16,11 @@ Select an empty slot → open the full-page picker → search/filter an eligible
 
 ## Desktop UI
 
-The planner uses a seven-day date strip followed by a seven-column weekly calendar. Week cards use a compact vertical editorial layout: 4:3 image or illustrated placeholder, visible two-line recipe title, preparation time/category metadata, and the existing replace/remove action menu. The calendar uses a paper grid, dashed pencil-like boundaries, and warm slot surfaces without changing the underlying meal actions. The week view uses summaries only; full recipe details are loaded only when opening a recipe. Add/replace navigates to a dedicated selection page and returns to the same week/date after saving. The selection page uses the same recipe-card grid and visual hierarchy as the Recipes catalogue; its fixed bottom action bar keeps the primary action visible without a duplicate selected-recipe summary panel.
+The planner uses a seven-column weekly calendar that expands to the available desktop width. Week cards use a compact vertical editorial layout: 4:3 image or illustrated placeholder, visible two-line recipe title, preparation time/category metadata, and the existing replace/remove action menu. The calendar uses a paper grid, dashed pencil-like boundaries, and warm slot surfaces without changing the underlying meal actions. The week view uses summaries only; full recipe details are loaded only when opening a recipe. Add/replace navigates to a dedicated selection page and returns to the same week/date after saving. The selection page uses the same recipe-card grid and visual hierarchy as the Recipes catalogue; its fixed bottom action bar keeps the primary action visible without a duplicate selected-recipe summary panel.
 
 ## Mobile UI
 
-The week calendar keeps the seven columns inside a horizontally scrollable calendar surface without page overflow. Category filters are horizontally scrollable chips, the add action stays above the bottom navigation while scrolling, and the calendar is usable at 320 px. Rich day-style cards are available on the dashboard for today's meals.
+On phones, the day strip selects one day and the calendar shows only that day’s four meal slots, so the page never forces a seven-column layout into the viewport. On tablet portrait and landscape widths, the seven-column calendar remains inside a horizontally scrollable surface without page overflow. Category filters are horizontally scrollable chips, the add action stays above the bottom navigation while scrolling, and the calendar is usable at 390 px. Rich day-style cards are available on the dashboard for today's meals.
 
 ## Actions
 

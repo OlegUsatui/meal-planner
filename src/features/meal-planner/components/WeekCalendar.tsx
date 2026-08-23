@@ -31,7 +31,7 @@ function WeekGrid({ dates, today, selectedDate, entries, recipes, onSelectDate, 
       const entry = entries.find((item) => item.date === date && item.slot === value)
       const recipe = entry ? recipes.get(entry.recipeId) : undefined
       const readOnly = date < today
-      return <div className="week-grid-cell" role="gridcell" key={`${date}:${value}`}>{entry && recipe ? <WeekMealCard recipe={recipe} readOnly={readOnly} onOpen={(trigger) => onOpen(entry, recipe, trigger)} onReplace={() => onReplace(entry)} onRemove={() => onRemove(entry)} /> : entry ? <div className="missing-recipe">Рецепт недоступний</div> : <button type="button" className="empty-meal-slot" disabled={readOnly} onClick={() => onAdd(date, value)}>+ <span>Додати страву</span></button>}</div>
+      return <div className={`week-grid-cell ${date === selectedDate ? 'selected' : ''}`} role="gridcell" key={`${date}:${value}`}>{entry && recipe ? <WeekMealCard recipe={recipe} readOnly={readOnly} onOpen={(trigger) => onOpen(entry, recipe, trigger)} onReplace={() => onReplace(entry)} onRemove={() => onRemove(entry)} /> : entry ? <div className="missing-recipe">Рецепт недоступний</div> : <button type="button" className="empty-meal-slot" disabled={readOnly} onClick={() => onAdd(date, value)}>+ <span>Додати страву</span></button>}</div>
     })}</div>)}
   </div>
 }
