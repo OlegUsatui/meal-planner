@@ -6,6 +6,7 @@
 @import './styles/settings.css';
 @import './styles/shopping.css';
 @import './styles/dashboard.css';
+@import './styles/recipe-suggestions.css';
  .auth-page { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--canvas); }
  .auth-card { width: min(100%, 460px); padding: 32px; border-radius: 24px; background: var(--surface); box-shadow: 0 18px 60px var(--shadow-color-auth); }
  .auth-card form { display: grid; gap: 16px; margin-top: 24px; }

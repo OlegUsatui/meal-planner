@@ -23,6 +23,8 @@ export const queryKeys = {
   recipes: (userId: string, filters: QueryFilters = {}) =>
     ['recipes', userId, canonicalFilters(filters)] as const,
   recipe: (userId: string, recipeId: string) => ['recipe', userId, recipeId] as const,
+  recipeSuggestions: (userId: string, productIds: string[]) =>
+    ['recipe-suggestions', userId, productIds] as const,
   products: (userId: string, filters: QueryFilters = {}) =>
     ['products', userId, canonicalFilters(filters)] as const,
   mealPlan: (userId: string, from: string, to: string) =>

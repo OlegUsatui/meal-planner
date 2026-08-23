@@ -4,6 +4,7 @@ import { ApiProductRepository } from './ApiProductRepository'
 import { ApiRecipeRepository } from './ApiRecipeRepository'
 import { ApiShoppingListRepository } from './ApiShoppingListRepository'
 import { ApiDashboardRepository } from './ApiDashboardRepository'
+import { ApiRecipeSuggestionRepository } from './ApiRecipeSuggestionRepository'
 import type { ApiClient } from './api-client'
 import type { RecipePage } from '../features/recipes/repositories/recipe-repository'
 import type { ProductPage } from '../features/products/repositories/product-repository'
@@ -40,6 +41,15 @@ describe('API repository contracts', () => {
     await new ApiRecipeRepository(client).list('', { systemOnly: true }, controller.signal)
 
     expect(client.get).toHaveBeenCalledWith('/api/recipes?systemOnly=true', { signal: controller.signal })
+  })
+
+  it('requests recipe suggestions with deduplicated product ids', async () => {
+    const client = fakeClient()
+    vi.mocked(client.get).mockResolvedValue([])
+
+    await new ApiRecipeSuggestionRepository(client).listByProductIds(['product-2', 'product-1', 'product-2'])
+
+    expect(client.get).toHaveBeenCalledWith('/api/recipe-suggestions?productIds=product-2%2Cproduct-1')
   })
 
   it('requests a server-paginated product page with search and archive filters', async () => {

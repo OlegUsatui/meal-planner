@@ -56,6 +56,36 @@ export class SupabaseRecipeRepository implements RecipeRepository {
     return { items, page, pageSize, total, hasNext: from + items.length < total }
   }
 
+  async listByProductIds(productIds: string[]): Promise<RecipeSummary[]> {
+    const { data: products, error: productError } = await this.client
+      .from('products')
+      .select('id')
+      .in('id', productIds)
+      .is('archived_at', null)
+    if (productError) throw new RecipeRepositoryError('not-found', 'Не вдалося перевірити доступні продукти.')
+
+    const activeProductIds = (products ?? []).map((product) => String((product as { id: string }).id))
+    if (!activeProductIds.length) return []
+
+    const { data: ingredientRows, error: ingredientError } = await this.client
+      .from('recipe_ingredients')
+      .select('recipe_id')
+      .in('product_id', activeProductIds)
+    if (ingredientError) throw new RecipeRepositoryError('not-found', 'Не вдалося підготувати рекомендації.')
+
+    const recipeIds = [...new Set((ingredientRows ?? []).map((row) => String((row as { recipe_id: string }).recipe_id)))]
+    if (!recipeIds.length) return []
+
+    const { data, error } = await this.client
+      .from('recipes')
+      .select(SUMMARY_COLUMNS)
+      .is('archived_at', null)
+      .in('id', recipeIds)
+      .order('name')
+    if (error) throw new RecipeRepositoryError('not-found', 'Не вдалося завантажити рекомендації.')
+    return this.summarizeRows((data ?? []) as unknown as RecipeRow[])
+  }
+
   async get(id: string): Promise<Recipe> {
     const [{ data: recipe, error: recipeError }, { data: ingredients, error: ingredientError }, { data: products, error: productError }] = await Promise.all([
       this.client.from('recipes').select('*').eq('id', id).maybeSingle(),

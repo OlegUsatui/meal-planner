@@ -6,6 +6,7 @@
 - Personal recipe photos are optional. Removing one nulls all metadata; an existing photo is preserved unless explicitly replaced/removed.
 - Nutrition is optional and non-negative. Exact preparation time uses equal bounds; range bounds are 0–1440 minutes and minimum cannot exceed maximum.
 - Recipes require name, instructions, at least one ingredient, and at least one valid classification. Archived products cannot be newly selected.
+- Recipe suggestions match by product identity: a recipe is eligible when at least one of its ingredients uses a selected active product. The selection is transient URL state and never represents persisted inventory or quantities.
 - A plan has four slots and one recipe per local date/slot. Past entries cannot be added, replaced, or removed.
 - Meal-plan reads are inclusive `from/to`; planner UI requests only the visible week.
 - Shopping is recalculated for inclusive `{from,to?}` from one serving of each planned recipe, aggregates by product, and remains read-only. Temporary source serving adjustments are UI-only.

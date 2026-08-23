@@ -4,6 +4,7 @@ import { AppShell } from '../shell/AppShell'
 import { PlaceholderPage } from './PlaceholderPage'
 
 const DashboardPage = lazy(() => import('../../features/dashboard/DashboardPage').then((module) => ({ default: module.DashboardPage })))
+const CookPage = lazy(() => import('../../features/recipe-suggestions/pages/CookPage').then((module) => ({ default: module.CookPage })))
 const MealPlannerPage = lazy(() => import('../../features/meal-planner/pages/MealPlannerPage').then((module) => ({ default: module.MealPlannerPage })))
 const MealPlanEntryPage = lazy(() => import('../../features/meal-planner/pages/MealPlanEntryPage').then((module) => ({ default: module.MealPlanEntryPage })))
 const ProductEditorPage = lazy(() => import('../../features/products/pages/ProductEditorPage').then((module) => ({ default: module.ProductEditorPage })))
@@ -22,6 +23,7 @@ export const appRoutes = [
     element: <AppShell />,
     children: [
       { index: true, element: <DashboardPage /> },
+      { path: 'cook', element: <CookPage /> },
       { path: 'products', element: <ProductsPage /> },
       { path: 'products/new', element: <ProductEditorPage /> },
       { path: 'products/:productId', element: <ProductEditorPage /> },

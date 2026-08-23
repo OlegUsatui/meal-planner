@@ -9,7 +9,9 @@ import { ApiRecipeRepository } from '../../api/ApiRecipeRepository'
 import { ApiMealPlanRepository } from '../../api/ApiMealPlanRepository'
 import { ApiShoppingListRepository } from '../../api/ApiShoppingListRepository'
 import { ApiDashboardRepository } from '../../api/ApiDashboardRepository'
+import { ApiRecipeSuggestionRepository } from '../../api/ApiRecipeSuggestionRepository'
 import { DashboardRepositoryProvider } from '../../features/dashboard/DashboardRepositoryContext'
+import { RecipeSuggestionRepositoryProvider } from '../../features/recipe-suggestions/repositories/RecipeSuggestionRepositoryContext'
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const repositories = useMemo(() => {
@@ -20,9 +22,10 @@ export function AppProviders({ children }: { children: ReactNode }) {
       mealPlanRepository: new ApiMealPlanRepository(client),
       shoppingListRepository: new ApiShoppingListRepository(client),
       dashboardRepository: new ApiDashboardRepository(client),
+      recipeSuggestionRepository: new ApiRecipeSuggestionRepository(client),
     }
   }, [])
-  const { productRepository, recipeRepository, mealPlanRepository, shoppingListRepository, dashboardRepository } = repositories
+  const { productRepository, recipeRepository, mealPlanRepository, shoppingListRepository, dashboardRepository, recipeSuggestionRepository } = repositories
 
-  return <ProductRepositoryProvider repository={productRepository}><RecipeRepositoryProvider repository={recipeRepository}><MealPlanRepositoryProvider repository={mealPlanRepository}><ShoppingListRepositoryProvider repository={shoppingListRepository}><DashboardRepositoryProvider repository={dashboardRepository}>{children}</DashboardRepositoryProvider></ShoppingListRepositoryProvider></MealPlanRepositoryProvider></RecipeRepositoryProvider></ProductRepositoryProvider>
+  return <ProductRepositoryProvider repository={productRepository}><RecipeRepositoryProvider repository={recipeRepository}><RecipeSuggestionRepositoryProvider repository={recipeSuggestionRepository}><MealPlanRepositoryProvider repository={mealPlanRepository}><ShoppingListRepositoryProvider repository={shoppingListRepository}><DashboardRepositoryProvider repository={dashboardRepository}>{children}</DashboardRepositoryProvider></ShoppingListRepositoryProvider></MealPlanRepositoryProvider></RecipeSuggestionRepositoryProvider></RecipeRepositoryProvider></ProductRepositoryProvider>
 }

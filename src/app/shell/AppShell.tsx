@@ -1,6 +1,6 @@
 import { useEffect, type ComponentType } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { BookOpen, Boxes, CalendarDays, House, LogOut, MoreHorizontal, Settings, ShoppingBasket, Sprout, type LucideProps } from 'lucide-react'
+import { BookOpen, Boxes, CalendarDays, ChefHat, House, LogOut, MoreHorizontal, Settings, ShoppingBasket, Sprout, type LucideProps } from 'lucide-react'
 import { useOptionalAuth } from '../../features/auth/useAuth'
 import { OnlineStatusBanner } from './OnlineStatusBanner'
 import { ServiceWorkerUpdatePrompt } from './ServiceWorkerUpdatePrompt'
@@ -11,6 +11,7 @@ const desktopNavigation: NavigationItem[] = [
   { to: '/', label: 'Сьогодні', icon: House, end: true },
   { to: '/plan', label: 'План', icon: CalendarDays },
   { to: '/recipes', label: 'Рецепти', icon: BookOpen },
+  { to: '/cook', label: 'Що приготувати?', icon: ChefHat },
   { to: '/products', label: 'Продукти', icon: Boxes },
   { to: '/shopping', label: 'Покупки', icon: ShoppingBasket },
 ]
