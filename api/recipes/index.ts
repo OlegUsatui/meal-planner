@@ -17,6 +17,8 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       const includeArchived = queryParam(request, 'includeArchived')
       const systemOnly = queryParam(request, 'systemOnly')
       const filters = parseListFilters({ mealType, systemOnly })
+      const rawProductIds = queryParam(request, 'productIds')
+      if (rawProductIds !== undefined) return repository.listByProductIds(parseProductIds(rawProductIds))
       if (![page, pageSize, subcategoryId, uncategorized, includeArchived].some((value) => value !== undefined)) return repository.list(query, filters)
       if (!repository.listPage) throw new ApiError(500, 'internal', 'Пагінація рецептів недоступна')
       const options = parseListOptions({ page, pageSize, mealType, subcategoryId, uncategorized, includeArchived, systemOnly })
@@ -27,6 +29,14 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     const id = requireString(body.id, 'id')
     return repository.createUploaded(id, body as never)
   }, request.method === 'POST' ? 201 : 200, ['GET', 'POST'])
+}
+
+function parseProductIds(value: string): string[] {
+  const values = value.split(',')
+  if (!values.length || values.some((productId) => !productId.trim())) {
+    throw new ApiError(400, 'bad-request', 'Некоректний список продуктів')
+  }
+  return [...new Set(values.map((productId) => productId.trim()))]
 }
 
 function parseListOptions(values: Record<string, string | undefined>): RecipeListOptions {

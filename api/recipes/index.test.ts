@@ -13,8 +13,8 @@ vi.mock('../../src/supabase/SupabaseRecipeRepository.js', () => ({
   },
 }))
 
-describe('recipe suggestions API', () => {
-  it('deduplicates product ids before querying the repository', async () => {
+describe('recipes API product suggestions', () => {
+  it('handles product suggestions through the recipes endpoint', async () => {
     mocks.authenticate.mockResolvedValue({ client: {}, isAdmin: false, user: { id: 'user-1' } })
     mocks.listByProductIds.mockResolvedValue([])
     const response = createResponse()
@@ -25,7 +25,7 @@ describe('recipe suggestions API', () => {
     expect(mocks.listByProductIds).toHaveBeenCalledWith(['product-2', 'product-1'])
   })
 
-  it('rejects an empty or malformed product selection', async () => {
+  it('rejects an empty product id in the suggestions query', async () => {
     mocks.authenticate.mockResolvedValue({ client: {}, isAdmin: false, user: { id: 'user-1' } })
     const response = createResponse()
 

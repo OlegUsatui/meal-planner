@@ -49,7 +49,7 @@ describe('API repository contracts', () => {
 
     await new ApiRecipeSuggestionRepository(client).listByProductIds(['product-2', 'product-1', 'product-2'])
 
-    expect(client.get).toHaveBeenCalledWith('/api/recipe-suggestions?productIds=product-2%2Cproduct-1')
+    expect(client.get).toHaveBeenCalledWith('/api/recipes?productIds=product-2%2Cproduct-1')
   })
 
   it('requests a server-paginated product page with search and archive filters', async () => {

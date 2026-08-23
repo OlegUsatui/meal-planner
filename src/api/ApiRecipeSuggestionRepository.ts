@@ -12,7 +12,7 @@ export class ApiRecipeSuggestionRepository implements RecipeSuggestionRepository
 
   listByProductIds(productIds: string[], signal?: AbortSignal): Promise<RecipeSummary[]> {
     const selected = normalizeProductIds(productIds)
-    const path = '/api/recipe-suggestions?productIds=' + encodeURIComponent(selected.join(','))
+    const path = '/api/recipes?productIds=' + encodeURIComponent(selected.join(','))
     return signal ? this.client.get<RecipeSummary[]>(path, { signal }) : this.client.get<RecipeSummary[]>(path)
   }
 }

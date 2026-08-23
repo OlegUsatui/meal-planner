@@ -7,7 +7,7 @@
 ## Routes
 
 - /cook — одноразовий підбір страв.
-- GET /api/recipe-suggestions?productIds=id1,id2 — read-only список рецептів.
+- GET /api/recipes?productIds=id1,id2 — read-only список рецептів.
 
 ## Flows
 
