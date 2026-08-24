@@ -23,5 +23,9 @@ export class ApiMealPlanRepository implements MealPlanRepository {
 
   upsert(input: MealPlanInput): Promise<MealPlanEntry> { return this.client.put<MealPlanEntry>('/api/meal-plan', input) }
 
+  async move(entryId: string, targetDate: string, targetSlot: MealPlanInput['slot']): Promise<void> {
+    await this.client.put('/api/meal-plan/move', { entryId, targetDate, targetSlot })
+  }
+
   async remove(id: string): Promise<void> { await this.client.delete(`/api/meal-plan/${encodeURIComponent(id)}`) }
 }

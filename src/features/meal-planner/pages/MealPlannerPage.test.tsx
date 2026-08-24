@@ -18,7 +18,7 @@ describe('MealPlannerPage', () => {
   afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
 
   it('loads only the visible week and adds a recipe without leaving the calendar', async () => {
-    const plan: MealPlanRepository = { list: vi.fn().mockResolvedValue([{ id: 'entry-1', date: '2026-08-14', slot: 'breakfast', recipeId: recipe.id, createdAt: 'now', updatedAt: 'now' }]), getByDateSlot: vi.fn(), upsert: vi.fn(), remove: vi.fn().mockResolvedValue(undefined) }
+    const plan: MealPlanRepository = { list: vi.fn().mockResolvedValue([{ id: 'entry-1', date: '2026-08-14', slot: 'breakfast', recipeId: recipe.id, createdAt: 'now', updatedAt: 'now' }]), getByDateSlot: vi.fn(), upsert: vi.fn(), move: vi.fn(), remove: vi.fn().mockResolvedValue(undefined) }
     const recipes: RecipeRepository = { list: vi.fn().mockResolvedValue([recipe]), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
     const router = createMemoryRouter([{ path: '/plan', element: <MealPlannerPage /> }, { path: '/plan/add', element: <MealPlanEntryPage /> }, { path: '/recipes/:recipeId', element: <h1>Сторінка рецепту</h1> }], { initialEntries: ['/plan?date=2026-08-14'] })
     const { container } = render(<QueryTestProvider><RecipeRepositoryProvider repository={recipes}><MealPlanRepositoryProvider repository={plan}><RouterProvider router={router} /></MealPlanRepositoryProvider></RecipeRepositoryProvider></QueryTestProvider>)
@@ -70,7 +70,7 @@ describe('MealPlannerPage', () => {
   })
 
   it('does not request full recipe details in week mode', async () => {
-    const plan: MealPlanRepository = { list: vi.fn().mockResolvedValue([{ id: 'entry-1', date: '2026-08-14', slot: 'breakfast', recipeId: recipe.id, createdAt: 'now', updatedAt: 'now' }]), getByDateSlot: vi.fn(), upsert: vi.fn(), remove: vi.fn() }
+    const plan: MealPlanRepository = { list: vi.fn().mockResolvedValue([{ id: 'entry-1', date: '2026-08-14', slot: 'breakfast', recipeId: recipe.id, createdAt: 'now', updatedAt: 'now' }]), getByDateSlot: vi.fn(), upsert: vi.fn(), move: vi.fn(), remove: vi.fn() }
     const recipes: RecipeRepository = { list: vi.fn().mockResolvedValue([recipe]), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
     const router = createMemoryRouter([{ path: '/plan', element: <MealPlannerPage /> }], { initialEntries: ['/plan?date=2026-08-14&view=day'] })
     render(<QueryTestProvider><RecipeRepositoryProvider repository={recipes}><MealPlanRepositoryProvider repository={plan}><RouterProvider router={router} /></MealPlanRepositoryProvider></RecipeRepositoryProvider></QueryTestProvider>)
@@ -83,7 +83,7 @@ describe('MealPlannerPage', () => {
   })
 
   it('replaces and removes a planned meal with explicit confirmations', async () => {
-    const plan: MealPlanRepository = { list: vi.fn().mockResolvedValue([{ id: 'entry-1', date: '2026-08-14', slot: 'breakfast', recipeId: recipe.id, createdAt: 'now', updatedAt: 'now' }]), getByDateSlot: vi.fn(), upsert: vi.fn().mockResolvedValue({}), remove: vi.fn().mockResolvedValue(undefined) }
+    const plan: MealPlanRepository = { list: vi.fn().mockResolvedValue([{ id: 'entry-1', date: '2026-08-14', slot: 'breakfast', recipeId: recipe.id, createdAt: 'now', updatedAt: 'now' }]), getByDateSlot: vi.fn(), upsert: vi.fn().mockResolvedValue({}), move: vi.fn(), remove: vi.fn().mockResolvedValue(undefined) }
     const recipes: RecipeRepository = { list: vi.fn().mockResolvedValue([recipe]), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
     const router = createMemoryRouter([{ path: '/plan', element: <MealPlannerPage /> }, { path: '/plan/add', element: <MealPlanEntryPage /> }], { initialEntries: ['/plan?date=2026-08-14'] })
     render(<QueryTestProvider><RecipeRepositoryProvider repository={recipes}><MealPlanRepositoryProvider repository={plan}><RouterProvider router={router} /></MealPlanRepositoryProvider></RecipeRepositoryProvider></QueryTestProvider>)

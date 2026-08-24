@@ -39,6 +39,7 @@ export function mapError(error: unknown): unknown {
   if (error instanceof MealPlanRepositoryError) {
     if (error.code === 'not-found') return new ApiError(404, 'not-found', error.message)
     if (error.code === 'duplicate-slot') return new ApiError(409, 'conflict', error.message)
+    if (error.code === 'move-failed') return new ApiError(409, 'conflict', error.message)
     return new ApiError(422, 'validation', error.message)
   }
   return error

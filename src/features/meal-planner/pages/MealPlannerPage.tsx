@@ -33,6 +33,7 @@ export function MealPlannerPage() {
   const [selectedDate, setSelectedDate] = useState(initialDate)
   const dates = useMemo(() => getWeekDates(weekStart), [weekStart])
   const [actionError, setActionError] = useState('')
+  const [clipboardRecipeId, setClipboardRecipeId] = useState<string>()
   const [removing, setRemoving] = useState<MealPlanEntry>()
   const [removePending, setRemovePending] = useState(false)
 
@@ -65,6 +66,21 @@ export function MealPlannerPage() {
   const goToday = () => { setWeekStart(startOfWeek(today)); selectDate(today) }
   const rangeLabel = `${parseLocalDate(dates[0]).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })} — ${parseLocalDate(dates[6]).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' })}`
 
+  async function savePlanAction(action: () => Promise<void>, message: string) {
+    setActionError('')
+    try { await action(); await invalidateMealPlanData(queryClient, userId) }
+    catch { setActionError(message) }
+  }
+
+  const pasteRecipe = (date: string, slot: MealPlanEntry['slot']) => {
+    if (!clipboardRecipeId || date < today) return
+    void savePlanAction(() => plan.upsert({ date, slot, recipeId: clipboardRecipeId }).then(() => undefined), 'Не вдалося вставити страву. Спробуйте ще раз.')
+  }
+  const moveEntry = (entry: MealPlanEntry, date: string, slot: MealPlanEntry['slot']) => {
+    if (date < today || entry.date < today) return
+    void savePlanAction(() => plan.move(entry.id, date, slot), 'Не вдалося перемістити страву. Спробуйте ще раз.')
+  }
+
   async function confirmRemove() {
     if (!removing) return
     setRemovePending(true); setActionError('')
@@ -83,7 +99,7 @@ export function MealPlannerPage() {
     {loading && <LoadingState>Завантажуємо план…</LoadingState>}
     {stale && <RetryBanner hasData={entries.length > 0} staleMessage="Показуємо останній завантажений план." errorMessage="Не вдалося завантажити план." onRetry={() => { void planQuery.refetch(); void catalogueQuery.refetch() }} pending={planQuery.isFetching || catalogueQuery.isFetching} />}
     {actionError && <Alert variant="error">{actionError}</Alert>}
-    {!loading && <WeekCalendar dates={dates} today={today} selectedDate={selectedDate} entries={entries} recipes={recipes} onSelectDate={selectDate} onAdd={(date, slot) => navigate(`/plan/add?date=${encodeURIComponent(date)}&slot=${encodeURIComponent(slot)}`)} onReplace={(entry) => navigate(`/plan/add?date=${encodeURIComponent(entry.date)}&slot=${encodeURIComponent(entry.slot)}&entryId=${encodeURIComponent(entry.id)}&recipeId=${encodeURIComponent(entry.recipeId)}`)} onRemove={setRemoving} onOpen={(entry, recipe) => openDetails(entry, recipe)} />}
+    {!loading && <WeekCalendar dates={dates} today={today} selectedDate={selectedDate} entries={entries} recipes={recipes} clipboardRecipeId={clipboardRecipeId} onSelectDate={selectDate} onAdd={(date, slot) => navigate(`/plan/add?date=${encodeURIComponent(date)}&slot=${encodeURIComponent(slot)}`)} onCopy={setClipboardRecipeId} onPaste={pasteRecipe} onMove={moveEntry} onReplace={(entry) => navigate(`/plan/add?date=${encodeURIComponent(entry.date)}&slot=${encodeURIComponent(entry.slot)}&entryId=${encodeURIComponent(entry.id)}&recipeId=${encodeURIComponent(entry.recipeId)}`)} onRemove={setRemoving} onOpen={(entry, recipe) => openDetails(entry, recipe)} />}
     {removing && <ConfirmDialog title="Видалити страву з плану?" description="Слот стане порожнім. Рецепт залишиться у вашому каталозі." confirmLabel="Видалити з плану" pending={removePending} danger onCancel={() => setRemoving(undefined)} onConfirm={() => void confirmRemove()} />}
   </section>
 }

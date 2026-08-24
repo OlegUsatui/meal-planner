@@ -25,7 +25,7 @@ describe('DashboardPage', () => {
   it('shows today meals, empty slots and a seven-day shopping preview', async () => {
     const repository: DashboardRepository = { get: vi.fn().mockResolvedValue({ today: '2026-08-14', todayEntries: [{ id: 'e1', date: '2026-08-14', slot: 'dinner', recipeId: 'r1', recipeName: 'Тепла миска' }], nextEntry: { id: 'e1', date: '2026-08-14', slot: 'dinner', recipeId: 'r1', recipeName: 'Тепла миска' }, sevenDayShoppingCount: 8, hasPersonalRecipes: false, hasPersonalProducts: false, hasPlanEntries: true }) }
     const recipeRepository: RecipeRepository = { list: vi.fn(), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
-    const mealPlanRepository: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn(), remove: vi.fn() }
+    const mealPlanRepository: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn(), move: vi.fn(), remove: vi.fn() }
     renderDashboard(repository, recipeRepository, mealPlanRepository)
 
     expect(await screen.findByRole('heading', { name: 'Сьогодні' })).toBeInTheDocument()
@@ -49,7 +49,7 @@ describe('DashboardPage', () => {
   it('shows setup guidance only before the first plan entry', async () => {
     const repository: DashboardRepository = { get: vi.fn().mockResolvedValue({ today: '2026-08-14', todayEntries: [], nextEntry: null, sevenDayShoppingCount: 0, hasPersonalRecipes: false, hasPersonalProducts: false, hasPlanEntries: false }) }
     const recipeRepository: RecipeRepository = { list: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
-    const mealPlanRepository: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn(), remove: vi.fn() }
+    const mealPlanRepository: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn(), move: vi.fn(), remove: vi.fn() }
     renderDashboard(repository, recipeRepository, mealPlanRepository)
     expect(await screen.findByText('Перший крок')).toBeInTheDocument()
     expect(screen.getByText('Заплануйте страви, щоб побачити підсумок.')).toBeInTheDocument()
@@ -60,7 +60,7 @@ describe('DashboardPage', () => {
   it('deduplicates the initial request in StrictMode', async () => {
     const repository: DashboardRepository = { get: vi.fn().mockResolvedValue({ today: '2026-08-14', todayEntries: [], nextEntry: null, sevenDayShoppingCount: 0, hasPersonalRecipes: false, hasPersonalProducts: false, hasPlanEntries: true }) }
     const recipeRepository: RecipeRepository = { list: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
-    const mealPlanRepository: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn(), remove: vi.fn() }
+    const mealPlanRepository: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn(), move: vi.fn(), remove: vi.fn() }
 
     render(<StrictMode><QueryTestProvider><MemoryRouter><RecipeRepositoryProvider repository={recipeRepository}><MealPlanRepositoryProvider repository={mealPlanRepository}><DashboardRepositoryProvider repository={repository}><DashboardPage /></DashboardRepositoryProvider></MealPlanRepositoryProvider></RecipeRepositoryProvider></MemoryRouter></QueryTestProvider></StrictMode>)
 
@@ -71,7 +71,7 @@ describe('DashboardPage', () => {
   it('does not render plan mutation controls on dashboard meal cards', async () => {
     const repository: DashboardRepository = { get: vi.fn().mockResolvedValue({ today: '2026-08-14', todayEntries: [{ id: 'e1', date: '2026-08-14', slot: 'dinner', recipeId: 'r1', recipeName: 'Тепла миска' }], nextEntry: null, sevenDayShoppingCount: 0, hasPersonalRecipes: false, hasPersonalProducts: false, hasPlanEntries: true }) }
     const recipeRepository: RecipeRepository = { list: vi.fn(), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
-    const mealPlanRepository: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn().mockResolvedValue({}), remove: vi.fn() }
+    const mealPlanRepository: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn().mockResolvedValue({}), move: vi.fn(), remove: vi.fn() }
     renderDashboard(repository, recipeRepository, mealPlanRepository)
 
     await screen.findByRole('button', { name: 'Відкрити рецепт Тепла миска' })

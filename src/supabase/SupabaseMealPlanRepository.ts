@@ -38,6 +38,18 @@ export class SupabaseMealPlanRepository implements MealPlanRepository {
     return toEntry(data as unknown as PlanRow)
   }
 
+  async move(entryId: string, targetDate: string, targetSlot: MealSlot): Promise<void> {
+    const errors = validateMealPlanInput({ date: targetDate, slot: targetSlot, recipeId: 'move' })
+    if (Object.keys(errors).length) throw new MealPlanRepositoryError('invalid-plan', 'Некоректний запис плану')
+    const { error } = await this.client.rpc('move_meal_plan_entry', { p_entry_id: entryId, p_target_date: targetDate, p_target_slot: targetSlot })
+    if (!error) return
+    const message = error.message.toLowerCase()
+    if (message.includes('не знайдено') || message.includes('not found')) throw new MealPlanRepositoryError('not-found', 'Запис плану не знайдено')
+    if (message.includes('минулу') || message.includes('past')) throw new MealPlanRepositoryError('past-date', 'Не можна змінювати план на минулу дату')
+    if (message.includes('некорект') || message.includes('invalid')) throw new MealPlanRepositoryError('invalid-plan', 'Некоректний запис плану')
+    throw new MealPlanRepositoryError('move-failed', `Не вдалося перемістити страву. ${error.message}`)
+  }
+
   async remove(id: string): Promise<void> {
     const ownerId = await currentUserId(this.client)
     const { data, error } = await this.client.from('meal_plan_entries').select('date').eq('id', id).eq('owner_id', ownerId).maybeSingle()

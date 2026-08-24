@@ -17,11 +17,12 @@ export interface MealPlanRepository {
   list(range?: MealPlanRange, signal?: AbortSignal): Promise<MealPlanEntry[]>
   getByDateSlot(date: string, slot: MealSlot): Promise<MealPlanEntry | undefined>
   upsert(input: MealPlanInput): Promise<MealPlanEntry>
+  move(entryId: MealPlanId, targetDate: string, targetSlot: MealSlot): Promise<void>
   remove(id: MealPlanId): Promise<void>
 }
 
 export class MealPlanRepositoryError extends Error {
-  readonly code: 'invalid-plan' | 'duplicate-slot' | 'not-found' | 'past-date'
+  readonly code: 'invalid-plan' | 'duplicate-slot' | 'move-failed' | 'not-found' | 'past-date'
 
   constructor(code: MealPlanRepositoryError['code'], message: string) {
     super(message)

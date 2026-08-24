@@ -8,6 +8,7 @@
 - Recipes require name, instructions, at least one ingredient, and at least one valid classification. Archived products cannot be newly selected.
 - Recipe suggestions match by product identity: a recipe is eligible when at least one of its ingredients uses a selected active product. The selection is transient URL state and never represents persisted inventory or quantities.
 - A plan has four slots and one recipe per local date/slot. Past entries cannot be added, replaced, or removed.
+- Current and future plan entries may be moved between days while retaining their slot. A move into an occupied slot atomically swaps the two entries; past dates reject the operation. Copy/paste is transient page state, targets the selected day/slot, and replaces an occupied target immediately.
 - Meal-plan reads are inclusive `from/to`; planner UI requests only the visible week.
 - Shopping is recalculated for inclusive `{from,to?}` from one serving of each planned recipe, aggregates by product, and remains read-only. Temporary source serving adjustments are UI-only.
 - Account export contains personal records/images plus system references. Account deletion requires recent reauthentication and the exact phrase `ВИДАЛИТИ АКАУНТ`; it never deletes system records.

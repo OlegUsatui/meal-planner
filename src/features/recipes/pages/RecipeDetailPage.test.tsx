@@ -18,7 +18,7 @@ describe('RecipeDetailPage', () => {
   it('announces successful creation on the recipe detail page', async () => {
     const recipe: Recipe = { id: 'recipe-1', name: 'Рецепт без фото', normalizedName: 'рецепт без фото', instructions: 'Подати.', classifications: [], caloriesPerServing: null, proteinGramsPerServing: null, fatGramsPerServing: null, carbsGramsPerServing: null, preparationTimeMinMinutes: null, preparationTimeMaxMinutes: null, archivedAt: null, createdAt: 'now', updatedAt: 'now', image: null, ingredients: [] }
     const repository: RecipeRepository = { list: vi.fn(), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
-    const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn(), remove: vi.fn() }
+    const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn(), move: vi.fn(), remove: vi.fn() }
     render(<QueryTestProvider><MemoryRouter initialEntries={['/recipes/recipe-1?created=1']}><RecipeRepositoryProvider repository={repository}><ProductRepositoryProvider repository={products}><MealPlanRepositoryProvider repository={mealPlan}><Routes><Route path="/recipes/:recipeId" element={<RecipeDetailPage />} /></Routes></MealPlanRepositoryProvider></ProductRepositoryProvider></RecipeRepositoryProvider></MemoryRouter></QueryTestProvider>)
 
     expect(await screen.findByText(/Рецепт створено/)).toBeInTheDocument()
@@ -26,7 +26,7 @@ describe('RecipeDetailPage', () => {
 
   it('shows a retryable error when the recipe cannot be loaded', async () => {
     const repository: RecipeRepository = { list: vi.fn(), get: vi.fn().mockRejectedValue(new Error('network')), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
-    const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn(), remove: vi.fn() }
+    const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn(), move: vi.fn(), remove: vi.fn() }
     render(<QueryTestProvider><MemoryRouter initialEntries={['/recipes/recipe-1']}><RecipeRepositoryProvider repository={repository}><ProductRepositoryProvider repository={products}><MealPlanRepositoryProvider repository={mealPlan}><Routes><Route path="/recipes/:recipeId" element={<RecipeDetailPage />} /></Routes></MealPlanRepositoryProvider></ProductRepositoryProvider></RecipeRepositoryProvider></MemoryRouter></QueryTestProvider>)
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Не вдалося завантажити рецепт')
@@ -36,7 +36,7 @@ describe('RecipeDetailPage', () => {
   it('passes the query cancellation signal to the detail repository', async () => {
     const recipe: Recipe = { id: 'recipe-1', name: 'Рецепт', normalizedName: 'рецепт', instructions: 'Подати.', classifications: [], caloriesPerServing: null, proteinGramsPerServing: null, fatGramsPerServing: null, carbsGramsPerServing: null, preparationTimeMinMinutes: null, preparationTimeMaxMinutes: null, archivedAt: null, createdAt: 'now', updatedAt: 'now', image: null, ingredients: [] }
     const repository: RecipeRepository = { list: vi.fn(), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
-    const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn(), remove: vi.fn() }
+    const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn(), move: vi.fn(), remove: vi.fn() }
     render(<QueryTestProvider><MemoryRouter initialEntries={['/recipes/recipe-1']}><RecipeRepositoryProvider repository={repository}><ProductRepositoryProvider repository={products}><MealPlanRepositoryProvider repository={mealPlan}><Routes><Route path="/recipes/:recipeId" element={<RecipeDetailPage />} /></Routes></MealPlanRepositoryProvider></ProductRepositoryProvider></RecipeRepositoryProvider></MemoryRouter></QueryTestProvider>)
 
     expect(await screen.findByRole('heading', { name: 'Рецепт' })).toBeInTheDocument()
@@ -48,7 +48,7 @@ describe('RecipeDetailPage', () => {
     const user = userEvent.setup()
     const recipe: Recipe = { id: 'recipe-1', name: 'Рисова миска', normalizedName: 'рисова миска', instructions: 'Змішати.', classifications: [], caloriesPerServing: 400, proteinGramsPerServing: 20, fatGramsPerServing: 10, carbsGramsPerServing: 60, preparationTimeMinMinutes: 20, preparationTimeMaxMinutes: 20, archivedAt: null, createdAt: 'now', updatedAt: 'now', image: { blob: new Blob(['image'], { type: 'image/webp' }), mimeType: 'image/webp', width: 10, height: 10, byteSize: 5 }, ingredients: [] }
     const repository: RecipeRepository = { list: vi.fn(), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
-    const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn().mockResolvedValue({}), remove: vi.fn() }
+    const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn().mockResolvedValue({}), move: vi.fn(), remove: vi.fn() }
     const router = createMemoryRouter([{ path: '/recipes/:recipeId', element: <RecipeDetailPage /> }, { path: '/plan', element: <h1>План</h1> }], { initialEntries: ['/recipes/recipe-1?planDate=2026-08-15&planSlot=dinner&planMode=add'] })
     render(<QueryTestProvider><RecipeRepositoryProvider repository={repository}><ProductRepositoryProvider repository={products}><MealPlanRepositoryProvider repository={mealPlan}><RouterProvider router={router} /></MealPlanRepositoryProvider></ProductRepositoryProvider></RecipeRepositoryProvider></QueryTestProvider>)
 
@@ -72,7 +72,7 @@ describe('RecipeDetailPage', () => {
     const user = userEvent.setup()
     const recipe: Recipe = { id: 'recipe-1', name: 'Рисова миска', normalizedName: 'рисова миска', instructions: 'Змішати.', classifications: [], caloriesPerServing: 400, proteinGramsPerServing: 20, fatGramsPerServing: 10, carbsGramsPerServing: 60, preparationTimeMinMinutes: 20, preparationTimeMaxMinutes: 20, archivedAt: null, createdAt: 'now', updatedAt: 'now', image: null, ingredients: [{ id: 'ingredient-1', productId: 'rice', productName: 'Рис', enteredQuantity: 100, enteredUnit: 'g', quantityBase: 100, productBaseUnit: 'g' }] }
     const repository: RecipeRepository = { list: vi.fn(), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
-    const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn().mockResolvedValue({}), remove: vi.fn() }
+    const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn().mockResolvedValue({}), move: vi.fn(), remove: vi.fn() }
     const router = createMemoryRouter([{ path: '/recipes/:recipeId', element: <RecipeDetailPage /> }, { path: '/plan', element: <h1>План</h1> }], { initialEntries: ['/recipes/recipe-1?planDate=2026-08-15&planSlot=dinner&planMode=add'] })
     render(<QueryTestProvider><RecipeRepositoryProvider repository={repository}><ProductRepositoryProvider repository={products}><MealPlanRepositoryProvider repository={mealPlan}><RouterProvider router={router} /></MealPlanRepositoryProvider></ProductRepositoryProvider></RecipeRepositoryProvider></QueryTestProvider>)
 
@@ -91,7 +91,7 @@ describe('RecipeDetailPage', () => {
     const recipe: Recipe = { id: 'recipe-1', name: 'Рисова миска', normalizedName: 'рисова миска', instructions: 'Змішати.', classifications: [{ mealType: 'dinner', subcategoryId: 'dinner-complete-plate' }], caloriesPerServing: 400, proteinGramsPerServing: 20, fatGramsPerServing: 10, carbsGramsPerServing: 60, preparationTimeMinMinutes: 20, preparationTimeMaxMinutes: 20, archivedAt: null, createdAt: 'now', updatedAt: 'now', image: null, ingredients: [{ id: 'ingredient-1', productId: 'rice', productName: 'Рис', enteredQuantity: 100, enteredUnit: 'g', quantityBase: 100, productBaseUnit: 'g' }] }
     let currentRecipe = recipe
     const repository: RecipeRepository = { list: vi.fn(), get: vi.fn().mockImplementation(async () => currentRecipe), create: vi.fn(), update: vi.fn().mockImplementation(async (_id, input) => { currentRecipe = { ...currentRecipe, name: input.name }; return currentRecipe }), archive: vi.fn() }
-    const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn(), remove: vi.fn() }
+    const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn(), move: vi.fn(), remove: vi.fn() }
     render(<QueryTestProvider><MemoryRouter initialEntries={['/recipes/recipe-1']}><RecipeRepositoryProvider repository={repository}><ProductRepositoryProvider repository={products}><MealPlanRepositoryProvider repository={mealPlan}><Routes><Route path="/recipes/:recipeId" element={<RecipeDetailPage />} /></Routes></MealPlanRepositoryProvider></ProductRepositoryProvider></RecipeRepositoryProvider></MemoryRouter></QueryTestProvider>)
 
     expect(await screen.findByRole('heading', { name: 'Рисова миска' })).toBeInTheDocument()
@@ -134,7 +134,7 @@ describe('RecipeDetailPage', () => {
     const user = userEvent.setup()
     const recipe: Recipe = { id: 'recipe-1', name: 'Рецепт', normalizedName: 'рецепт', instructions: 'Подати.', classifications: [], caloriesPerServing: null, proteinGramsPerServing: null, fatGramsPerServing: null, carbsGramsPerServing: null, preparationTimeMinMinutes: null, preparationTimeMaxMinutes: null, archivedAt: null, createdAt: 'now', updatedAt: 'now', image: null, ingredients: [] }
     const repository: RecipeRepository = { list: vi.fn(), get: vi.fn().mockResolvedValue(recipe), create: vi.fn(), update: vi.fn(), archive: vi.fn() }
-    const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn(), remove: vi.fn() }
+    const mealPlan: MealPlanRepository = { list: vi.fn(), getByDateSlot: vi.fn(), upsert: vi.fn(), move: vi.fn(), remove: vi.fn() }
     render(<QueryTestProvider><MemoryRouter initialEntries={['/recipes/recipe-1']}><RecipeRepositoryProvider repository={repository}><ProductRepositoryProvider repository={products}><MealPlanRepositoryProvider repository={mealPlan}><Routes><Route path="/recipes/:recipeId" element={<RecipeDetailPage />} /></Routes></MealPlanRepositoryProvider></ProductRepositoryProvider></RecipeRepositoryProvider></MemoryRouter></QueryTestProvider>)
 
     expect(await screen.findByRole('button', { name: 'Редагувати рецепт' })).toBeInTheDocument()

@@ -25,4 +25,19 @@ describe('DexieMealPlanRepository', () => {
 
     expect(entries.map((entry) => entry.date)).toEqual(['2026-08-14', '2026-08-20'])
   })
+
+  it('moves an entry or swaps it with an occupied target atomically', async () => {
+    const ids = ['source', 'target']
+    const repository = new DexieMealPlanRepository(database, { now: () => '2026-08-14T00:00:00.000Z', id: () => ids.shift() ?? 'entry-x', today: () => '2026-08-14' })
+    await repository.upsert({ date: '2026-08-15', slot: 'breakfast', recipeId: 'recipe-a' })
+    await repository.upsert({ date: '2026-08-16', slot: 'breakfast', recipeId: 'recipe-b' })
+
+    await repository.move('source', '2026-08-16', 'breakfast')
+
+    expect(await repository.list()).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'source', date: '2026-08-16', slot: 'breakfast', recipeId: 'recipe-a' }),
+      expect.objectContaining({ id: 'target', date: '2026-08-15', slot: 'breakfast', recipeId: 'recipe-b' }),
+    ]))
+    await expect(repository.move('source', '2026-08-13', 'breakfast')).rejects.toMatchObject({ code: 'past-date' })
+  })
 })

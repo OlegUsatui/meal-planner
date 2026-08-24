@@ -12,7 +12,7 @@ Plan recipes into dated meal slots while preserving the selected week and surrou
 
 ## Flows
 
-Select an empty slot → open the full-page picker → search/filter an eligible recipe with chips → explicitly select a recipe → add from the action bar. Add and replace save only the selected recipe into the date/slot. Confirmed remove remains in the calendar. Today's richer day-style cards are shown on the dashboard, where all current-day meal actions are also available.
+Select an empty slot → open the full-page picker → search/filter an eligible recipe with chips → explicitly select a recipe → add from the action bar. Add and replace save only the selected recipe into the date/slot. A current or future card can be dragged to another day in the same slot; an occupied target swaps the two entries atomically. A card or slot context menu supports copy and paste. Copy is kept only in page memory; paste writes the copied recipe into the target cell and replaces an occupied target immediately. Confirmed remove remains in the calendar. Today's richer day-style cards are shown on the dashboard, where all current-day meal actions are also available.
 
 ## Desktop UI
 
@@ -24,11 +24,11 @@ On phones, the day strip selects one day and the calendar shows only that day’
 
 ## Actions
 
-Change week, return to today, add, replace, remove, open detail from a planned card or the add/replace selection card, search/filter on the selection page, retry a stale read, and recover a missing recipe.
+Change week, return to today, add, replace, remove, open detail from a planned card or the add/replace selection card, drag a card to another day, copy/paste a recipe through the context menu, search/filter on the selection page, retry a stale read, and recover a missing recipe.
 
 ## State and storage
 
-Only the visible inclusive week is requested. The selected date lives in the URL. Visible ranges are cached for 30 seconds with stale-while-refresh UI; changing date or day/week range shows a loading state instead of retaining another range's calendar; recipe cards/pickers reuse five-minute summaries. Writes use the meal-plan repository, preserve one entry per date/slot, and invalidate every meal-plan range plus dashboard and shopping projections.
+Only the visible inclusive week is requested. The selected date lives in the URL. Visible ranges are cached for 30 seconds with stale-while-refresh UI; changing date or day/week range shows a loading state instead of retaining another range's calendar; recipe cards/pickers reuse five-minute summaries. Writes use the meal-plan repository, preserve one entry per date/slot, and invalidate every meal-plan range plus dashboard and shopping projections. The copy buffer contains only a recipe ID, is cleared by a page reload, and is never persisted.
 
 ## Validation
 
@@ -40,19 +40,19 @@ Initial loading, empty week/slot, ready, stale calendar with retry, local action
 
 ## Accessibility
 
-The selection page has a labelled search, chips with `aria-pressed`, keyboard-safe recipe cards/buttons with selectable and deselectable state, changing subcategory clears the active recipe selection, the action bar is rendered only for an active selection, remove uses shared `ConfirmDialog`, controls have accessible names, and reduced motion is respected.
+The selection page has a labelled search, chips with `aria-pressed`, keyboard-safe recipe cards/buttons with selectable and deselectable state, changing subcategory clears the active recipe selection, the action bar is rendered only for an active selection, remove uses shared `ConfirmDialog`, planner action menus are available through the visible «…» controls as a keyboard alternative to the pointer context menu, context menus use focusable menu items and Escape/outside-click dismissal, controls have accessible names, and reduced motion is respected.
 
 ## Tricky cases
 
-A failed refresh keeps stale calendar data. Replace shows current → new and commits only through “Замінити в плані”. Missing recipe references remain removable and never crash the week.
+A failed refresh keeps stale calendar data. Replace shows current → new and commits only through “Замінити в плані”. Dragging preserves the meal slot and swaps an occupied target; past dates reject all mutations. Pasting into an occupied slot replaces it without a confirmation. Missing recipe references remain removable and never crash the week, but cannot be copied or dragged.
 
 ## Acceptance criteria
 
-The API receives only the visible week; date survives reload/back; add and replace preserve context through `/plan/add` and return to the same date; planned detail returns to the same date.
+The API receives only the visible week; date survives reload/back; add and replace preserve context through `/plan/add` and return to the same date; planned detail returns to the same date; move/swap is atomic; copy/paste works through card and slot menus; past dates remain read-only.
 
 ## Tests
 
-Domain tests cover date ranges and slot rules. Component tests cover responsive add/replace/remove, absence of servings controls, stale data, local errors, menus, and missing recipes. E2E covers desktop/mobile core planning.
+Domain and repository tests cover date ranges, slot rules, move/swap, past-date protection, and API contracts. Component tests cover responsive add/replace/remove, drag-and-drop, copy/paste, context-menu keyboard access, absence of servings controls, stale data, local errors, menus, and missing recipes. E2E covers desktop/mobile core planning.
 
 ## Dependencies
 

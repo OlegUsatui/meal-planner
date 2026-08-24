@@ -3,6 +3,7 @@ import recipeCollection from './recipes/index.js'
 import recipeItem from './recipes/[id].js'
 import productCollection from './products/index.js'
 import mealPlanCollection from './meal-plan/index.js'
+import mealPlanMove from './meal-plan/move.js'
 import me from './me.js'
 import dashboard from './dashboard.js'
 import shoppingList from './shopping-list.js'
@@ -11,7 +12,7 @@ const mocks = vi.hoisted(() => ({
   auth: vi.fn().mockResolvedValue({ client: {}, user: { id: 'user-1', email: 'user@example.com' }, isAdmin: false }),
   recipes: { list: vi.fn(), listPage: vi.fn(), get: vi.fn(), createUploaded: vi.fn(), update: vi.fn(), updateUploaded: vi.fn(), archive: vi.fn(), remove: vi.fn() },
   products: { list: vi.fn(), listPage: vi.fn(), create: vi.fn(), remove: vi.fn() },
-  mealPlan: { list: vi.fn(), upsert: vi.fn() },
+  mealPlan: { list: vi.fn(), upsert: vi.fn(), move: vi.fn() },
   dashboard: { get: vi.fn() },
   shopping: { list: vi.fn() },
 }))
@@ -109,6 +110,8 @@ describe('REST handlers', () => {
     expect(mocks.mealPlan.list).toHaveBeenCalledWith({ from: '2026-08-14', to: '2026-08-20' })
     await mealPlanCollection({ method: 'PUT', headers: {}, body: { date: '2026-08-15' } }, response())
     expect(mocks.mealPlan.upsert).toHaveBeenCalledWith({ date: '2026-08-15' })
+    await mealPlanMove({ method: 'PUT', headers: {}, body: { entryId: 'entry-1', targetDate: '2026-08-16', targetSlot: 'breakfast' } }, response())
+    expect(mocks.mealPlan.move).toHaveBeenCalledWith('entry-1', '2026-08-16', 'breakfast')
   })
 
   it('handles dashboard and ranged shopping projections', async () => {

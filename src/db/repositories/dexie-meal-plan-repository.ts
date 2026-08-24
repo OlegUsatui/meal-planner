@@ -1,5 +1,6 @@
 import type { MealPlannerDatabase } from '../database'
 import { isPastMealPlanDate, validateMealPlanInput, type MealPlanInput, type MealSlot } from '../../features/meal-planner/domain/meal-plan'
+import { moveMealPlanEntries } from '../../features/meal-planner/domain/meal-plan-move'
 import { MealPlanRepositoryError, type MealPlanEntry, type MealPlanRange, type MealPlanRepository } from '../../features/meal-planner/types'
 
 interface Runtime {
@@ -55,6 +56,29 @@ export class DexieMealPlanRepository implements MealPlanRepository {
     }
     await this.database.mealPlanEntries.put(record)
     return toEntry(record)
+  }
+
+  async move(entryId: string, targetDate: string, targetSlot: MealSlot): Promise<void> {
+    const targetInput = { date: targetDate, slot: targetSlot, recipeId: 'move' }
+    if (Object.keys(validateMealPlanInput(targetInput)).length) throw new MealPlanRepositoryError('invalid-plan', 'Некоректний запис плану')
+    await this.database.transaction('rw', this.database.mealPlanEntries, async () => {
+      const source = await this.database.mealPlanEntries.get(entryId)
+      if (!source) throw new MealPlanRepositoryError('not-found', 'Запис плану не знайдено')
+      if (isPastMealPlanDate(source.date, this.runtime.today()) || isPastMealPlanDate(targetDate, this.runtime.today())) throw new MealPlanRepositoryError('past-date', 'Не можна змінювати план на минулу дату')
+      if (source.date === targetDate && source.slot === targetSlot) return
+
+      const sourceDateSlot = source.dateSlot
+      const targetDateSlot = `${targetDate}:${targetSlot}`
+      const target = await this.database.mealPlanEntries.where('dateSlot').equals(targetDateSlot).first()
+      const move = moveMealPlanEntries(toEntry(source), target ? toEntry(target) : undefined, targetDate, targetSlot, this.runtime.today())
+      if (!move) return
+      const now = this.runtime.now()
+      if (target) {
+        await this.database.mealPlanEntries.update(source.id, { dateSlot: `__moving:${source.id}`, updatedAt: now })
+        await this.database.mealPlanEntries.update(target.id, { date: move.target?.date, slot: move.target?.slot, dateSlot: sourceDateSlot, updatedAt: now })
+      }
+      await this.database.mealPlanEntries.update(source.id, { date: move.source.date, slot: move.source.slot, dateSlot: targetDateSlot, updatedAt: now })
+    })
   }
 
   async remove(id: string): Promise<void> {
